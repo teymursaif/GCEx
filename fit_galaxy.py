@@ -229,7 +229,7 @@ def cut(fitsfile, ra, dec, radius_pix, objectname='none', filtername='none',  ba
     w=WCS(objectname+'_'+filtername+'_cropped'+str(label)+'.fits')
     x_gal_center,y_gal_center = w.all_world2pix(ra, dec,0)
 
-    return output_frame, x_gal_center,y_gal_center
+    return output_frame, x_gal_center, y_gal_center
 
     
 
@@ -237,7 +237,7 @@ def cut(fitsfile, ra, dec, radius_pix, objectname='none', filtername='none',  ba
 
 #----------------------------------------------------------------------
 
-def mask_stars (frame, ra, dec, objname, filtername, r_cut, r_cut_back_mask=0, q=1, pa=0, blurred=0, label='') :
+def mask_stars (frame, ra, dec, objname, filtername, r_cut, zp, r_cut_back_mask=0, q=1, pa=0, blurred=0, label='') :
     #frame = main_data
     #print ('+++ Making mask frame for '+frame)
     X = get_header(frame,keyword='NAXIS1')
@@ -245,8 +245,8 @@ def mask_stars (frame, ra, dec, objname, filtername, r_cut, r_cut_back_mask=0, q
 
   
     os.system('sextractor '+frame+' -c sex/default_galfit.sex -CATALOG_NAME '+frame+'.sex_cat.fits '+ \
-    '-DETECT_MINAREA 5 -DETECT_THRESH 2 -ANALYSIS_THRESH 2 \
-    -BACK_SIZE 16 -CHECKIMAGE_NAME '+objname+'_'+filtername+'.check.fits')
+    '-DETECT_MINAREA 5 -DETECT_THRESH 2 -ANALYSIS_THRESH 2 -MAG_ZEROPOINT '+str(zp)+' '+\
+    '-BACK_SIZE 16 -CHECKIMAGE_NAME '+objname+'_'+filtername+'.check.fits')
 
     os.system('rm '+frame+'.sex_cat.fits')
     img1 = pyfits.open(frame)
@@ -263,8 +263,8 @@ def mask_stars (frame, ra, dec, objname, filtername, r_cut, r_cut_back_mask=0, q
     os.system('sextractor '+objname+'_'+filtername+'_median_subtracted'+str(label)+'.fits'+\
         ' -c sex/default_galfit.sex -CATALOG_NAME '+\
     objname+'_'+filtername+'.sex_cat.fits '+ \
-    '-DETECT_MINAREA 5 -DETECT_THRESH 2 -ANALYSIS_THRESH 2 \
-    -BACK_SIZE 64 -CHECKIMAGE_TYPE NONE')
+    '-DETECT_MINAREA 5 -DETECT_THRESH 2 -ANALYSIS_THRESH 2 -MAG_ZEROPOINT '+str(zp)+' '+\
+    '-BACK_SIZE 64 -CHECKIMAGE_TYPE NONE')
 
     #merge fits catalogues
     cat = pyfits.open(objname+'_'+filtername+'.sex_cat.fits')
@@ -281,6 +281,7 @@ def mask_stars (frame, ra, dec, objname, filtername, r_cut, r_cut_back_mask=0, q
     #print (image)
     for i in range (0,N) :
         params = table[i]
+        mag = params[2]
         ra_star = params[16]
         dec_star = params[17]
         x = params[14]
@@ -290,7 +291,8 @@ def mask_stars (frame, ra, dec, objname, filtername, r_cut, r_cut_back_mask=0, q
         A = params[18]
         B = params[19]
         r = math.sqrt((ra-ra_star)**2+(dec-dec_star)**2)
-        if flag <= 9999 and r >= 0.2/3600.:
+        if flag <= 9999 and r >= 0.2/3600. and mag < 25:
+            print (mag)
             #print (r*3600., ra_star, dec_star)
             if x >= X or y >= Y :
                 continue
@@ -891,7 +893,7 @@ def make_radial_profile(data,ellipse,mask=None,sn_stop=1./3.,rad_stop=None,binsi
 
 
 def fit_galaxy_sersic(main_data,ra,dec,obj_name,filter_name,pix_size,fit_dir,zp,\
-    r_cut,r_cut_back,r_cut_back_mask,r_cut_fit,plotting=False) :
+    r_cut,r_cut_back,r_cut_back_mask,r_cut_fit,scale,blur_frame=0,plotting=False) :
 
     print ('\n+ Sersic fitting for the galaxy : '+str(obj_name))
     print (r_cut,r_cut_back,r_cut_back_mask)
@@ -963,12 +965,12 @@ def fit_galaxy_sersic(main_data,ra,dec,obj_name,filter_name,pix_size,fit_dir,zp,
     print ('+ MAIN fitting of the galaxy')
     print ('+++ cropping ')
     cropped_frame, x_gal_center, y_gal_center = cut(main_data, ra, dec, r_cut , obj_name, \
-        filter_name, overwrite=True, blur=0)
+        filter_name, overwrite=True, blur=blur_frame)
     print (x_gal_center, y_gal_center)
     print ('+++ masking ')
     #mask_frame, masked_frame, check_frame = mask_stars(cropped_frame, ra, dec, obj_name, filter_name, \
     #   r_cut, r_cut_back_mask, q=1-e_initial, pa=pa_initial)
-    mask_frame, masked_frame, check_frame, weight_frame = mask_stars(cropped_frame, ra, dec, obj_name, filter_name,r_cut)
+    mask_frame, masked_frame, check_frame, weight_frame = mask_stars(cropped_frame, ra, dec, obj_name, filter_name, r_cut, zp)
     print ('+++ fitting ')
 
     #imfit_input = make_imfit_input(cropped_frame, obj_name, filter_name, x_initial,y_initial,back_average,\
@@ -1010,10 +1012,10 @@ def fit_galaxy_sersic(main_data,ra,dec,obj_name,filter_name,pix_size,fit_dir,zp,
     
 
     re_best_arcsec = re_best * pix_size
-    re_best_kpc = re_best * pix_size / 2.0
+    re_best_kpc = re_best * pix_size * scale
 
     d_re_best_arcsec = d_re_best * pix_size
-    d_re_best_kpc = d_re_best * pix_size / 2.0
+    d_re_best_kpc = d_re_best * pix_size * scale
 
 
     #if obj_name in ['DFX1','DF17'] :
@@ -1158,7 +1160,7 @@ def fit_galaxy_sersic(main_data,ra,dec,obj_name,filter_name,pix_size,fit_dir,zp,
 
         fig, ax = plt.subplots(2, 1, figsize=(12, 12), sharex=True, gridspec_kw={'height_ratios': [2.0, 1]})
         fig1, (ax1,ax2,ax3,ax4) = plt.subplots(1, 4,figsize=(12, 4), \
-            gridspec_kw={'wspace':0.05, 'hspace':0}, squeeze=True,frameon=False) #figsize=(11, 4),
+            gridspec_kw={'wspace':0.05, 'hspace':0}, squeeze=True) #figsize=(11, 4),
         fig.subplots_adjust(hspace=0)
         #fig1.subplots_adjust(left=-1, right=1, top=1, bottom=-1)
         #fig1.subplots_adjust(wspace=0.1)
@@ -1218,12 +1220,12 @@ def fit_galaxy_sersic(main_data,ra,dec,obj_name,filter_name,pix_size,fit_dir,zp,
         #f = sersic(rs,Ie_best,re_best,n_best,0)
         #m = -2.5*np.log10(f/c)+zp
 
-        ax[0].plot(rs*pix_size*0.5,magbins,color='black',markersize=1, lw=5, label=obj_name+' (F'+str(filter_name)+'W)')
-        ax[0].plot(rs*pix_size*0.5,magbins_up,'k--',markersize=1, lw=3)
-        ax[0].plot(rs*pix_size*0.5,magbins_down,'k--',markersize=1, lw=3)
+        ax[0].plot(rs*pix_size*scale,magbins,color='black',markersize=1, lw=5, label=obj_name+' (F'+str(filter_name)+'W)')
+        ax[0].plot(rs*pix_size*scale,magbins_up,'k--',markersize=1, lw=3)
+        ax[0].plot(rs*pix_size*scale,magbins_down,'k--',markersize=1, lw=3)
 
-        ax[0].plot(rs_m*pix_size*0.5,magbins_m,color='red',markersize=3, lw=5, label=l,zorder=3)
-        ax[1].plot(rs*pix_size*0.5,magbins-magbins_m,color='black',markersize=1, lw=5)
+        ax[0].plot(rs_m*pix_size*scale,magbins_m,color='red',markersize=3, lw=5, label=l,zorder=3)
+        ax[1].plot(rs*pix_size*scale,magbins-magbins_m,color='black',markersize=1, lw=5)
     
         """
         backs = np.random.normal(sky_best, d_sky_best, 2000)
@@ -1242,7 +1244,7 @@ def fit_galaxy_sersic(main_data,ra,dec,obj_name,filter_name,pix_size,fit_dir,zp,
         ax[0].yaxis.labelpad = 26
         ax[1].plot([-2,20],[0,0],color='red',lw=5)
 
-        ax[0].set_xlim([-0.001,0.5*r_cut_fit*0.05+0.05])
+        ax[0].set_xlim([-0.001,scale*r_cut_fit*pix_size+0.05])
         #plt.xlim([0,10])
         ax[0].set_ylim(29.45,23.0)
         #ax[0].set_ylim(22.70,22.55)
@@ -1306,7 +1308,7 @@ def fit_galaxy_sersic(main_data,ra,dec,obj_name,filter_name,pix_size,fit_dir,zp,
 
 
         ax1.text(60,r_cut*2-100,obj_name,color='red',fontsize=20)
-        ax1.arrow(60,50,2.0*2/0.05,0,head_width=0, head_length=20, color='gold',lw=2)
+        ax1.arrow(60,50,2/scale/pix_size,0,head_width=0, head_length=20, color='gold',lw=2)
         ax1.text(180,40,'2 kpc',fontsize=14, color='gold')
         ax1.arrow(2*r_cut-50,50,0,100,color='gold',head_width=10, head_length=10,lw=2)
         ax1.text(2*r_cut-200+90,150,'N',fontsize=14, color='gold')
