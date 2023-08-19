@@ -1,6 +1,4 @@
-GC pipeline v2.0 (2023)
-Developed by Teymoor Saifollahi
-Kapteyn Astronomical Institute
+GC pipeline v2.0 (2023), Developed by Teymoor Saifollahi, Kapteyn Astronomical Institute
 
 **Contact**
 - saifollahi@astro.rug.nl (this might not be available in the future 
