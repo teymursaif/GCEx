@@ -1,7 +1,11 @@
-GC pipeline v2.0 (2023), Developed by Teymoor Saifollahi, Kapteyn Astronomical Institute
+**GC pipeline v2.0 (2023)**
+
+Developed by Teymoor Saifollahi, Kapteyn Astronomical Institute
 
 **Contact**
-- saifollahi@astro.rug.nl (this might not be available in the future 
+
+Contact me in case of problems, questions, feedback, or for contributing to this pipeline:
+- saifollahi@astro.rug.nl (this might not be available in the future, postdoc life)
 - teymur.saif@gmail.com (personal email address)
 
 **Installation**
@@ -14,9 +18,9 @@ GC pipeline v2.0 (2023), Developed by Teymoor Saifollahi, Kapteyn Astronomical I
 
 - Make sure data is prepared for the analysis by keeping them in the "data_dir" parameter as is defined in "modules/pipeline_functions". Frames for a given galaxy should be in the following format (as an example for HST data of galaxy DF44 in F606W):
 DF44_F606W_*.science.fits -> science frame (and stacked)
-DF44_F606W_*.weight.fits -> weight map associated to the science frame
+DF44_F606W_*.weight.fits -> weight map associated with the science frame
 
-- Make sure you have PSF models stored in the "psf_dir" parameter as is defined in "modules/pipeline_functions". PSF model for a given filter should be given in the following format (as an example for HST F606W): psf_F606W.fits
+- Make sure you have PSF models stored in the "psf_dir" parameter as defined in "modules/pipeline_functions". PSF model for a given filter should be given in the following format (as an example for HST F606W): psf_F606W.fits
 
 - Make sure that you have adjusted all the inputs in "modules/pipeline_functions".
 
