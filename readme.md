@@ -22,14 +22,14 @@ DF44_F606W_*.weight.fits -> weight map associated to the science frame
 
 - fill in the "inputs/udg_input.csv" for the objects you would like to analyse (more information can be found inside that file). This file contains basic info about objects such as their name, rough coordinates, distance in Mpc, filters, and some comments regarding the type of the galaxy (e.g. nucleated or not-nucleated)
 
-**run the pipeline_functions**
+**Run the pipeline_functions**
 - in your working directory and in the command line execute:
 "python gc_pipeline.py"
 
-**example**
+**Example**
 - there is already data on MATLAS-2019, a UDG known for its GCs). After setup the basic, you should be able to run the pipeline. Some output jpg files are already available in the output directory which you can look to get an idea of what to expect.
 
-**notes**
+**Notes**
 - the current version (August 2023) of the pipeline does the first two steps of the desired analysis (out of 4 steps which will be available in the next versions). These two steps are (GCpipeline.png):
   
 1. Sersic modelling of the galaxy to estimate Sersic parameters of objects
