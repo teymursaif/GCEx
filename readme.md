@@ -31,7 +31,7 @@ DF44_F606W_*.weight.fits -> weight map associated with the science frame
 `python gc_pipeline.py`
 
 **Example**
-- there is already data on MATLAS-2019, a UDG known for its GCs). After setup the basic, you should be able to run the pipeline. Some output jpg files are already available in the output directory which you can look to get an idea of what to expect.
+- there is already data on MATLAS-2019, a UDG known for its GCs). After setup the basic, you should be able to run the pipeline. Some output jpg files are already available in the output directory which you can look to get an idea of what to expect. There is data in 4 filters: HST/ACS in F606W and F814, VEGAS (VST survey) in g and i. There is more data of this object (but not included in the example)
 
 **Notes**
 - the current version (August 2023) of the pipeline does the first two steps of the desired analysis (out of 4 steps which will be available in the next versions). These two steps are (GCpipeline.png):
