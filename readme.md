@@ -1,4 +1,4 @@
-**GC pipeline v2.0 (2023)**
+**GC pipeline v2.0 (August 2023)**
 
 Developed by Teymoor Saifollahi, Kapteyn Astronomical Institute
 
