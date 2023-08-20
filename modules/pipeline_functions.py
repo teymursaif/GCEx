@@ -14,11 +14,11 @@ from astropy.visualization import *
 from astropy.visualization import make_lupton_rgb
 from astropy.table import Table, join_skycoord
 from astropy import table
-from fitsio import FITS
 import shutil
 import photutils
 from photutils.aperture import CircularAperture
 from photutils.aperture import CircularAnnulus
+import scipy.optimize as opt
 #from lacosmic import lacosmic
 
 ############################################################
@@ -79,13 +79,13 @@ def initialize_params() :
     #INSTR_FOV = 0.05 #deg
     N_ART_GCS = 1000
     COSMIC_CLEAN = False
-    PHOTOM_APERS = '2,4,8,25' # the largest aperture will be used for aperture correction
+    PHOTOM_APERS = '2,4,8,12,16,20,24,32' # the largest aperture will be used for aperture correction
 
     ###################33
 
     # if no PSF is given to the pipeline, FWHM (in arcsec) in eachfilter must be given to the pipeline:
     FWHMS_ARCSEC = {'F115W':[0.0037], 'F150W':[0.049], 'F200W':[0.064], 'F277W':[0.088], 'F356W':[0.114], 'F410M':[0.133], 'F444W':[0.140], \
-    'F606W':[0.08], 'F814W':[0.09], 'F125W':[0.12], 'F160W':[0.18], 'g':[0], 'r':[0], 'i':[0]}
+    'F606W':[0.08], 'F814W':[0.09], 'F125W':[0.12], 'F160W':[0.18], 'g':[1], 'r':[1], 'i':[1]}
 
     # and the 50% energy radius in arcsec:
     #PSF_RAD50_ARCSEC = {'F115W':[0.025], 'F150W':[0.032], 'F200W':[0.042], 'F277W':[0.055], 'F356W':[0.073], 'F410M':[0.084], 'F444W':[0.090], \
@@ -570,8 +570,65 @@ def estimate_aper_corr(gal_id):
             donothing = 1
 
 ############################################################
+
+def estimate_fwhm(gal_id):
+    gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
+    for fn in filters:
+        psf_file = psf_dir+'psf_'+fn+'.fits'
+        print ('- estimating psf FWHM for filter:', fn)
+        if os.path.exists(psf_file):
+            psf_fits_file = fits.open(psf_file)
+            psf_data = psf_fits_file[0].data
+            psf_pixel_scale = psf_fits_file[0].header['PIXELSCL']
+            X = float(psf_fits_file[0].header['NAXIS1'])
+            Y = float(psf_fits_file[0].header['NAXIS2'])
+            (FWHM_x, FWHM_y) = getFWHM_GaussianFitScaledAmp(psf_data)
+            #print (FWHM_x,FWHM_y)
+            #print (FWHM_x*psf_pixel_scale ,FWHM_y*psf_pixel_scale)
+            FWHMS_ARCSEC[fn] = np.mean([FWHM_x*psf_pixel_scale ,FWHM_y*psf_pixel_scale])
+            print ('- FWHM in filter', fn, 'is', FWHMS_ARCSEC[fn], 'arcsec')
+
+        else:
+            print ("* PSF file is not found. using the default value of FWHM (arcsec)", (FWHMS_ARCSEC[fn])[0])
+
+############################################################
+
+def twoD_GaussianScaledAmp(xy, xo, yo, sigma_x, sigma_y, amplitude, offset):
+    """Function to fit, returns 2D gaussian function as 1D array"""
+    x, y = xy
+    xo = float(xo)
+    yo = float(yo)
+    g = offset + amplitude*np.exp( - (((x-xo)**2)/(2*sigma_x**2) + ((y-yo)**2)/(2*sigma_y**2)))
+    return g.ravel()
+
+def getFWHM_GaussianFitScaledAmp(img):
+    """Get FWHM(x,y) of a blob by 2D gaussian fitting
+    Parameter:
+        img - image as numpy array
+    Returns:
+        FWHMs in pixels, along x and y axes.
+    """
+    x = np.linspace(0, img.shape[1], img.shape[1])
+    y = np.linspace(0, img.shape[0], img.shape[0])
+    x, y = np.meshgrid(x, y)
+    #Parameters: xpos, ypos, sigmaX, sigmaY, amp, baseline
+    initial_guess = (img.shape[1]/2,img.shape[0]/2,10,10,1,0)
+    # subtract background and rescale image into [0,1], with floor clipping
+    bg = np.percentile(img,5)
+    img_scaled = np.clip((img - bg) / (img.max() - bg),0,1)
+    popt, pcov = opt.curve_fit(twoD_GaussianScaledAmp, (x, y),
+                               img_scaled.ravel(), p0=initial_guess,
+                               bounds = ((img.shape[1]*0.4, img.shape[0]*0.4, 1, 1, 0.5, -0.1),
+                                     (img.shape[1]*0.6, img.shape[0]*0.6, img.shape[1]/2, img.shape[0]/2, 1.5, 0.5)))
+    xcenter, ycenter, sigmaX, sigmaY, amp, offset = popt[0], popt[1], popt[2], popt[3], popt[4], popt[5]
+    FWHM_x = np.abs(4*sigmaX*np.sqrt(-0.5*np.log(0.5)))
+    FWHM_y = np.abs(4*sigmaY*np.sqrt(-0.5*np.log(0.5)))
+    return (FWHM_x, FWHM_y)
+
+############################################################
 ###
 welcome()
 initialize_params()
 get_data_info(gal_id)
+estimate_fwhm(gal_id)
 estimate_aper_corr(gal_id)
