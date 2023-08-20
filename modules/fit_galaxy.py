@@ -598,7 +598,7 @@ def estimate_frame_back(frame,gal_name,filtername) :
     plt.plot([median+1*std,median+1*std],[0,max_plot],'k--')
     plt.plot([median-1*std,median-1*std],[0,max_plot],'k--')
 
-    plt.savefig(plots_dir+gal_name+'_'+filtername+'_hist_back.png',\
+    plt.savefig(check_plots_dir+gal_name+'_'+filtername+'_hist_back.png',\
         bbox_inches='tight', pad_inches = 0, dpi=100)
     plt.close()
 
@@ -1154,7 +1154,7 @@ def fit_galaxy_sersic(main_data,weight_data,ra,dec,obj_name,filter_name,pix_size
         plt.legend(loc='upper right')
         plt.xlabel('radius [pixels]')
         plt.ylabel('flux')
-        plt.savefig(plots_dir+obj_name+'_'+filter_name+'_flux_profile.png',bbox_inches='tight', pad_inches = 0, dpi=100)
+        plt.savefig(check_plots_dir+obj_name+'_'+filter_name+'_flux_profile.png',bbox_inches='tight', pad_inches = 0, dpi=100)
         plt.close()
 
         rs_m,fluxbins_m,errors_m,sky_level_m,sky_noise_m,sky_bin_m, sky_bins_values_m, area_m\
