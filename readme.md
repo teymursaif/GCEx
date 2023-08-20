@@ -1,4 +1,4 @@
-**GC pipeline v2.0 (August 2023)**
+**GCTOOLS pipeline (August 2023)**
 
 Developed by Teymoor Saifollahi, Kapteyn Astronomical Institute
 (This pipeline also makes use of several scripts/functions that have ben developed by others)
