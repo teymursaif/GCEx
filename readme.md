@@ -1,7 +1,10 @@
 **GCTOOLS pipeline (August 2023)**
 
 Developed by Teymoor Saifollahi, Kapteyn Astronomical Institute
-(This pipeline also makes use of several scripts/functions that have ben developed by others)
+
+A data-analysis pipeline for the detection and characterization of extragalactic globular clusters (or generally star clusters). 
+
+(*This pipeline also makes use of several scripts/functions that have been developed by others)
 
 **Contact**
 
