@@ -33,7 +33,6 @@ def initialize_params() :
 
     # defining the executables (what you type in the command-line that executes the program)
     SE_executable = 'sex'
-    galfit_executable = './galfit'
     swarp_executable = 'swarp'
 
     ##################################################
@@ -59,6 +58,8 @@ def initialize_params() :
     sbf_dir = output_dir+'sbf/'
     check_plots_dir = output_dir+'check_plots/'
     external_dir = input_dir+'external/'
+
+    galfit_executable = external_dir+'galfit'
 
     PRIMARY_FRAME_SIZE_ARCSEC = 1*FRAME_SIZE_ARCSEC #arcsec
     BACKGROUND_ANNULUS_START = 3 #The size of background annulus for forced photoemtry as a factor of FWHM
