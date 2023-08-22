@@ -17,8 +17,10 @@ from astropy import table
 import photutils
 from photutils.aperture import CircularAperture
 from photutils.aperture import CircularAnnulus
-
+from photutils.utils import CutoutImage
+import time as TIME
 from modules.pipeline_functions import *
+from modules.initialize import *
 
 def prepare_sex_cat(source_cat_name_input,source_cat_name_output,gal_name,filter_name,distance):
     main = fits.open(source_cat_name_input)
@@ -26,9 +28,9 @@ def prepare_sex_cat(source_cat_name_input,source_cat_name_output,gal_name,filter
     fn = filter_name
     #print (len(sex_cat_data))
     mask = ((sex_cat_data['FLAGS'] < 4) & \
-    (sex_cat_data ['ELLIPTICITY'] < 0.9) & \
+    (sex_cat_data ['ELLIPTICITY'] < 1) & \
     (sex_cat_data ['MAG_AUTO'] > 20) & \
-    (sex_cat_data ['MAG_AUTO'] < 27) & \
+    (sex_cat_data ['MAG_AUTO'] < MAG_LIMIT_CAT) & \
     (sex_cat_data ['FWHM_IMAGE'] < 999) & \
     (sex_cat_data ['FWHM_IMAGE'] > 0.5) )
     sex_cat_data = sex_cat_data[mask]
@@ -40,7 +42,7 @@ def prepare_sex_cat(source_cat_name_input,source_cat_name_output,gal_name,filter
     magerr_apers = np.array(sex_cat_data['MAGERR_APER'])
     flux_apers = np.array(sex_cat_data['FLUX_APER'])
     fluxerr_apers = np.array(sex_cat_data['FLUXERR_APER'])
-    psf_dia_ref_pixel = 2*(PSF_REF_RAD_ARCSEC[filter_name])[0]/PIXEL_SCALES[filter_name]
+    psf_dia_ref_pixel = 2*(PSF_REF_RAD_ARCSEC[filter_name])/PIXEL_SCALES[filter_name]
     psf_dia_ref_pixel = int(psf_dia_ref_pixel*1000+0.4999)/1000
     apertures = (str(psf_dia_ref_pixel)+','+PHOTOM_APERS).split(',')
     expand_fits_table(source_cat_name_output,'MAG_APER_REF',mag_apers[:,0])
@@ -51,8 +53,8 @@ def prepare_sex_cat(source_cat_name_input,source_cat_name_output,gal_name,filter
 
     expand_fits_table(source_cat_name_output,'APER_RAD_REF_PIXEL',mag_apers[:,0]*0+float(apertures[0]))
 
-    fraction_corr = 2.512*np.log10(1./(PSF_REF_RAD_FRAC[fn])[0])
-    flux_fraction_corr = 1./(PSF_REF_RAD_FRAC[fn])[0]
+    fraction_corr = 2.512*np.log10(1./(PSF_REF_RAD_FRAC[fn]))
+    flux_fraction_corr = 1./(PSF_REF_RAD_FRAC[fn])
     expand_fits_table(source_cat_name_output,'MAG_APER_CORR',mag_apers[:,0]-fraction_corr)
     expand_fits_table(source_cat_name_output,'MAGERR_APER_CORR',magerr_apers[:,0])
 
@@ -61,7 +63,7 @@ def prepare_sex_cat(source_cat_name_input,source_cat_name_output,gal_name,filter
 
     # add size
     fwhm_obs = np.array(sex_cat_data['FWHM_WORLD'])*3600.0
-    fwhm = (FWHMS_ARCSEC[filter_name])[0]
+    fwhm = (FWHMS_ARCSEC[filter_name])
     fwhm_int = fwhm_obs**2-fwhm**2
     #print (fwhm_obs, fwhm, fwhm_int)
     fwhm_int[fwhm_int<0] = 0
@@ -199,7 +201,7 @@ def make_mask(frame, sex_source_cat, weight_frame, seg_map, mask_out, mask_out2,
 ############################################################
 
 def make_detection_frame(gal_id, input_frame, weight_frame, fn, output_frame, backsize=16, backfiltersize=1, iteration=3):
-    print ('- Making the detection frame for source detection ... ')
+    print ('- Making the detection frame for filter ', fn)
     gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
     os.system('cp '+input_frame+' '+temp_dir+'temp_det.fits')
     for i in range(0,iteration):
@@ -214,10 +216,10 @@ def make_detection_frame(gal_id, input_frame, weight_frame, fn, output_frame, ba
 
         # make segmentation map
         #if i == 0 :
-        command = 'sex '+temp_dir+'temp_det.fits'+' -c '+str(input_dir)+'default.sex -CATALOG_NAME '+temp_dir+'temp_sex_cat.fits'+str(i)+'.fits '+ \
-        '-PARAMETERS_NAME '+str(input_dir)+'default.param -DETECT_MINAREA 3 -DETECT_THRESH 1.0 -ANALYSIS_THRESH 1.0 ' + \
+        command = SE_executable+' '+temp_dir+'temp_det.fits'+' -c '+str(external_dir)+'default.sex -CATALOG_NAME '+temp_dir+'temp_sex_cat.fits'+str(i)+'.fits '+ \
+        '-PARAMETERS_NAME '+str(external_dir)+'default.param -DETECT_MINAREA 3 -DETECT_THRESH 1.0 -ANALYSIS_THRESH 1.0 ' + \
         '-DEBLEND_NTHRESH 4 -DEBLEND_MINCONT 0.1 ' + weight_command + \
-        '-FILTER_NAME  '+str(input_dir)+'default.conv -STARNNW_NAME '+str(sex_dir)+'default.nnw -PIXEL_SCALE ' + str(PIXEL_SCALES[filters[0]]) + ' ' \
+        '-FILTER_NAME  '+str(external_dir)+'default.conv -STARNNW_NAME '+str(external_dir)+'default.nnw -PIXEL_SCALE ' + str(PIXEL_SCALES[filters[0]]) + ' ' \
         '-BACK_SIZE 256 -BACK_FILTERSIZE 3 -CHECKIMAGE_TYPE SEGMENTATION ' +  \
         '-CHECKIMAGE_NAME '+temp_dir+'temp_seg'+str(i)+'.fits'
         os.system(command)
@@ -231,10 +233,10 @@ def make_detection_frame(gal_id, input_frame, weight_frame, fn, output_frame, ba
             img1[0].data = data1
             img1.writeto(temp_dir+'temp_seg'+str(i)+'.fits',overwrite=True)
 
-        command = 'sex '+temp_dir+'temp_det.fits'+' -c '+str(input_dir)+'default.sex -CATALOG_NAME '+temp_dir+'temp_sex_cat.fits'+str(i)+'.fits '+ \
-        '-PARAMETERS_NAME '+str(input_dir)+'default.param -DETECT_MINAREA 4 -DETECT_THRESH 2.0 -ANALYSIS_THRESH 2.0 ' + \
+        command = SE_executable+' '+temp_dir+'temp_det.fits'+' -c '+str(external_dir)+'default.sex -CATALOG_NAME '+temp_dir+'temp_sex_cat.fits'+str(i)+'.fits '+ \
+        '-PARAMETERS_NAME '+str(external_dir)+'default.param -DETECT_MINAREA 4 -DETECT_THRESH 2.0 -ANALYSIS_THRESH 2.0 ' + \
         '-DEBLEND_NTHRESH 64 -DEBLEND_MINCONT 0.0001 ' + weight_command + \
-        '-FILTER_NAME  '+str(input_dir)+'default.conv -STARNNW_NAME '+str(sex_dir)+'default.nnw -PIXEL_SCALE ' + str(PIXEL_SCALES[filters[0]]) + ' ' \
+        '-FILTER_NAME  '+str(external_dir)+'default.conv -STARNNW_NAME '+str(external_dir)+'default.nnw -PIXEL_SCALE ' + str(PIXEL_SCALES[filters[0]]) + ' ' \
         '-BACK_SIZE '+ str(backsize)+' -BACK_FILTERSIZE '+ str(backfiltersize)+' -CHECKIMAGE_TYPE BACKGROUND,-BACKGROUND,APERTURES ' +  \
         '-CHECKIMAGE_NAME '+temp_dir+'temp_back'+str(i)+'.fits,'+temp_dir+'temp_-back'+str(i)+'.fits,'+temp_dir+'temp_aper'+str(i)+'.fits'
         #print (command)
@@ -267,7 +269,7 @@ def make_source_cat(gal_id):
     i = -1
     for fn in filters:
         i=i+1
-
+        os.system('cp '+external_dir+'sex_default.param '+external_dir+'default.param')
         detection_frame = detection_dir+gal_name+'_'+fn+'_'+'detection'+'_cropped.fits'
         main_frame = data_dir+gal_name+'_'+fn+'_cropped.fits'
         weight_frame = data_dir+gal_name+'_'+fn+'_cropped.weight.fits'
@@ -293,11 +295,11 @@ def make_source_cat(gal_id):
 
         weight_command = '-WEIGHT_TYPE  MAP_WEIGHT -WEIGHT_IMAGE '+weight_map+' -WEIGHT_THRESH 0.001'
 
-        psf_dia_ref_pixel = 2*(PSF_REF_RAD_ARCSEC[fn])[0]/PIXEL_SCALES[fn]
+        psf_dia_ref_pixel = 2*(PSF_REF_RAD_ARCSEC[fn])/PIXEL_SCALES[fn]
         psf_dia_ref_pixel = int(psf_dia_ref_pixel*100+0.4999)/100
         apertures = (str(psf_dia_ref_pixel)+','+PHOTOM_APERS).split(',')
         n = len(apertures)
-        params = open(input_dir+'default.param','a')
+        params = open(external_dir+'default.param','a')
         params.write('MAG_APER('+str(n)+') #Fixed aperture magnitude vector [mag]\n')
         params.write('MAGERR_APER('+str(n)+') #RMS error vector for fixed aperture mag [mag]\n')
         params.write('FLUX_APER('+str(n)+') # Flux within a Kron-like elliptical aperture [count]\n')
@@ -305,11 +307,11 @@ def make_source_cat(gal_id):
         params.close()
 
         # 2, 1, 1 for JWST
-        command = 'sex '+detection_frame+','+frame+' -c '+input_dir+'default.sex -CATALOG_NAME '+source_cat_name+' '+ \
-        '-PARAMETERS_NAME '+input_dir+'default.param -DETECT_MINAREA 4 -DETECT_THRESH 1.5 -ANALYSIS_THRESH 1.0 ' + \
+        command = SE_executable+' '+detection_frame+','+frame+' -c '+external_dir+'default.sex -CATALOG_NAME '+source_cat_name+' '+ \
+        '-PARAMETERS_NAME '+external_dir+'default.param -DETECT_MINAREA 4 -DETECT_THRESH 1.5 -ANALYSIS_THRESH 1.0 ' + \
         '-DEBLEND_NTHRESH 32 -DEBLEND_MINCONT 0.0001 ' + weight_command + ' -PHOT_APERTURES '+str(psf_dia_ref_pixel)+','+str(PHOTOM_APERS)+' -GAIN ' + str(gain) + ' ' \
         '-MAG_ZEROPOINT ' +str(zp) + ' -BACKPHOTO_TYPE GLOBAL '+\
-        '-FILTER Y -FILTER_NAME  '+input_dir+'tophat_1.5_3x3.conv -STARNNW_NAME '+input_dir+'default.nnw -PIXEL_SCALE ' + str(pix_size) + ' ' \
+        '-FILTER Y -FILTER_NAME  '+external_dir+'tophat_1.5_3x3.conv -STARNNW_NAME '+external_dir+'default.nnw -PIXEL_SCALE ' + str(pix_size) + ' ' \
         '-BACK_SIZE 32 -BACK_FILTERSIZE 1 -CHECKIMAGE_TYPE APERTURES,FILTERED,BACKGROUND,-BACKGROUND,SEGMENTATION,BACKGROUND_RMS ' +  \
         '-CHECKIMAGE_NAME '+check_image_aper+','+check_image_filtered+','+check_image_back+','+check_image_noback+','+check_image_segm+\
         ','+check_image_back_rms
@@ -369,7 +371,7 @@ def make_multiwavelength_cat(gal_id, mode='forced-photometry'):
         os.system('cp '+main_cat+' join.fits')
         for fn in filters[1:2]:
             cat = sex_dir+gal_name+'_'+fn+'_source_cat_proc.fits'
-            crossmatch('join.fits',cat,'RA','DEC','RA_'+fn,'DEC_'+fn,0.25,fn,'join.fits')
+            crossmatch('join.fits',cat,'RA','DEC','RA_'+fn,'DEC_'+fn,CROSS_MATCH_RADIUS_ARCSEC,fn,'join.fits')
 
         os.system('mv join.fits '+cats_dir+gal_name+'_master_cat.fits')
 
@@ -402,7 +404,6 @@ def forced_photometry(det_cat, photom_frame, mask_frame, back_rms_frame, fn, out
     back_rms = fits.open(back_rms_frame)
     back_rms_data = back_rms[0].data
 
-    error_data = (back_rms_data)
     #mask_data = np.array(1-mask_data)
     #print (mask_data[2000:2010,2000:2010])
     mask_data_bool = mask_data#.astype(np.bool_)
@@ -411,9 +412,15 @@ def forced_photometry(det_cat, photom_frame, mask_frame, back_rms_frame, fn, out
     mask_data_bool = mask_data_bool.astype(np.bool_)
     #print (mask_data_bool[2000:2010,2000:2010])
     #print (fits_data)
+
     zp = ZPS[fn]
-    exptime = fits_file[0].header['EXPTIME']
+    exptime = EXPTIME[fn]
     #zp = zp - 2.5*np.log10(exptime)
+    error_data = (back_rms_data**2+fits_data/GAIN[fn]/(PSF_REF_RAD_FRAC[fn]))
+    #error_data[error_data<=0] = 99999
+    error_data = np.sqrt(error_data)/np.sqrt(exptime)
+    #(np.sqrt((flux_err**2)*exptime+(flux_sky_sub*exptime / GAIN[fn] / (PSF_REF_RAD_FRAC[fn]))))/exptime
+
     RA = cat_data['RA']
     DEC = cat_data['DEC']
     FLUX, FLUX_ERR, MAG, MAG_ERR, BACK_FLUX, BACK_FLUX_ERR = [], [], [], [], [], []
@@ -422,61 +429,80 @@ def forced_photometry(det_cat, photom_frame, mask_frame, back_rms_frame, fn, out
     w=WCS(photom_frame)
     X = get_header(photom_frame,keyword='NAXIS1')
     Y = get_header(photom_frame,keyword='NAXIS2')
-    aper_size = ((PSF_REF_RAD_ARCSEC[fn])[0])/PIXEL_SCALES[fn]
-    sky_aper_size_1 = int(3*((FWHMS_ARCSEC[fn])[0])/PIXEL_SCALES[fn]+0.5)
-    sky_aper_size_2 = int(sky_aper_size_1+20)
+    aper_size = ((PSF_REF_RAD_ARCSEC[fn]))/PIXEL_SCALES[fn]
+    sky_aper_size_1 = int(BACKGROUND_ANNULUS_START*FWHMS_ARCSEC[fn]/PIXEL_SCALES[fn])
+    sky_aper_size_2 = int(sky_aper_size_1+BACKGROUND_ANNULUS_TICKNESS)
     print ("- apreture radius for forced photometry is (pixels):", aper_size)
     print ("- sky annulus radi for forced photometry are (pixels):", sky_aper_size_1, sky_aper_size_2)
-
+    a = 0
     for i in range(N_objects):
         ra = RA[i]
         dec = DEC[i]
-        x, y, = w.all_world2pix(ra, dec,0)
-        #print (x,y)
-        #if (x<1) or (y<1) or (x>X-1) or (y>Y-1):
-        #    print (' *** object with RA and Dec ',str(ra),', ',str(dec), 'is outside of the frame.')
-        #    mag = -99
-        #    mag_err = -99
-        #    MAG.append(mag)
-        #    MAG_ERR.append(mag_err)
-        #    continue
+        y, x, = w.all_world2pix(ra, dec, 0)
+
+        dx = 2*sky_aper_size_2+5
+        dy = 2*sky_aper_size_2+5
+
+        fits_data_cropped = CutoutImage(fits_data,(x,y),(dx,dy),mode='trim')#[int(x)-sky_aper_size_2-2:int(x)+sky_aper_size_2+2,int(y)-sky_aper_size_2-2:int(y)+sky_aper_size_2+2]
+        mask_data_bool_cropped =  CutoutImage(mask_data_bool,(x,y),(dx,dy),mode='trim',fill_value=1)#[int(x)-sky_aper_size_2-2:int(x)+sky_aper_size_2+2,int(y)-sky_aper_size_2-2:int(y)+sky_aper_size_2+2]
+        error_data_cropped = CutoutImage(error_data,(x,y),(dx,dy),mode='trim',fill_value=99999)#[int(x)-sky_aper_size_2-2:int(x)+sky_aper_size_2+2,int(y)-sky_aper_size_2-2:int(y)+sky_aper_size_2+2]
+
+        fits_data_cropped = fits_data_cropped.data
+        mask_data_bool_cropped = mask_data_bool_cropped.data
+        error_data_cropped = error_data_cropped.data
+
+        #   plt.figure()
+        #   plt.imshow(fits_data_cropped)
+        #   plt.savefig(check_plots_dir+str(i)+'.png')
+        #   plt.close()
+
+        x = dx/2
+        y = dy/2
+
+        #break
 
         aper = CircularAperture((x, y), aper_size)
         sky_aper = CircularAnnulus((x, y), sky_aper_size_1, sky_aper_size_2)
-        aper_area = aper.area_overlap(data=fits_data,method='exact')
-        sky_area = sky_aper.area_overlap(data=fits_data,mask=mask_data_bool,method='exact')
+        aper_area = aper.area_overlap(data=fits_data_cropped,method='exact')
+        sky_area = sky_aper.area_overlap(data=fits_data_cropped,mask=mask_data_bool_cropped,method='exact')
         #print (aper_area, sky_area, sky_area/aper_area)
+        #print (error_data_cropped)
 
-        #try :
-        perform_photom = 1
-        if perform_photom == 1:
-            flux, flux_err = aper.do_photometry(data=fits_data,method='exact',error=error_data)
-            sky_flux, sky_flux_err = sky_aper.do_photometry(data=fits_data,mask=mask_data_bool,method='exact',error=error_data)
-            flux = flux[0]
-            flux_err = flux_err[0]
-            sky_flux = sky_flux[0]
-            sky_flux_err = sky_flux_err[0]
-
-            flux_sky_sub = float(flux)-float(sky_flux)/(sky_area/aper_area)
-            flux_total = (flux_sky_sub) / (PSF_REF_RAD_FRAC[fn])[0]
-            flux_err = np.sqrt(flux_err**2+(flux_sky_sub / GAIN[fn] / (PSF_REF_RAD_FRAC[fn])[0]))
-
-            #print (flux, sky_flux)
-
+        flux, flux_err = aper.do_photometry(data=fits_data_cropped,error=error_data_cropped,method='exact')
+        sky_flux, sky_flux_err = sky_aper.do_photometry(data=fits_data_cropped,mask=mask_data_bool_cropped,error=error_data_cropped,method='exact')
+        #print (flux, sky_flux)
+        flux = flux[0]
+        flux_err = flux_err[0]
+        sky_flux = sky_flux[0]
+        sky_flux_err = sky_flux_err[0]
+        flux_sky_sub = float(flux)-float(sky_flux)/(sky_area/aper_area)
+        flux_total = (flux_sky_sub) / (PSF_REF_RAD_FRAC[fn])
+        #flux_err = (np.sqrt((flux_err**2)*exptime+(flux_sky_sub*exptime / GAIN[fn] / (PSF_REF_RAD_FRAC[fn]))))/exptime
+        #print (flux, sky_flux)
+        if flux_total <= 0 :
+            FLUX.append(-99)
+            FLUX_ERR.append(-99)
+            MAG.append(-99)
+            MAG_ERR.append(-99)
+            BACK_FLUX.append(float(-99))
+        else:
             mag = -2.5*np.log10((flux_total))+zp
-            mag_err = 2.5*np.log10(((flux+flux_err)/flux))
-
+            mag_err = 2.5*np.log10(((flux_total+flux_err)/flux_total))
             #print (flux, sky_flux, mag)
-
             FLUX.append(flux_total)
             FLUX_ERR.append(flux_err)
             MAG.append(mag)
             MAG_ERR.append(mag_err)
             BACK_FLUX.append(float(sky_flux_err))
-            BACK_FLUX_ERR.append(sky_flux_err)
-            print ('\n- Photometry for object with ID:',i)
             #print ('- flux, sky-flux and magnitude for object are:', flux, sky_flux, mag)
-            #print ('- errors om flux, sky-flux and magnitude for object are:', flux_err, sky_flux_err, mag_err)
+
+        text = "+ Photometry for " + str(N_objects) + " sources in filter "+\
+            fn+" in progress: " + str(int((i+1)*100/N_objects)) + "%"
+        print ("\r" + text + "        ", end='')
+        #TIME.sleep (1)
+        a = a + 1
+
+    print('')
 
     #print (N_objects,len(MAG))
     expand_fits_table(output, 'F_FLUX_APER_CORR_'+fn,np.array(FLUX))

@@ -19,95 +19,11 @@ import photutils
 from photutils.aperture import CircularAperture
 from photutils.aperture import CircularAnnulus
 import scipy.optimize as opt
+from fitsio import FITS
+from modules.initialize import *
+from modules.psf import *
 #from lacosmic import lacosmic
 
-############################################################
-
-def initialize_params() :
-    # Defining the working directories
-    global working_directory,input_dir,output_dir,data_dir,main_data_dir,clean_data_dir,img_dir,sex_dir,fit_dir,plots_dir,\
-    detection_dir,cats_dir,psfs_dir,art_dir,final_cats_dir,temp_dir,sbf_dir,psf_dir
-
-    working_directory = '/data/users/saifollahi/Euclid/ERO/'
-    input_dir = '/data/users/saifollahi/Euclid/ERO/inputs/'
-    output_dir = '/data/users/saifollahi/Euclid/ERO/outputs/'
-
-    gal_input_cat = input_dir+'udg_input.csv'
-    main_data_dir = input_dir+'main_data/'
-    data_dir = input_dir+'data/'
-    psf_dir = input_dir+'psf/'
-
-    clean_data_dir = output_dir+'clean_data/'
-    img_dir = output_dir+'img/'
-    sex_dir = output_dir+'sex/'
-    fit_dir = output_dir+'fit/'
-    plots_dir = output_dir+'plots/'
-    detection_dir = output_dir+'detection/'
-    cats_dir = output_dir+'cats/'
-    psfs_dir = output_dir+'psfs/'
-    art_dir = output_dir+'artificial/'
-    final_cats_dir = output_dir+'final_cats/'
-    temp_dir = output_dir+'temp_files/'
-    sbf_dir = output_dir+'sbf/'
-
-    for dir in [working_directory,input_dir,output_dir,data_dir,main_data_dir,clean_data_dir,img_dir,sex_dir,fit_dir,plots_dir,\
-    detection_dir,cats_dir,psfs_dir,art_dir,final_cats_dir,temp_dir,sbf_dir,psf_dir] :
-        if not os.path.exists(dir): os.makedirs(dir)
-
-    # Getting the objcts and data info
-    global gal_id, gal_name, ra, dec, distance, filters, comments, gal_params
-
-    gal_params = {}
-    gal_cat = open(gal_input_cat,'r')
-    for line in gal_cat:
-        if line[0] != '#' :
-            line = line.split(' ')
-            gal_id, gal_name, ra, dec, distance, filters, comments = int(line[0]), str(line[1]), \
-            float(line[2]), float(line[3]), float(line[4]), np.array(line[5].split(',')), np.array((line[6].split('\n')[0]).split(','))
-            gal_params[gal_id] = [gal_name, ra, dec, distance, filters, comments]
-
-    # Configuring the pipeline parameters
-    global PRIMARY_FRAME_SIZE_ARCSEC, FRAME_SIZE_ARCSEC, GAL_FRAME_SIZE_ARCSEC, \
-    N_ART_GCS, PSF_IMAGE_SIZE, INSTR_FOV, COSMIC_CLEAN, GAIN, \
-    PHOTOM_APERS, FWHMS_ARCSEC, PSF_REF_RAD_ARCSEC, PSF_REF_RAD_FRAC
-
-    PRIMARY_FRAME_SIZE_ARCSEC = 240 #arcsec
-    FRAME_SIZE_ARCSEC = 240 #arcsec
-    GAL_FRAME_SIZE_ARCSEC  = 120 #arcsec
-
-    PSF_IMAGE_SIZE = 50 #pixelsatom
-    #INSTR_FOV = 0.05 #deg
-    N_ART_GCS = 1000
-    COSMIC_CLEAN = False
-    PHOTOM_APERS = '2,4,8,12,16,20,24,32' # the largest aperture will be used for aperture correction
-
-    ###################33
-
-    # if no PSF is given to the pipeline, FWHM (in arcsec) in eachfilter must be given to the pipeline:
-    FWHMS_ARCSEC = {'F115W':[0.0037], 'F150W':[0.049], 'F200W':[0.064], 'F277W':[0.088], 'F356W':[0.114], 'F410M':[0.133], 'F444W':[0.140], \
-    'F606W':[0.08], 'F814W':[0.09], 'F125W':[0.12], 'F160W':[0.18], 'g':[1], 'r':[1], 'i':[1]}
-
-    # and the 50% energy radius in arcsec:
-    #PSF_RAD50_ARCSEC = {'F115W':[0.025], 'F150W':[0.032], 'F200W':[0.042], 'F277W':[0.055], 'F356W':[0.073], 'F410M':[0.084], 'F444W':[0.090], \
-    #'F606W':[0.076], 'F814W':[0.081], 'F125W':[0.12], 'F160W':[0.13], 'g':[0.5], 'r':[0.5], 'i':[0.5]}
-
-    #PSF_RAD80_ARCSEC = {'F115W':[0.136], 'F150W':[0.121], 'F200W':[0.138], 'F277W':[0.179], 'F356W':[0.228], 'F410M':[0.258], 'F444W':[0.276], \
-    #'F606W':[0.157], 'F814W':[0.175], 'F125W':[0.25], 'F160W':[0.35], 'g':[1], 'r':[1], 'i':[1]}
-
-    PSF_REF_RAD_ARCSEC = {'F115W':[0.136], 'F150W':[0.121], 'F200W':[0.138], 'F277W':[0.179], 'F356W':[0.228], 'F410M':[0.258], 'F444W':[0.276], \
-    'F606W':[0.157], 'F814W':[0.175], 'F125W':[0.25], 'F160W':[0.35], 'g':[1], 'r':[1], 'i':[1]}
-
-    PSF_REF_RAD_FRAC = {'F115W':[0.8], 'F150W':[0.8], 'F200W':[0.8], 'F277W':[0.8], 'F356W':[0.8], 'F410M':[0.8], 'F444W':[0.8], \
-    'F606W':[0.8], 'F814W':[0.8], 'F125W':[0.8], 'F160W':[0.8], 'g':[0.8], 'r':[0.8], 'i':[0.8]}
-
-    GAIN = {'F606W':1.5, 'F814W':2, 'g':2.5, 'i':2.5}
-
-############################################################
-
-def welcome():
-    print ('\n+ GCTOOLS pipeline v2.0 (2023) ')
-    print ('+ Developed by: Teymoor Saifollahi ')
-    print ('+ Kapteyn Astronomical Institute')
 
 ############################################################
 
@@ -162,7 +78,7 @@ def median_filter_array(data,fsize = 3):
 ############################################################
 
 def get_data_info(gal_id):
-    global PIXEL_SCALES, ZPS, PRIMARY_FRAME_SIZE, FRAME_SIZE, GAL_FRAME_SIZE
+    global PIXEL_SCALES, ZPS, PRIMARY_FRAME_SIZE, FRAME_SIZE, GAL_FRAME_SIZE, EXPTIME
     print ('- Extracting pixel-size and zero-point values from the data')
     gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
     PIXEL_SCALES = {}
@@ -170,19 +86,24 @@ def get_data_info(gal_id):
     PRIMARY_FRAME_SIZE = {}
     FRAME_SIZE = {}
     GAL_FRAME_SIZE = {}
+    EXPTIME = {}
     for fn in filters:
         pixel_scale = get_pixel_scale(main_data_dir+gal_name+'_'+fn+'.fits')
         PIXEL_SCALES[fn] = pixel_scale
         zp = get_zp_AB(main_data_dir+gal_name+'_'+fn+'.fits')
+        exptime = get_exptime(main_data_dir+gal_name+'_'+fn+'.fits')
         ZPS[fn] = zp
         PRIMARY_FRAME_SIZE[fn] = int(PRIMARY_FRAME_SIZE_ARCSEC/pixel_scale+0.5)
         FRAME_SIZE[fn] = int(FRAME_SIZE_ARCSEC/pixel_scale+0.5)
         GAL_FRAME_SIZE[fn] = int(GAL_FRAME_SIZE_ARCSEC/pixel_scale+0.5)
+        EXPTIME[fn]=exptime
+    print ('- Frame exposure times are:'+str(EXPTIME))
     print ('- Pixel-sizes are: '+str(PIXEL_SCALES))
     print ('- Zero-points are: '+str(ZPS))
     print ('- Cut-out sizes are: '+str(FRAME_SIZE))
     #PIXEL_SCALE = PIXEL_SCALES[0]
     #print ('- The adopted pixel-size for this analysis is: '+str(PIXEL_SCALE))
+
 
 ############################################################
 
@@ -255,6 +176,13 @@ def get_zp_AB(fitsfile):
 
     zp = (int(zp*100+0.49999))/100
     return zp
+
+############################################################
+
+def get_exptime(fitsfile):
+    header = get_fits_header(fitsfile)
+    exptime = header['EXPTIME']
+    return exptime
 
 
 ############################################################
@@ -333,13 +261,13 @@ def resample_swarp(fitsfile, fitsfile_weight, obj_name, radius_pix, filter_name,
     hdul.writeto(temp_dir+'temp.fits',overwrite=True)
 
     if pixel_size == 0 :
-        command = 'swarp '+temp_dir+'temp.fits -c '+input_dir+'default.swarp -IMAGEOUT_NAME '+output+' -WEIGHTOUT_NAME '+output_weight+\
+        command = swarp_executable+' '+temp_dir+'temp.fits -c '+external_dir+'default.swarp -IMAGEOUT_NAME '+output+' -WEIGHTOUT_NAME '+output_weight+\
             ' -WEIGHT_TYPE MAP_WEIGHT '+'-WEIGHT_IMAGE '+fitsfile_weight+\
             ' -IMAGE_SIZE '+str(radius_pix)+','+str(radius_pix)+' -PIXEL_SCALE '+str(pixel_size)+\
             ' -CENTER_TYPE MANUAL -CENTER '+str(ra)+','+str(dec)+' -SUBTRACT_BACK N'
 
     else :
-        command = 'swarp '+temp_dir+'temp.fits -c '+input_dir+'default.swarp -IMAGEOUT_NAME '+output+' -WEIGHTOUT_NAME '+output_weight+\
+        command = swarp_executable+' '+temp_dir+'temp.fits -c '+external_dir+'default.swarp -IMAGEOUT_NAME '+output+' -WEIGHTOUT_NAME '+output_weight+\
             ' -WEIGHT_TYPE MAP_WEIGHT '+'-WEIGHT_IMAGE '+fitsfile_weight+\
             ' -IMAGE_SIZE '+str(radius_pix)+','+str(radius_pix)+' -PIXELSCALE_TYPE MANUAL -PIXEL_SCALE '+str(pixel_size)+\
             ' -RESAMPLE Y -CENTER_TYPE MANUAL -CENTER '+str(ra)+','+str(dec)+' -SUBTRACT_BACK N'
@@ -476,9 +404,9 @@ def make_rgb(gal_id,rgb_filters=None):
     image_g = get_fits_data(fitsfile_g)
     image_b = get_fits_data(fitsfile_b)
 
-    fwhm_r = (FWHMS_ARCSEC[fn_r])[0]
-    fwhm_g = (FWHMS_ARCSEC[fn_g])[0]
-    fwhm_b = (FWHMS_ARCSEC[fn_b])[0]
+    fwhm_r = (FWHMS_ARCSEC[fn_r])
+    fwhm_g = (FWHMS_ARCSEC[fn_g])
+    fwhm_b = (FWHMS_ARCSEC[fn_b])
     #print (fwhm_r,fwhm_g,fwhm_b)
     fwhm_max = np.max([fwhm_r,fwhm_g,fwhm_b])
     #print (fwhm_max)
@@ -535,100 +463,4 @@ def update_header(fits_file_name, header_keyword, value):
     fits_file[0].header[header_keyword] = value
     fits_file.writeto(fits_file_name, overwrite=True)
 
-
-############################################################
-
-def estimate_aper_corr(gal_id):
-    gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
-    for fn in filters:
-        try:
-            psf_file = psf_dir+'psf_'+fn+'.fits'
-            aper_size_arcsec = (PSF_REF_RAD_ARCSEC[fn])[0]
-            #aper_size_pixel = aper_size_arcsec/PIXEL_SCALES[fn]
-            print ('- estimating aperture correction value for filter and aperture radius (arcsec): '\
-                , fn, ', ', aper_size_arcsec)
-
-            psf_fits_file = fits.open(psf_file)
-            #print (psf_file)
-            psf_data = psf_fits_file[0].data
-            #print (psf_data)
-            psf_pixel_scale = psf_fits_file[0].header['PIXELSCL']
-            X = float(psf_fits_file[0].header['NAXIS1'])
-            Y = float(psf_fits_file[0].header['NAXIS2'])
-            aper_size_pixel = aper_size_arcsec/psf_pixel_scale
-
-            total_flux = np.nansum(psf_data)
-
-            aper = CircularAperture((X/2., Y/2.), aper_size_pixel)
-            aper_area = aper.area_overlap(data=psf_data,method='exact')
-            flux, flux_err = aper.do_photometry(data=psf_data,method='exact')
-
-            flux_ratio = float(flux[0]) / total_flux
-            #print (aper_size_pixel, flux_ratio)
-            PSF_REF_RAD_FRAC = flux_ratio
-        except:
-            donothing = 1
-
-############################################################
-
-def estimate_fwhm(gal_id):
-    gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
-    for fn in filters:
-        psf_file = psf_dir+'psf_'+fn+'.fits'
-        print ('- estimating psf FWHM for filter:', fn)
-        if os.path.exists(psf_file):
-            psf_fits_file = fits.open(psf_file)
-            psf_data = psf_fits_file[0].data
-            psf_pixel_scale = psf_fits_file[0].header['PIXELSCL']
-            X = float(psf_fits_file[0].header['NAXIS1'])
-            Y = float(psf_fits_file[0].header['NAXIS2'])
-            (FWHM_x, FWHM_y) = getFWHM_GaussianFitScaledAmp(psf_data)
-            #print (FWHM_x,FWHM_y)
-            #print (FWHM_x*psf_pixel_scale ,FWHM_y*psf_pixel_scale)
-            FWHMS_ARCSEC[fn] = np.mean([FWHM_x*psf_pixel_scale ,FWHM_y*psf_pixel_scale])
-            print ('- FWHM in filter', fn, 'is', FWHMS_ARCSEC[fn], 'arcsec')
-
-        else:
-            print ("* PSF file is not found. using the default value of FWHM (arcsec)", (FWHMS_ARCSEC[fn])[0])
-
-############################################################
-
-def twoD_GaussianScaledAmp(xy, xo, yo, sigma_x, sigma_y, amplitude, offset):
-    """Function to fit, returns 2D gaussian function as 1D array"""
-    x, y = xy
-    xo = float(xo)
-    yo = float(yo)
-    g = offset + amplitude*np.exp( - (((x-xo)**2)/(2*sigma_x**2) + ((y-yo)**2)/(2*sigma_y**2)))
-    return g.ravel()
-
-def getFWHM_GaussianFitScaledAmp(img):
-    """Get FWHM(x,y) of a blob by 2D gaussian fitting
-    Parameter:
-        img - image as numpy array
-    Returns:
-        FWHMs in pixels, along x and y axes.
-    """
-    x = np.linspace(0, img.shape[1], img.shape[1])
-    y = np.linspace(0, img.shape[0], img.shape[0])
-    x, y = np.meshgrid(x, y)
-    #Parameters: xpos, ypos, sigmaX, sigmaY, amp, baseline
-    initial_guess = (img.shape[1]/2,img.shape[0]/2,10,10,1,0)
-    # subtract background and rescale image into [0,1], with floor clipping
-    bg = np.percentile(img,5)
-    img_scaled = np.clip((img - bg) / (img.max() - bg),0,1)
-    popt, pcov = opt.curve_fit(twoD_GaussianScaledAmp, (x, y),
-                               img_scaled.ravel(), p0=initial_guess,
-                               bounds = ((img.shape[1]*0.4, img.shape[0]*0.4, 1, 1, 0.5, -0.1),
-                                     (img.shape[1]*0.6, img.shape[0]*0.6, img.shape[1]/2, img.shape[0]/2, 1.5, 0.5)))
-    xcenter, ycenter, sigmaX, sigmaY, amp, offset = popt[0], popt[1], popt[2], popt[3], popt[4], popt[5]
-    FWHM_x = np.abs(4*sigmaX*np.sqrt(-0.5*np.log(0.5)))
-    FWHM_y = np.abs(4*sigmaY*np.sqrt(-0.5*np.log(0.5)))
-    return (FWHM_x, FWHM_y)
-
-############################################################
-###
-welcome()
-initialize_params()
 get_data_info(gal_id)
-estimate_fwhm(gal_id)
-estimate_aper_corr(gal_id)

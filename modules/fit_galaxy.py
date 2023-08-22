@@ -19,7 +19,6 @@ from matplotlib.ticker import ScalarFormatter
 from astropy.io import fits
 from matplotlib.ticker import StrMethodFormatter
 import matplotlib.ticker as ticker
-from modules.pipeline_functions import *
 from astropy.stats import sigma_clip
 from matplotlib.colors import LogNorm
 from scipy.ndimage import gaussian_filter
@@ -27,6 +26,8 @@ from scipy import ndimage, misc
 import os.path
 import random
 from astropy.visualization import *
+from modules.pipeline_functions import *
+from modules.initialize import *
 
 
 def fit_galaxy_sersic_all_filters(gal_id):
@@ -63,7 +64,8 @@ def fit_galaxy_sersic_all_filters(gal_id):
         update_header(weight_data,'GAIN',gain)
 
         scale = 0.005*distance #arcsec/kpc
-        try :
+        try :\
+        #if True:
             ra_, dec_, Re_, mag_, n_, PA_, q_ = fit_galaxy_sersic(main_data,weight_data,ra,dec,gal_name,fn,pix_size,fit_dir,zp,plotting=True,\
             r_cut=GAL_FRAME_SIZE[fn], r_cut_fit=GAL_FRAME_SIZE[fn], scale=scale, constraint=constraint)
             ra_ = float(ra_)
@@ -96,13 +98,10 @@ def fit_galaxy_sersic_all_filters(gal_id):
         if fn == filters[0]: cat.write(str(ra_)+', '+str(dec_)+', '+str(Re_)+', '+str(mag_)+', '+str(n_)+', '+str(PA_)+', '+str(q_))
         else: cat.write(', '+str(Re_)+', '+str(mag_)+', '+str(n_)+', '+str(PA_)+', '+str(q_))
 
-        #break
-
     cat.write('\n')
     cat.close()
 
-#----------------------------------------------------------------------
-#----------------------------------------------------------------------
+############################################################
 
 def get_ellipse(xc,yc,a,b,pa,res=360):
     '''
@@ -126,113 +125,7 @@ def get_ellipse(xc,yc,a,b,pa,res=360):
     ely = yc + r * np.sin(theta)
     return elx,ely
 
-#----------------------------------------------------------------------
-#----------------------------------------------------------------------
-
-def get_aperture_mag(data,ellipse,mask=None,sky_annulus=None):
-    '''
-    Get aperture magnitude with the given ellipse parameters.
-    ellipse = [xc,yc,A,B,PA] (PA in radians and from x -axis)
-    sky_annulus = [minr,maxr]
-
-    Returns:
-    sum,error (no ksy paerture)
-    sum,error,skylevel (sky aperture)
-    '''
-    xc,yc,A,B,PA = ellipse
-    nx,ny = len(data[0]),len(data)
-    A = A
-    B = B
-    # Define elliptical coordinates
-    x,y = np.ogrid[-yc:float(ny)-yc,-xc:float(nx)-xc]
-    angles = np.arctan(y/x)
-    angles = np.pi/2.-angles
-    angles[:yc,:] = angles[:yc,:]+np.pi
-    angles[yc,:xc] = np.pi
-    distance = np.sqrt(x**2.+y**2.)
-    d, a = distance , angles
-    edist = d / ( B / np.sqrt((B*np.cos(a-PA))**2.+(A*np.sin(a-PA))**2.))
-    edist[yc,xc] = 0.
-    # Gather the pixels within  the aperture (exclude the masked pixels)
-    pix_ind = edist < A
-    #if mask != None:
-    mask_ind = mask==0
-    pix_ind *= mask_ind
-    if sky_annulus != None:
-        p1 = edist > sky_annulus[0]
-        p2 = edist < sky_annulus[1]
-        sky_ind = p1*p2
-        #if mask != None:
-        sky_ind*=mask_ind
-        data_ind = data[sky_ind]
-        skylevel = np.median(data_ind)
-        skysigma = np.std(data_ind)
-    flux = data[pix_ind]
-    sum = np.sum(data[pix_ind])
-    error = -2.5*np.log10(np.median(flux))+2.5*np.log10(np.median(flux)+np.std(flux)/np.sqrt(len(flux)))
-
-    ##############
-    min_step   = 5
-    n_sky_bins = 18
-    dist_sky   = 5. #REFFS
-    nx,ny = len(data[0]),len(data)
-    xc,yc,A,B,PA = ellipse
-    fluxbins = []
-    errors   = []
-    rs = []
-    #Define elliptical coordinates
-    x,y = np.ogrid[-yc:float(ny)-yc,-xc:float(nx)-xc]
-    angles = np.arctan(y/x)
-    angles = np.pi/2.-angles
-    angles[:yc,:] = angles[:yc,:]+np.pi
-    angles[yc,:xc] = np.pi
-    distance = np.sqrt(x**2.+y**2.)
-    d, a = distance , angles
-    edist = d / ( B / np.sqrt((B*np.cos(a-PA))**2.+(A*np.sin(a-PA))**2.))
-    edist[yc,xc] = 0.
-    reff = A
-
-    # Deal with the sky (if asked):
-    dthet      = 2.*np.pi/n_sky_bins
-    sky_bins   = []
-    sky_bins_values = []
-    sky_radius = int( dist_sky * reff )
-    binsize = 3
-    if (sky_radius+binsize >= len(data)/2):
-        sky_radius = len(data)/2-binsize
-    max_r = sky_radius+binsize > edist
-    min_r = sky_radius-binsize < edist
-    rind = min_r*max_r
-    for i in range(n_sky_bins):
-        min_the =    i*dthet   < angles
-        max_the = (i+1.)*dthet > angles
-        ind_the = min_the*max_the
-        ind     = ind_the*rind
-        #if mask.any() == None:
-        sky_pix = data[ind][mask[ind] == 0 ]
-        #else:
-        #ky_pix = data[ind][mask[ind] == 0 ]
-
-        sky_bins_values.append('None')
-        not_nan = ~np.isnan(sky_pix)
-        sky_pix = sigma_clip(sky_pix[not_nan],3,maxiters=3)
-        sky_bins.append(np.median(sky_pix))
-
-        not_nan = ~np.isnan(sky_bins)
-        sky_bin = sigma_clip(np.array(sky_bins)[not_nan],3,maxiters=3)
-        sky_noise = np.std(np.array(sky_bin))
-        sky_level = np.median(np.array(sky_bin))
-    #############
-    if sky_annulus==None:
-        return sum,error
-    else:
-        #print sky_level, sky_noise, skylevel, skysigma
-        #print sky_level, sky_noise, skylevel, skysigma
-        return sum,error,sky_level,sky_noise
-        #return sum,error,skylevel,skysigma
-
-#----------------------------------------------------------------------
-#----------------------------------------------------------------------
+############################################################
 
 def cut(fitsfile, ra, dec, radius_pix, objectname='none', filtername='none',  back=0, overwrite=False, \
     blur=0, label=''):
@@ -269,7 +162,7 @@ def cut(fitsfile, ra, dec, radius_pix, objectname='none', filtername='none',  ba
     #template2 = hdu2
     template[0].header['NAXIS1'] = urx - llx
     template[0].header['NAXIS2'] = ury - lly
-    template[0].header['EXPTIME'] = 1.0
+    #template[0].header['EXPTIME'] = 1.0
     #template[0].header['GAIN'] = 1.0
     #print (urx - llx,ury - lly)
     template[0].header['CRPIX1'] = hdu[0].header['CRPIX1'] -llx
@@ -294,8 +187,7 @@ def cut(fitsfile, ra, dec, radius_pix, objectname='none', filtername='none',  ba
     return output_frame, x_gal_center, y_gal_center
 
 
-#----------------------------------------------------------------------
-#----------------------------------------------------------------------
+############################################################
 
 def mask_stars (frame, weight_frame, ra, dec, objname, filtername, zp, q=1, pa=0, blurred=0, label='') :
     #frame = main_data
@@ -304,21 +196,38 @@ def mask_stars (frame, weight_frame, ra, dec, objname, filtername, zp, q=1, pa=0
     Y = get_header(frame,keyword='NAXIS2')
 
     os.system('rm '+fit_dir+objname+'_'+filtername+'.sex_cat.fits')
-    os.system('sex '+frame+' -c '+input_dir+'default.sex -PARAMETERS_NAME '+input_dir+'default.param -CATALOG_NAME '+\
-    fit_dir+objname+'_'+filtername+'.sex_cat.fits -DETECT_MINAREA 4 -DETECT_THRESH 1.5 -ANALYSIS_THRESH 1.5 -MAG_ZEROPOINT '+str(zp)+' '+\
-    '-FILTER_NAME '+input_dir+'default.conv '+' -STARNNW_NAME '+input_dir+'default.nnw '+\
-    '-BACK_SIZE 32 -CHECKIMAGE_TYPE SEGMENTATION -CHECKIMAGE_NAME '+fit_dir+objname+'_'+filtername+'.check.fits')
+
+    """
+    os.system(SE_executable+' '+frame+' -c '+external_dir+'default.sex -PARAMETERS_NAME '+external_dir+'sex_default.param -CATALOG_NAME '+\
+    fit_dir+objname+'_'+filtername+'.sex_cat.fits -DETECT_MINAREA 20 -DETECT_THRESH 1.5 -ANALYSIS_THRESH 1.5 -MAG_ZEROPOINT '+str(zp)+' '+\
+    '-DEBLEND_NTHRESH 8 -DEBLEND_MINCONT 0.005 -FILTER_NAME '+external_dir+'default.conv '+' -STARNNW_NAME '+external_dir+'default.nnw '+\
+    '-BACK_SIZE 256 -BACK_FILTERSIZE 3  -CHECKIMAGE_TYPE APERTURES,SEGMENTATION -CHECKIMAGE_NAME '+\
+    fit_dir+objname+'_'+filtername+'.check_aper_2.fits,'+fit_dir+objname+'_'+filtername+'_galfit_seg_map_1.fits')
+    """
+
+    os.system(SE_executable+' '+frame+' -c '+external_dir+'default.sex -PARAMETERS_NAME '+external_dir+'sex_default.param -CATALOG_NAME '+\
+    fit_dir+objname+'_'+filtername+'.sex_cat.fits -DETECT_MINAREA 4 -DETECT_THRESH 1.0 -ANALYSIS_THRESH 1.0 -MAG_ZEROPOINT '+str(zp)+' '+\
+    '-DEBLEND_NTHRESH 16 -DEBLEND_MINCONT 0.005 -FILTER_NAME '+external_dir+'default.conv '+' -STARNNW_NAME '+external_dir+'default.nnw '+\
+    '-BACK_SIZE 32 -CHECKIMAGE_TYPE APERTURES,SEGMENTATION -CHECKIMAGE_NAME '+\
+    fit_dir+objname+'_'+filtername+'.check_aper_2.fits,'+fit_dir+objname+'_'+filtername+'_galfit_seg_map.fits')
+
+    """
+    img1 = fits.open(fit_dir+objname+'_'+filtername+'_galfit_seg_map_1.fits')
+    img2 = fits.open(fit_dir+objname+'_'+filtername+'_galfit_seg_map_2.fits')
+    data1 = img1[0].data
+    data2 = img2[0].data
+    data1 = data1+data2
+    img1[0].data = data1
+    img1.writeto(fit_dir+objname+'_'+filtername+'_galfit_seg_map.fits',overwrite=True)
+    """
 
     cat = fits.open(fit_dir+objname+'_'+filtername+'.sex_cat.fits')
     img = fits.open(frame)
     weight = fits.open(weight_frame)
-    img2 = fits.open(fit_dir+objname+'_'+filtername+'.check.fits')
-    #img = fits.open(objname+'_'+filtername+'_'+'.fits')
-    #img2 = fits.open(objname+'_'+filtername+'.fits')
+    img2 = fits.open(fit_dir+objname+'_'+filtername+'_galfit_seg_map.fits')
     table = cat[1].data
     data = img[0].data
     data2 = img2[0].data
-    #ata3 = img[0].data
     weight_data = weight[0].data
     #data = data*0
     N = len(table)
@@ -337,7 +246,7 @@ def mask_stars (frame, weight_frame, ra, dec, objname, filtername, zp, q=1, pa=0
         B = params['B_IMAGE']
         #print (ra_star, dec_star, mag)
         r = math.sqrt((ra-ra_star)**2+(dec-dec_star)**2)
-        if flag <= 9999 and r >= -0.01/3600. and mag < 26:
+        if flag <= 9999 and r >= -0.01/3600. and mag < 18:
             #print (r*3600., ra_star, dec_star, mag)
             if x >= X or y >= Y :
                 continue
@@ -350,8 +259,6 @@ def mask_stars (frame, weight_frame, ra, dec, objname, filtername, zp, q=1, pa=0
             #if blurred==1 :
             mask_size = int(2*(26-mag)*B)
 
-            if mask_size < 5:
-                mask_size = 5
             if mask_size > 20:
                 mask_size = 20
 
@@ -376,20 +283,13 @@ def mask_stars (frame, weight_frame, ra, dec, objname, filtername, zp, q=1, pa=0
     data2[where_are_NaNs] = 1
     data2[data2>0.5] = 1
     data2[weight_data<1e-9] = 1
-    #data[abs(data)==0] = 1
-    #data2 = data2.astype(int)
-    #data[(abs(data-1.))>1.0e-2] = 101
-    #data[(abs(data-1.))<1.0e-2] = 1
-    #data[(abs(data))>100] = 0
     img2[0].data = (data2)
-    #print (data)
     img2.writeto(fit_dir+objname+'_'+filtername+'_masked.fits',overwrite=True)
 
     median_filter_data = abs(median_filter_array(data,fsize=7))
     sigma_data = sqrt(1./weight_data+0*median_filter_data/GAIN[filtername])
     where_are_NaNs = isnan(sigma_data)
     sigma_data[where_are_NaNs] = 10e+8
-    #data3 = data3*w
     weight[0].data = (sigma_data)
     weight.writeto(fit_dir+objname+'_'+filtername+'.sigma.fits',overwrite=True)
 
@@ -405,58 +305,12 @@ def mask_stars (frame, weight_frame, ra, dec, objname, filtername, zp, q=1, pa=0
            fit_dir+objname+'_'+filtername+'.check.fits',\
            fit_dir+objname+'_'+filtername+'.sigma.fits'
 
-#----------------------------------------------------------------------
-#----------------------------------------------------------------------
+############################################################
 
 def sersic(r, ne, re, n, bkg) :
     return ne * np.exp(-1*(1.9992*n-0.3271)*((r/re)**(1./n)-1)) + bkg
 
-def make_imfit_input(main_data, obj_name, filter_name, x, y, back, e=0.5, pa=0, constrain=0) :
-    """
-    X0   724 710,740
-    Y0   703  610,720
-    FUNCTION Sersic
-    PA    -65.8    -65.8001,-65.80
-    ell    0.344   0.344,0.344001
-    n      0.72   0.72,0.720001
-    I_e    0.002     0,0.1
-    r_e    197     197,197.0001
-    FUNCTION FlatSky
-    I_sky   0.01933 0.01933,0.01933001
-    """
-    x = int(x)
-    y = int(y)
-    if constrain == 0 :
-        output_file = obj_name+'_'+filter_name+'_imfit_input.dat'
-        text = open(output_file,'w')
-        text.write('X0 '+str(x)+' '+str(x-25)+','+str(x+25)+'\n')
-        text.write('Y0 '+str(y)+' '+str(y-25)+','+str(y+25)+'\n')
-        text.write('FUNCTION Sersic'+'\n')
-        text.write('PA '+str(pa)+' '+str(0)+','+str(360)+'\n')
-        text.write('ell '+str(e)+' '+str(0)+','+str(1)+'\n')
-        text.write('n '+str(1)+' '+str(0.5)+','+str(2.0001)+'\n')
-        text.write('I_e '+str(3*back)+' '+str(1*back)+','+str(1)+'\n')
-        text.write('r_e '+str(160)+' '+str(80)+','+str(320)+'\n')
-        text.write('FUNCTION FlatSky'+'\n')
-        text.write('I_sky '+str(back)+' fixed'+'\n')
-
-    if constrain == 1 :
-        output_file = obj_name+'_'+filter_name+'_imfit_input.dat'
-        text = open(output_file,'w')
-        text.write('X0 '+str(x)+' fixed'+'\n')
-        text.write('Y0 '+str(y)+' fixed'+'\n')
-        text.write('FUNCTION Sersic'+'\n')
-        text.write('PA '+str(pa)+' fixed'+'\n')
-        text.write('ell '+str(e)+' fixed'+'\n')
-        text.write('n '+str(1)+' '+str(0.5)+','+str(2)+'\n')
-        text.write('I_e '+str(3*back)+' '+str(1*back)+','+str(1)+'\n')
-        text.write('r_e '+str(150)+' '+str(80)+','+str(320)+'\n')
-        text.write('FUNCTION FlatSky'+'\n')
-        text.write('I_sky '+str(back)+' fixed'+'\n')
-
-
-    return obj_name+'_'+filter_name+'_imfit_input.dat'
-
+############################################################
 
 def make_weight_map(frame,weight_file,back,back_std) :
     main = fits.open(frame)
@@ -473,6 +327,8 @@ def make_weight_map(frame,weight_file,back,back_std) :
     main[0].data = weight
     main.writeto(weight_file,overwrite=True)
 
+############################################################
+
 def change_weight_map(weight_in,weight_out,make_weight) :
     main = fits.open(weight_in)
     weight = main[0].data
@@ -486,81 +342,7 @@ def change_weight_map(weight_in,weight_out,make_weight) :
     main[0].data = weight
     main.writeto(weight_out,overwrite=True)
 
-
-def run_imfit(frame,mask,input_file,obj_name,filter_name,back=0,back_std=0,make_weight=0) :
-
-    #main = fits.open(frame)
-    #data = main[0].data
-    #data[data<-90] = 99
-    #main[0].data = data
-    #os.system('rm '+frame)
-    #main.writeto(frame)
-    res = obj_name+'_'+filter_name+'_res.fits'
-    model = obj_name+'_'+filter_name+'_model.fits'
-    weight = obj_name+'_'+filter_name+'_weight.fits'
-    weight_out = obj_name+'_'+filter_name+'_weight_out.fits'
-    #make_weight_map(frame,weight,back,back_std)
-    #command = './fit/imfit '+frame+' -c '+input_file+' -save-model '+model+ ' -save-residual '+res+\
-    #    ' --mask '+mask+' --sky='+str(back)
-    #print (command)
-
-    #gain = get_header(frame,'CCDGAIN')
-    #readnoise = get_header(frame,'READNSEA')
-    #exptime = get_header(frame,'TEXPTIME')
-
-    common = ''#--model-errors'#--gain '+str(gain)+' --readnoise '+str(readnoise)+' --exptime '+str(exptime)
-
-    #os.system('./fit/imfit '+frame+' -c '+input_file+' -save-model '+model+ ' -save-residual '+res+\
-    #        ' --mask '+mask+' --save-weights '+weight)#t+common+ ' --poisson-mlr')#+' --sky='+str(back))
-
-
-    if make_weight == -1 : #use exisitng weight-map
-        os.system('./fit/imfit '+frame+' -c '+input_file+' -save-model '+model+ ' -save-residual '+res+\
-            ' --mask '+mask+' --save-weights '+weight_out+' --noise '+weight+' --errors-are-weights'+common)
-
-    elif make_weight == 1 : #internal weightmap (**1)
-        os.system('./fit/imfit '+frame+' -c '+input_file+' -save-model '+model+ ' -save-residual '+res+\
-            ' --mask '+mask)
-
-    else:
-        os.system('./fit/imfit '+frame+' -c '+input_file+' -save-model '+model+ ' -save-residual '+res+\
-            ' --mask '+mask+' --save-weights '+weight+common)#+ ' --poisson-mlr')#+' --sky='+str(back))
-        change_weight_map(weight,weight,make_weight)
-        os.system('./fit/imfit '+frame+' -c '+input_file+' -save-model '+model+ ' -save-residual '+res+\
-            ' --mask '+mask+' --save-weights '+weight_out+' --noise '+weight+' --errors-are-weights'+common)
-            #+ ' --poisson-mlr')#+' --sky='+str(back))
-
-    text = open('bestfit_parameters_imfit.dat')
-    for lines in text :
-        line = lines.split()
-        #print (line)
-        # check convergence
-
-        if len(line) > 0 :
-            if line[0] == 'PA' :
-                pa = float(line[1])
-                epa = float(line[4])
-            if line[0] == 'ell' :
-                ell = float(line[1])
-                eell = float(line[4])
-            if line[0] == 'n' :
-                n = float(line[1])
-                en = float(line[4])
-            if line[0] == 'r_e' :
-                r = float(line[1])
-                er = float(line[4])
-            if line[0] == 'I_e' :
-                i = float(line[1])
-                ei = float(line[4])
-
-            if line[0] == 'X0' :
-                x0 = int(float(line[1]))
-            if line[0] == 'Y0' :
-                y0 = int(float(line[1]))
-
-
-    return pa,ell,n,i,r,epa,eell,en,ei,er,x0,y0
-
+############################################################
 
 def estimate_frame_back(frame,gal_name,filtername) :
 
@@ -606,9 +388,7 @@ def estimate_frame_back(frame,gal_name,filtername) :
 
     return median, std
 
-#----------------------------------------------------------------------
-
-#----------------------------------------------------------------------
+############################################################
 
 def make_galfit_feedme_file_sersic(main_file, mask_file, sigma_file, psf_file, objname,\
     ra, dec, reff, filtername, fit_x1, fit_x2, fit_y1, fit_y2, r_mag, sersic_index, pos_angel, axis_ratio, nuc, sky,\
@@ -619,7 +399,7 @@ def make_galfit_feedme_file_sersic(main_file, mask_file, sigma_file, psf_file, o
     x = get_header(main_file,keyword='NAXIS1')
     y = get_header(main_file,keyword='NAXIS2')
     fits_file = fits.open(main_file)
-    exptime = fits_file[0].header['EXPTIME']
+    exptime = EXPTIME[filtername]
     gain = GAIN[filtername]
     zp = zp - 2.5*np.log10(exptime)
     galfit_conf = open(fit_dir+objname+'_galfit.conf','w')
@@ -670,9 +450,7 @@ def make_galfit_feedme_file_sersic(main_file, mask_file, sigma_file, psf_file, o
 
     galfit_conf.close()
 
-#----------------------------------------------------------------------
-
-#----------------------------------------------------------------------
+############################################################
 
 def make_galfit_feedme_file_sersic_constrained(main_file, mask_file, sigma_file, psf_file, objname,\
     ra, dec, reff, filtername, fit_x1, fit_x2, fit_y1, fit_y2, r_mag, sersic_index, pos_angel, axis_ratio, nuc,  sky,\
@@ -683,7 +461,7 @@ def make_galfit_feedme_file_sersic_constrained(main_file, mask_file, sigma_file,
     x = get_header(main_file,keyword='NAXIS1')
     y = get_header(main_file,keyword='NAXIS2')
     fits_file = fits.open(main_file)
-    exptime = fits_file[0].header['EXPTIME']
+    exptime = EXPTIME[filtername]
     gain = GAIN[filtername]
     zp = zp - 2.5*np.log10(exptime)
     galfit_conf = open(fit_dir+objname+'_galfit.conf','w')
@@ -734,9 +512,7 @@ def make_galfit_feedme_file_sersic_constrained(main_file, mask_file, sigma_file,
 
     galfit_conf.close()
 
-#----------------------------------------------------------------------
-
-#----------------------------------------------------------------------
+############################################################
 
 def run_galfit_sersic (main_file, objname, filter_name) :
 
@@ -744,7 +520,7 @@ def run_galfit_sersic (main_file, objname, filter_name) :
     #os.system('rm '+'fit.log')
     #os.system('rm '+fit_dir+'galfit.0*')
     os.system('rm '+fit_dir+objname+'_'+filter_name+'_galfit_imgblock*fits')
-    os.system('./galfit '+fit_dir+objname+'_galfit.conf')
+    os.system(galfit_executable+' '+fit_dir+objname+'_galfit.conf')
 
     if os.path.isfile(fit_dir+objname+'_'+str(filter_name)+'galfit_imgblock_model.fits') :
         os.system('rm '+fit_dir+objname+'_'+str(filter_name)+'galfit_imgblock_model.fits')
@@ -794,8 +570,6 @@ def read_galfit_sersic (main_file, objname, filtername) :
     n = 0
     X = get_header(main_file,keyword='NAXIS1')
     Y = get_header(main_file,keyword='NAXIS2')
-    #x = X/2
-    #y = Y/2
 
     mag_1, reff_1, d_mag_1, d_reff_1, pa, d_pa, axis_ratio, d_axis_ratio, \
     sky, sky_dx, sky_dy, d_sky, d_sky_dx, d_sky_dy = \
@@ -850,17 +624,13 @@ def read_galfit_sersic (main_file, objname, filtername) :
             d_sky_dx = float(params[1])
             d_sky_dy = float(params[2])
 
-    #print (objname, mag_1, reff_1, d_mag_1, d_reff_1, sersic_index_1, d_sersic_index_1, X, Y, \
-    # x, y, sky, sky_dx, sky_dy, d_sky, d_sky_dx, d_sky_dy)
     return mag_1, reff_1, d_mag_1, d_reff_1, sersic_index_1, d_sersic_index_1, X, Y, \
         x, y, pa, d_pa, axis_ratio, d_axis_ratio, sky, sky_dx, sky_dy, d_sky, d_sky_dx, d_sky_dy
 
 
-#----------------------------------------------------------------------
+############################################################
 
-#----------------------------------------------------------------------
-
-def make_radial_profile(data,ellipse,mask=None,sn_stop=1./3.,rad_stop=None,binsize=5,sky=False) :
+def make_radial_profile(data,ellipse,exptime=1,mask=None,sn_stop=1./3.,rad_stop=None,binsize=5,sky=False) :
     '''
     Makes a radial profile using the input paramateres and outputs
     the (masked) clipped values for each bin.
@@ -960,15 +730,12 @@ def make_radial_profile(data,ellipse,mask=None,sn_stop=1./3.,rad_stop=None,binsi
         sky_bin = sigma_clip(np.array(sky_bins)[not_nan],3,maxiters=5)
         sky_noise = np.std(np.array(sky_bin))
         sky_level = np.median(np.array(sky_bin))
+
         return rs,fluxbins,errors,sky_level,sky_noise,sky_bin, sky_bins_values, area
     else:
         return rs,fluxbins,errors, 0, 0, 0, 0, area
 
-
-
-#----------------------------------------------------------------------
-
-#----------------------------------------------------------------------
+############################################################
 
 def fit_galaxy_sersic(main_data,weight_data,ra,dec,obj_name,filter_name,pix_size,fit_dir,zp,\
     r_cut,r_cut_fit,scale,constraint='None',blur_frame=0,plotting=False) :
@@ -984,21 +751,8 @@ def fit_galaxy_sersic(main_data,weight_data,ra,dec,obj_name,filter_name,pix_size
     #print (cropped_frame)
     w=WCS(main_data)
     c = ((pix_size)**2)
-
-    #print ('- estimate initial background value: ')
-    #while True :
-    #    back_average, back_std, backs_all = estimate_frame_back(cropped_frame)
-    #    if back_average > 0 and back_std > 0 :
-    #        break
-
-
-
     print ('- estimating sky flux')
-    #backs = np.linspace(back_average-back_std,back_average+back_std,num=5)
     back_average, back_std = estimate_frame_back(cropped_frame, obj_name, filter_name)
-    #back_average =  0 #back_average #/ 10 #initial background value is 0
-    #print (back_average)
-    #backs = np.random.normal(back_average, back_std, 20)
 
     print ('- masking ')
     mask_frame, masked_frame, check_frame, sigma_frame = mask_stars(cropped_frame, weight_frame, ra, dec, obj_name, filter_name, zp)
@@ -1030,15 +784,9 @@ def fit_galaxy_sersic(main_data,weight_data,ra,dec,obj_name,filter_name,pix_size
         q_c = 1
         x_gal_center,y_gal_center = w.all_world2pix(ra, dec,0)
 
-        if ('nN' in comments):
-            make_galfit_feedme_file_sersic(cropped_frame,mask_frame,sigma_frame,psf_frame,\
-            obj_name, ra_c, dec_c, re_c, filter_name, fit_x1, fit_x2, fit_y1, fit_y2, \
-            mag_c, n_c, pa_c, q_c, -1, back_average, zp, pix_size, x_gal_center, y_gal_center)
-
-        if ('N' in comments):
-            make_galfit_feedme_file_sersic(cropped_frame,mask_frame,weight_frame,psf_frame,\
-            obj_name, ra_c, dec_c, re_c, filter_name, fit_x1, fit_x2, fit_y1, fit_y2, \
-            mag_c, n_c, pa_c, q_c, 1, back_average, zp, pix_size, x_gal_center, y_gal_center)
+        make_galfit_feedme_file_sersic(cropped_frame,mask_frame,sigma_frame,psf_frame,\
+        obj_name, ra_c, dec_c, re_c, filter_name, fit_x1, fit_x2, fit_y1, fit_y2, \
+        mag_c, n_c, pa_c, q_c, -1, back_average, zp, pix_size, x_gal_center, y_gal_center)
 
     else:
         ra_c = float(constraint[0])
@@ -1050,16 +798,9 @@ def fit_galaxy_sersic(main_data,weight_data,ra,dec,obj_name,filter_name,pix_size
         q_c = float(constraint[6])
         x_gal_center,y_gal_center = w.all_world2pix(ra_c, dec_c,0)
 
-        if ('nN' in comments):
-            make_galfit_feedme_file_sersic_constrained(cropped_frame,mask_frame,sigma_frame,psf_frame,\
-            obj_name, ra_c, dec_c, re_c, filter_name, fit_x1, fit_x2, fit_y1, fit_y2, \
-            mag_c, n_c, pa_c, q_c, -1, back_average, zp, pix_size, x_gal_center, y_gal_center)
-
-        if ('N' in comments):
-            make_galfit_feedme_file_sersic_constrained(cropped_frame,mask_frame,weight_frame,psf_frame,\
-            obj_name, ra_c, dec_c, re_c, filter_name, fit_x1, fit_x2, fit_y1, fit_y2, \
-            mag_c, n_c, pa_c, q_c, 1, back_average, zp, pix_size, x_gal_center, y_gal_center)
-
+        make_galfit_feedme_file_sersic_constrained(cropped_frame,mask_frame,sigma_frame,psf_frame,\
+        obj_name, ra_c, dec_c, re_c, filter_name, fit_x1, fit_x2, fit_y1, fit_y2, \
+        mag_c, n_c, pa_c, q_c, -1, back_average, zp, pix_size, x_gal_center, y_gal_center)
 
     model_frame, res_frame, data_frame = run_galfit_sersic(cropped_frame, obj_name, filter_name)
 
@@ -1108,13 +849,6 @@ def fit_galaxy_sersic(main_data,weight_data,ra,dec,obj_name,filter_name,pix_size
         plt.rcParams['ytick.minor.size']=6
         plt.rc('text', usetex=True)
 
-        #frame = data_frame
-        #frame = main_data
-        #model_frame = fit_dir+obj_name+'_'+filter_name+'_model.fits'
-        #res_frame = fit_dir+obj_name+'_'+filter_name+'_res.fits'
-        #mask_frame = fit_dir+obj_name+'_'+filter_name+'_masked.fits'
-        #mask_frame_ = fit_dir+obj_name+'_'+filter_name+'_masked+.fits'
-
         bin_size=int(5)
 
         img = fits.open(data_frame)
@@ -1124,8 +858,6 @@ def fit_galaxy_sersic(main_data,weight_data,ra,dec,obj_name,filter_name,pix_size
         fig1, (ax1,ax2,ax3,ax4) = plt.subplots(1, 4,figsize=(12, 4), \
             gridspec_kw={'wspace':0.05, 'hspace':0}, squeeze=True) #figsize=(11, 4),
         fig.subplots_adjust(hspace=0)
-        #fig1.subplots_adjust(left=-1, right=1, top=1, bottom=-1)
-        #fig1.subplots_adjust(wspace=0.1)
         fig2, ax5 = plt.subplots(1,1,figsize=(8,8),frameon=False)
 
         img2 = fits.open(model_frame)
@@ -1140,9 +872,11 @@ def fit_galaxy_sersic(main_data,weight_data,ra,dec,obj_name,filter_name,pix_size
         img5 = fits.open(masked_frame)
         masked = img5[0].data
 
+        exptime = EXPTIME[fn]
+
         ellipse = [x_best,y_best,re_best,axis_ratio_best*re_best,(90+pa_best)/360.*2.*np.pi]
         rs,fluxbins,errors,sky_level,sky_noise,sky_bin, sky_bins_values, area\
-            = make_radial_profile(data,ellipse,mask=mask,rad_stop=GAL_FRAME_SIZE[fn],binsize=bin_size,sky=True)
+            = make_radial_profile(data,ellipse,exptime,mask=mask,rad_stop=GAL_FRAME_SIZE[fn],binsize=bin_size,sky=True)
         fluxbins0 = fluxbins
         fluxbins = (fluxbins) - sky_best
         e = np.sqrt(errors**2 + sky_noise**2)
@@ -1158,13 +892,13 @@ def fit_galaxy_sersic(main_data,weight_data,ra,dec,obj_name,filter_name,pix_size
         plt.close()
 
         rs_m,fluxbins_m,errors_m,sky_level_m,sky_noise_m,sky_bin_m, sky_bins_values_m, area_m\
-            = make_radial_profile(model,ellipse,mask=mask*0,rad_stop=GAL_FRAME_SIZE[fn],binsize=bin_size,sky=True)
+            = make_radial_profile(model,ellipse,exptime,mask=mask*0,rad_stop=GAL_FRAME_SIZE[fn],binsize=bin_size,sky=True)
         fluxbins0_m = fluxbins
         fluxbins_m = (fluxbins_m) - sky_best
         e_m = np.sqrt(errors_m**2 + sky_noise_m**2)
 
         rs_res,fluxbins_res,errors_res,sky_level_res,sky_noise_res,sky_bin_res, sky_bins_values_res, area_res\
-            = make_radial_profile(res,ellipse,mask=mask,rad_stop=GAL_FRAME_SIZE[fn],binsize=bin_size,sky=True)
+            = make_radial_profile(res,ellipse,exptime,mask=mask,rad_stop=GAL_FRAME_SIZE[fn],binsize=bin_size,sky=True)
         fluxbins0_res = fluxbins
         fluxbins_res = (fluxbins_res)
         e_res = np.sqrt(errors_res**2 + sky_noise_res**2)
@@ -1181,8 +915,6 @@ def fit_galaxy_sersic(main_data,weight_data,ra,dec,obj_name,filter_name,pix_size
         #####
 
         l = 'R$_e$ = ' + str(re_best_kpc)[:4] +' kpc, n = '+str(n_best)[:4]
-        #l2 = 'R$_e$ = ' + str(re_best_kpc_2)[:4] +' kpc, n = '+str(n_best_2)[:4]
-        #ax[1].text(2.0,2.4,l, fontsize=36, color='red',alpha=0.8)
 
         #m_half_flux = mag_best+0.756
         flux_within_re = (10.**((mag_best-zp)*-0.4))/2.
@@ -1247,8 +979,7 @@ def fit_galaxy_sersic(main_data,weight_data,ra,dec,obj_name,filter_name,pix_size
 
         s = r_cut
         #norm1 = LogStretch()
-        #norm2 = SqrtStretch()
-        thumbnail_size = int(60/PIXEL_SCALES[fn]/2) #(30/2)
+        thumbnail_size = int(60/PIXEL_SCALES[fn]/2)
         x_best_int = int(x_best+0.5)
         y_best_int = int(y_best+0.5)
         data_zoom = data[x_best_int-thumbnail_size:x_best_int+thumbnail_size,\
@@ -1269,7 +1000,7 @@ def fit_galaxy_sersic(main_data,weight_data,ra,dec,obj_name,filter_name,pix_size
         ax3.imshow((model_zoom),cmap='gist_gray',vmin=min_, vmax=max_)
         ax4.imshow((res_zoom),cmap='gist_gray',vmin=min_2, vmax=max_2)
 
-        ax5.imshow(data,cmap='gist_gray',vmin=min_, vmax=max_)
+        ax5.imshow(data_zoom,cmap='gist_gray',vmin=min_, vmax=max_)
 
         ax1.set_title('Main Frame',color='black',fontsize=20)
         ax2.set_title('Mask',color='black',fontsize=20)
@@ -1290,8 +1021,8 @@ def fit_galaxy_sersic(main_data,weight_data,ra,dec,obj_name,filter_name,pix_size
         #ax1.arrow(r_cut_fit-50,50,-100,0,color='gold',head_width=10, head_length=10,lw=2)
         #ax1.text(r_cut_fit-100-75,75,'E',fontsize=14, color='gold')
 
-        ax5.text(s/20,r_cut_fit-s/12,obj_name,color='red',fontsize=32)
-        ax5.arrow(s/20,s/25,2/scale/pix_size,0,head_width=0, head_length=32, color='gold',lw=4)
+        ax5.text(s/20,s-s/12,obj_name,color='red',fontsize=20)
+        ax5.arrow(s/20,s/25,2/scale/pix_size,0,head_width=0, head_length=20, color='gold',lw=4)
         ax5.text(s/20,s/15,'2 kpc',fontsize=32, color='gold')
         #ax5.arrow(r_cut_fit-50,50,0,100,color='gold',head_width=10, head_length=20,lw=4)
         #ax5.text(r_cut_fit-200+110,150,'N',fontsize=32, color='gold')
@@ -1310,11 +1041,6 @@ def fit_galaxy_sersic(main_data,weight_data,ra,dec,obj_name,filter_name,pix_size
         ax5.axis('off')
         ax5.invert_yaxis()
 
-        #plt.axis("off")
-        #plt.subplots_adjust(hspace=0, wspace=0)
-        #plt.tight_layout()
-        #fig1.tight_layout()
-
         fig1.savefig(plots_dir+obj_name+'_'+filter_name+'_sersic_model.png',bbox_inches='tight', pad_inches = 0, dpi=100)
         fig2.savefig(plots_dir+obj_name+'_'+filter_name+'_fancy_frame.png',bbox_inches='tight', pad_inches = 0, dpi=100)
         plt.close()
@@ -1322,5 +1048,4 @@ def fit_galaxy_sersic(main_data,weight_data,ra,dec,obj_name,filter_name,pix_size
         os.system('mv fit*log '+fit_dir)
 
     ra_best, dec_best = w.all_pix2world(x_best, y_best,0)
-    #print (ra_best, dec_best)
     return ra_best, dec_best, re_best_kpc, mag_best, n_best, pa_best_corr, axis_ratio_best#,Ie_best,d_re_best,d_n_best,d_pa_best,d_axis_ratio_best,d_Ie_best

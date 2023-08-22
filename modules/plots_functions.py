@@ -1,4 +1,6 @@
 import matplotlib.pyplot as plt
+from modules.pipeline_functions import *
+from modules.initialize import *
 
 #plotting parameters
 plt.rc('axes', labelsize=32)
