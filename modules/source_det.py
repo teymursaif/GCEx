@@ -440,26 +440,24 @@ def forced_photometry(det_cat, photom_frame, mask_frame, back_rms_frame, fn, out
         dec = DEC[i]
         y, x, = w.all_world2pix(ra, dec, 0)
 
-        dx = 2*sky_aper_size_2+5
-        dy = 2*sky_aper_size_2+5
+        dx = 10#2*sky_aper_size_2+5
+        dy = 10#2*sky_aper_size_2+5
 
-        fits_data_cropped = CutoutImage(fits_data,(x,y),(dx,dy),mode='trim')#[int(x)-sky_aper_size_2-2:int(x)+sky_aper_size_2+2,int(y)-sky_aper_size_2-2:int(y)+sky_aper_size_2+2]
-        mask_data_bool_cropped =  CutoutImage(mask_data_bool,(x,y),(dx,dy),mode='trim',fill_value=1)#[int(x)-sky_aper_size_2-2:int(x)+sky_aper_size_2+2,int(y)-sky_aper_size_2-2:int(y)+sky_aper_size_2+2]
-        error_data_cropped = CutoutImage(error_data,(x,y),(dx,dy),mode='trim',fill_value=99999)#[int(x)-sky_aper_size_2-2:int(x)+sky_aper_size_2+2,int(y)-sky_aper_size_2-2:int(y)+sky_aper_size_2+2]
+        fits_data_cropped = CutoutImage(fits_data,(x,y),(dx,dy))#[int(x)-sky_aper_size_2-2:int(x)+sky_aper_size_2+2,int(y)-sky_aper_size_2-2:int(y)+sky_aper_size_2+2]
+        mask_data_bool_cropped =  CutoutImage(mask_data_bool,(x,y),(dx,dy))#[int(x)-sky_aper_size_2-2:int(x)+sky_aper_size_2+2,int(y)-sky_aper_size_2-2:int(y)+sky_aper_size_2+2]
+        error_data_cropped = CutoutImage(error_data,(x,y),(dx,dy))#[int(x)-sky_aper_size_2-2:int(x)+sky_aper_size_2+2,int(y)-sky_aper_size_2-2:int(y)+sky_aper_size_2+2]
 
         fits_data_cropped = fits_data_cropped.data
         mask_data_bool_cropped = mask_data_bool_cropped.data
         error_data_cropped = error_data_cropped.data
 
-        #   plt.figure()
-        #   plt.imshow(fits_data_cropped)
-        #   plt.savefig(check_plots_dir+str(i)+'.png')
-        #   plt.close()
+        plt.figure()
+        plt.imshow(fits_data_cropped)
+        plt.savefig(check_plots_dir+str(i)+'.png')
+        plt.close()
 
         x = dx/2
         y = dy/2
-
-        #break
 
         aper = CircularAperture((x, y), aper_size)
         sky_aper = CircularAnnulus((x, y), sky_aper_size_1, sky_aper_size_2)
@@ -471,6 +469,7 @@ def forced_photometry(det_cat, photom_frame, mask_frame, back_rms_frame, fn, out
         flux, flux_err = aper.do_photometry(data=fits_data_cropped,error=error_data_cropped,method='exact')
         sky_flux, sky_flux_err = sky_aper.do_photometry(data=fits_data_cropped,mask=mask_data_bool_cropped,error=error_data_cropped,method='exact')
         #print (flux, sky_flux)
+        #print (flux_err, sky_flux_err)
         flux = flux[0]
         flux_err = flux_err[0]
         sky_flux = sky_flux[0]
@@ -484,7 +483,8 @@ def forced_photometry(det_cat, photom_frame, mask_frame, back_rms_frame, fn, out
             FLUX_ERR.append(-99)
             MAG.append(-99)
             MAG_ERR.append(-99)
-            BACK_FLUX.append(float(-99))
+            BACK_FLUX.append(-99)
+            BACK_FLUX_ERR.append(-99)
         else:
             mag = -2.5*np.log10((flux_total))+zp
             mag_err = 2.5*np.log10(((flux_total+flux_err)/flux_total))
@@ -493,8 +493,9 @@ def forced_photometry(det_cat, photom_frame, mask_frame, back_rms_frame, fn, out
             FLUX_ERR.append(flux_err)
             MAG.append(mag)
             MAG_ERR.append(mag_err)
-            BACK_FLUX.append(float(sky_flux_err))
-            #print ('- flux, sky-flux and magnitude for object are:', flux, sky_flux, mag)
+            BACK_FLUX.append(float(sky_flux))
+            BACK_FLUX_ERR.append(float(sky_flux_err))
+            #print ('- flux, sky-flux and magnitude for object are:', flux_err, sky_flux_err, mag_err)
 
         text = "+ Photometry for " + str(N_objects) + " sources in filter "+\
             fn+" in progress: " + str(int((i+1)*100/N_objects)) + "%"
