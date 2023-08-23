@@ -14,11 +14,9 @@ from astropy.visualization import *
 from astropy.visualization import make_lupton_rgb
 from astropy.table import Table, join_skycoord
 from astropy import table
-import photutils
 from photutils.aperture import CircularAperture
 from photutils.aperture import CircularAnnulus
 from photutils.centroids import centroid_1dg, centroid_2dg, centroid_com, centroid_quadratic
-from photutils.utils import CutoutImage
 import time as TIME
 from modules.pipeline_functions import *
 from modules.initialize import *
