@@ -12,9 +12,12 @@ Contact me in case of problems, questions, feedback, or for contributing to this
 - saifollahi@astro.rug.nl (this might not be available in the future, postdoc life)
 - teymur.saif@gmail.com (personal email address)
 
+
 **Installation**
+
 In your working directory, execute the following command in the command line:
 `git clone https://github.com/teymursaif/GCTOOLS.git`. You probably need to also install several Python libraries such as `Astropy` and `photutils` as well as packages `Galfit` (the executable is available in the repository), `SExtractor` and `SWarp`. you can install such libraries using `pip install <library-name>` in the command line (e.g. `pip install astropy photutils`).
+
 
 **Setup the input data**
 
@@ -28,13 +31,19 @@ All the configuration of the pipeline is done in `modules/initialize.py`. Make s
 Make sure data is prepared for the analysis by keeping them in the `data_dir` parameter as defined in `modules/initialize.py`. Frames for a given galaxy should be in the following format:
 `<galaxy-name>_<filter-name>.science.fits` (for science frame), and `<galaxy-name>_<filter-name>.weight.fits` (for the associated weight-map, if available)). Make sure you have PSF models stored in the `psf_dir` parameter as defined in `modules/pipeline_functions`. PSF model for a given filter should be given in the following format: `psf_F606W.fits`
 
+
 **Run the pipeline_functions**
-- in your working directory and in the command line execute: `python gc_pipeline.py`
+
+In your working directory and in the command line execute: `python gc_pipeline.py`
+
 
 **Example**
+
 There is already data on MATLAS-2019, a UDG known for its rich GC population. After setup the basic, you should be able to run the pipeline. Some output jpg files are already available in the output directory which you can look to get an idea of what to expect. There is data in 4 filters: HST/ACS in F606W and F814, VEGAS (VST survey) in g and i. There is more data of this object (but not included in the example)
 
+
 **Notes**
+
 The current version (August 2023) of the pipeline does the first two steps of the desired analysis (out of 4 steps which will be available in the next versions). These two steps are (GCpipeline.png):
 
 1. Sersic modelling of the galaxy to estimate Sersic parameters of objects
