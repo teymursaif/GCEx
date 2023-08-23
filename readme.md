@@ -54,4 +54,4 @@ The other steps (steps 3 and 4, to be developed) are:
 3. producing artificial GCs (at the distance of the galaxy and the given PSF) and measuring the completeness of source extractions, as well as assessing the compactness index of GC
 4. Using compactness criteria based on simulations and identifying GCs in the data, apply colour selection, measuring their properties
 
-![Screenshot](https://raw.githubusercontent.com/teymursaif/GCTOOLS/main/GCpipeline.png)
+![Screenshot](https://raw.githubusercontent.com/teymursaif/GCTOOLS/main/gc_pipeline.png)
