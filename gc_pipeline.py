@@ -15,20 +15,20 @@ from modules.psf import *
 # running the pipeline
 for gal_id in gal_params.keys():
 
-    # step 1. prepare data
+    # step 0. prepare data
     intro(gal_id)
     copy_data(gal_id)
     resample_data(gal_id) #compulsary
     make_galaxy_frames(gal_id, resampled=True)
 
-    # step 2. fit sersic and subtract the light
+    # step 1. fit sersic and subtract the light
     fit_galaxy_sersic_all_filters(gal_id)
 
-    # step 3. detection, photometry and make the main source catalogue
+    # step 2. detection, photometry and make the main source catalogue
     make_source_cat(gal_id)
     make_multiwavelength_cat(gal_id, mode='forced-photometry')
 
-    # step 4. GC analysis: completeness, selection, measurments
+    # step 3. GC analysis: completeness, selection, measurments
     #measure_completeness(gal_id)
     #select_GC_candidates(gal_id)
     #measure_GC_properties(gald_id)
