@@ -41,23 +41,26 @@ def intro(gal_id):
 ############################################################
 
 def copy_data(gal_id):
-    print ('- Copying data to the input-data directory: '+(data_dir))
+    print ('- Copying data to the input-data directory: '+(main_data_dir))
     gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
 
     for fn in filters:
-        data_path = main_data_dir+gal_name+'_'+fn+'.fits'
+        main_data_path = main_data_dir+gal_name+'_'+fn+'.fits'
+        data_path = data_dir+gal_name+'_'+fn+'.fits'
+        main_weight_path = main_data_dir+gal_name+'_'+fn+'.weight.fits'
         weight_path = main_data_dir+gal_name+'_'+fn+'.weight.fits'
 
-        if os.path.exists(data_path):
+        if os.path.exists(main_data_path):
             crop_frame(main_data_dir+gal_name+'_'+fn+'.fits',gal_name,PRIMARY_FRAME_SIZE[fn]/2,fn,ra,dec,format='.fits')
         else:
             print ('*** File does no exists: '+str(data_path))
 
-        if os.path.exists(weight_path):
+        if os.path.exists(main_weight_path):
             crop_frame(main_data_dir+gal_name+'_'+fn+'.weight.fits',gal_name,PRIMARY_FRAME_SIZE[fn]/2,fn,ra,dec,format='.weight.fits')
         else:
             print ('*** Weight does no exists: '+str(data_path)+', crating a weight-map with values of 1')
-            make_weight_map(data_path,weight_path)
+            make_weight_map(main_data_path,main_weight_path)
+            crop_frame(main_data_dir+gal_name+'_'+fn+'.weight.fits',gal_name,PRIMARY_FRAME_SIZE[fn]/2,fn,ra,dec,format='.weight.fits')
 
 ############################################################
 
@@ -158,21 +161,27 @@ def get_pixel_scale(fitsfile):
 def get_zp_AB(fitsfile):
     header = get_fits_header(fitsfile)
     pixel_scale = get_pixel_scale(fitsfile)
-    telescope = header['TELESCOP']
+    try:
+        telescope = header['TELESCOP']
 
-    if (telescope in ['jwst','JWST']):
-        PHOTFLAM = header['PHOTFLAM ']
-        PHOTPLAM = header['PHOTPLAM ']
-        zp = -2.5*np.log10(PHOTFLAM)-5*np.log10(PHOTPLAM)-2.408
+        if (telescope in ['jwst','JWST']):
+            PHOTFLAM = header['PHOTFLAM ']
+            PHOTPLAM = header['PHOTPLAM ']
+            zp = -2.5*np.log10(PHOTFLAM)-5*np.log10(PHOTPLAM)-2.408
 
-    elif telescope in ['hst','HST']:
-        PHOTFLAM = header['PHOTFLAM ']
-        PHOTPLAM = header['PHOTPLAM ']
-        EXPTIME = header['EXPTIME']
-        zp = -2.5*np.log10(PHOTFLAM)-5*np.log10(PHOTPLAM)-2.408
+        elif telescope in ['hst','HST']:
+            PHOTFLAM = header['PHOTFLAM ']
+            PHOTPLAM = header['PHOTPLAM ']
+            EXPTIME = header['EXPTIME']
+            zp = -2.5*np.log10(PHOTFLAM)-5*np.log10(PHOTPLAM)-2.408
 
-    elif telescope in ['ESO-VST']:
-        zp = float(header['PHOTZP'])
+        elif telescope in ['ESO-VST']:
+            zp = float(header['PHOTZP'])
+    except:
+        if header['FILTER'] == 'VIS' :
+            zp = float(header['MAGZERO'])
+
+
 
     zp = (int(zp*100+0.49999))/100
     return zp
@@ -277,7 +286,7 @@ def resample_swarp(fitsfile, fitsfile_weight, obj_name, radius_pix, filter_name,
 
 ############################################################
 
-def crop_frame(fitsfile, obj_name, radius_pix, filter_name, ra, dec, pixel_size=0, blur=0, back=0, format='_xxx.fits', output=None) :
+def crop_frame(fitsfile, obj_name, radius_pix, filter_name, ra, dec, pixel_size=0, blur=0, back=0, format='_xxx.fits', output=None, save_fits=True) :
     if output == None:
         output = data_dir+obj_name+'_'+filter_name+format
     hdu = fits.open(fitsfile)
@@ -325,8 +334,10 @@ def crop_frame(fitsfile, obj_name, radius_pix, filter_name, ra, dec, pixel_size=
     where_are_NaNs = np.isnan(object)
     object[where_are_NaNs] = 0
     template[0].data = object
-    template.writeto(output, overwrite=True, output_verify='fix')
+    if save_fits == True:
+        template.writeto(output, overwrite=True, output_verify='fix')
     del template,hdu
+
 
 ############################################################
 

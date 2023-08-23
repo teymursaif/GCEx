@@ -17,6 +17,7 @@ from astropy import table
 import photutils
 from photutils.aperture import CircularAperture
 from photutils.aperture import CircularAnnulus
+from photutils.centroids import centroid_1dg, centroid_2dg, centroid_com, centroid_quadratic
 from photutils.utils import CutoutImage
 import time as TIME
 from modules.pipeline_functions import *
@@ -381,7 +382,7 @@ def make_multiwavelength_cat(gal_id, mode='forced-photometry'):
         output = temp_dir+'join.fits'
         os.system('rm '+output)
         shutil.copy(det_cat,output)
-        for fn in filters:
+        for fn in filters[:1]:
             photom_frame = data_dir+gal_name+'_'+fn+'_cropped.fits'
             mask_frame = sex_dir+gal_name+'_'+fn+'_'+'mask'+'_cropped.fits'
             back_rms_frame = sex_dir+gal_name+'_'+fn+'_check_image_back_rms.fits'
@@ -392,12 +393,54 @@ def make_multiwavelength_cat(gal_id, mode='forced-photometry'):
 
 ############################################################
 
+def crop_fits_data(fits_file,ra,dec,crop_size):
+
+    fits_data = fits_file[0].data
+    fits_header = fits_file[0].header
+
+    w = WCS(fits_header,fix=True)
+    radius_pix = int(crop_size/2)
+    x_center,y_center = w.all_world2pix(ra, dec,0)
+    #print (x_center,y_center,radius_pix)
+    llx = int(x_center - radius_pix)
+    lly = int(y_center - radius_pix)
+    urx = int(x_center + radius_pix)
+    ury = int(y_center + radius_pix)
+    #print (np.shape(hdu[0].data))
+    dimx,dimy= np.shape(fits_data)[0],np.shape(fits_data)[1]
+    #print (dimx,dimy)
+    if llx<0:llx=0
+    if lly<0:lly=0
+    if urx>=dimx:urx=dimx-1
+    if ury>=dimy:ury=dimy-1
+    fits_header['NAXIS1'] = urx - llx
+    fits_header['NAXIS2'] = ury - lly
+    fits_header['CRPIX1'] = fits_header['CRPIX1']-llx
+    fits_header['CRPIX2'] = fits_header['CRPIX2']-lly
+    fits_data = fits_data[lly:ury,llx:urx]
+    return fits_data, fits_header, lly, ury, llx, urx
+
+############################################################
+
 def forced_photometry(det_cat, photom_frame, mask_frame, back_rms_frame, fn, output):
 
     cat = fits.open(det_cat)
     cat_data = cat[1].data
     fits_file = fits.open(photom_frame)
+
+    try:
+        header = fits_file[0].header
+        header['RADESYSa'] = header['RADECSYS']
+        del header['RADECSYS']
+        fits_file[0].header = header
+        fits_file.writeto(photom_frame,overwrite=True)
+    except:
+        donothing=1
+
+    fits_file = fits.open(photom_frame)
     fits_data = fits_file[0].data
+    fits_header = fits_file[0].header
+
     mask_file = fits.open(mask_frame)
     mask_data = mask_file[0].data
 
@@ -416,13 +459,15 @@ def forced_photometry(det_cat, photom_frame, mask_frame, back_rms_frame, fn, out
     zp = ZPS[fn]
     exptime = EXPTIME[fn]
     #zp = zp - 2.5*np.log10(exptime)
-    error_data = (back_rms_data**2+fits_data/GAIN[fn]/(PSF_REF_RAD_FRAC[fn]))
+    error_data = (back_rms_data**2+fits_data/GAIN[fn])
     #error_data[error_data<=0] = 99999
     error_data = np.sqrt(error_data)/np.sqrt(exptime)
     #(np.sqrt((flux_err**2)*exptime+(flux_sky_sub*exptime / GAIN[fn] / (PSF_REF_RAD_FRAC[fn]))))/exptime
 
     RA = cat_data['RA']
     DEC = cat_data['DEC']
+    fn_det = filters[0]
+    MAG_det = cat_data['MAG_AUTO_'+fn_det]
     FLUX, FLUX_ERR, MAG, MAG_ERR, BACK_FLUX, BACK_FLUX_ERR = [], [], [], [], [], []
     #mag_ref = cat_data['MAG_APER_CORR_F606W']
     N_objects = len(RA)
@@ -438,26 +483,40 @@ def forced_photometry(det_cat, photom_frame, mask_frame, back_rms_frame, fn, out
     for i in range(N_objects):
         ra = RA[i]
         dec = DEC[i]
-        y, x, = w.all_world2pix(ra, dec, 0)
+        mag_det = MAG_det[i]
+        #y, x, = w.all_world2pix(ra, dec, 0)
 
-        dx = 10#2*sky_aper_size_2+5
-        dy = 10#2*sky_aper_size_2+5
+        crop_size = 2*sky_aper_size_2+10
+        fits_file = fits.open(photom_frame)
+        fits_data_cropped, data_header_cropped, lly, ury, llx, urx = crop_fits_data(fits_file, ra, dec, crop_size)
+        error_data_cropped = error_data[lly:ury,llx:urx]
+        mask_data_bool_cropped = mask_data_bool[lly:ury,llx:urx]
 
-        fits_data_cropped = CutoutImage(fits_data,(x,y),(dx,dy))#[int(x)-sky_aper_size_2-2:int(x)+sky_aper_size_2+2,int(y)-sky_aper_size_2-2:int(y)+sky_aper_size_2+2]
-        mask_data_bool_cropped =  CutoutImage(mask_data_bool,(x,y),(dx,dy))#[int(x)-sky_aper_size_2-2:int(x)+sky_aper_size_2+2,int(y)-sky_aper_size_2-2:int(y)+sky_aper_size_2+2]
-        error_data_cropped = CutoutImage(error_data,(x,y),(dx,dy))#[int(x)-sky_aper_size_2-2:int(x)+sky_aper_size_2+2,int(y)-sky_aper_size_2-2:int(y)+sky_aper_size_2+2]
+        w_cropped = WCS(data_header_cropped)
+        y, x, = w_cropped.all_world2pix(ra, dec, 0)
 
-        fits_data_cropped = fits_data_cropped.data
-        mask_data_bool_cropped = mask_data_bool_cropped.data
-        error_data_cropped = error_data_cropped.data
+        #fits_data_cropped = CutoutImage(fits_data,(x,y),(dx,dy))#[int(x)-sky_aper_size_2-2:int(x)+sky_aper_size_2+2,int(y)-sky_aper_size_2-2:int(y)+sky_aper_size_2+2]
+        #mask_data_bool_cropped =  CutoutImage(mask_data_bool,(x,y),(dx,dy))#[int(x)-sky_aper_size_2-2:int(x)+sky_aper_size_2+2,int(y)-sky_aper_size_2-2:int(y)+sky_aper_size_2+2]
+        #error_data_cropped = CutoutImage(error_data,(x,y),(dx,dy))#[int(x)-sky_aper_size_2-2:int(x)+sky_aper_size_2+2,int(y)-sky_aper_size_2-2:int(y)+sky_aper_size_2+2]
 
-        plt.figure()
-        plt.imshow(fits_data_cropped)
-        plt.savefig(check_plots_dir+str(i)+'.png')
-        plt.close()
+        #fits_data_cropped = fits_data_cropped.data
+        #mask_data_bool_cropped = mask_data_bool_cropped.data
+        #error_data_cropped = error_data_cropped.data
 
-        x = dx/2
-        y = dy/2
+        #print (np.shape(fits_data_cropped))
+
+
+        if (mag_det) < 22 and (mag_det > 18) :
+            fig, ax = plt.subplots(1, 3, figsize=(10,3))
+            ax[0].imshow(fits_data_cropped)
+            ax[1].imshow(error_data_cropped)
+            mask_data_bool_cropped_int = mask_data_bool_cropped
+            mask_data_bool_cropped_int[mask_data_bool_cropped_int==True]=1
+            mask_data_bool_cropped_int[mask_data_bool_cropped_int==False]=0
+            ax[2].imshow(mask_data_bool_cropped_int)
+            plt.savefig(check_plots_dir+'object_'+str(i)+'_'+fn+'.png')
+            plt.close()
+
 
         aper = CircularAperture((x, y), aper_size)
         sky_aper = CircularAnnulus((x, y), sky_aper_size_1, sky_aper_size_2)
@@ -499,7 +558,7 @@ def forced_photometry(det_cat, photom_frame, mask_frame, back_rms_frame, fn, out
 
         text = "+ Photometry for " + str(N_objects) + " sources in filter "+\
             fn+" in progress: " + str(int((i+1)*100/N_objects)) + "%"
-        print ("\r" + text + "        ", end='')
+        print ("\r" + text + " ", end='')
         #TIME.sleep (1)
         a = a + 1
 

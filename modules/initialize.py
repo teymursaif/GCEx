@@ -18,7 +18,6 @@ def initialize_params() :
     ##### PARAMETERS THAT USER NEEDS TO CONFIGURE
 
     working_directory = '/data/users/saifollahi/Euclid/ERO/'
-    gal_input_cat = '/data/users/saifollahi/Euclid/ERO/udg_input.csv'
     FRAME_SIZE_ARCSEC = 240 #cut-out size from the original frame for the general anlaysis (arcsec)
     GAL_FRAME_SIZE_ARCSEC  = 120 #cut-out size from the original frame for sersic fitting anlaysis (arcsec)
     PHOTOM_APERS = '2,4,8,16,24,32' #aperture-sizes (diameters) in pixels for aperture photometry with Sextractor
@@ -29,7 +28,8 @@ def initialize_params() :
     # comments: LSB,N,etc
     # (lines with # in the beginning will be skipped)
     # example: '1 DF44 195.2416667 +26.9763889 100 F814W,F475W,F606W'
-    TARGETS = ['1 MATLAS2019 226.33460 +01.81282 25 F814W,F606W,g,i LSB,nN']
+    #TARGETS = ['1 MATLAS2019 226.33460 +01.81282 25 F814W,F606W,g,i LSB,nN']
+    TARGETS = ['2 DWARF-MER-SIM 269.06658 +65.00640 20 VIS LSB,N']
 
     # defining the executables (what you type in the command-line that executes the program)
     SE_executable = 'sex'
@@ -83,10 +83,10 @@ def initialize_params() :
         #print (gal_name, ra, dec, distance, filters, comments)
 
     # if no PSF is given to the pipeline, FWHM and flux-correction value in each filter must be given to the pipeline
-    FWHMS_ARCSEC = {'F606W':0.08, 'F814W':0.09,'g':1, 'i':1}
-    PSF_REF_RAD_ARCSEC = {'F606W':0.16, 'F814W':0.2, 'g':0.8, 'i':0.8}
-    PSF_REF_RAD_FRAC = {'F606W':0.8, 'F814W':0.8, 'g':0.8, 'i':0.8}
-    GAIN = {'F606W':1.5, 'F814W':2, 'g':2.5, 'i':2.5}
+    FWHMS_ARCSEC = {'F606W':0.08, 'F814W':0.09,'g':1, 'i':1, 'VIS':0.16}
+    PSF_REF_RAD_ARCSEC = {'F606W':0.16, 'F814W':0.2, 'g':0.8, 'i':0.8, 'VIS':0.08}
+    PSF_REF_RAD_FRAC = {'F606W':0.8, 'F814W':0.8, 'g':0.8, 'i':0.8, 'VIS':0.8}
+    GAIN = {'F606W':1.5, 'F814W':2, 'g':2.5, 'i':2.5, 'VIS':3}
 
 ############################################################
 
