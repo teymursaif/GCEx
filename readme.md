@@ -16,7 +16,7 @@ Contact me in case of problems, questions, feedback, or for contributing to this
 **Installation**
 
 In your working directory, execute the following command in the command line:
-`git clone https://github.com/teymursaif/GCTOOLS.git`. You probably need to also install several Python libraries such as `Astropy` and `photutils` as well as packages `Galfit` (the executable is available in the repository), `SExtractor` and `SWarp`. you can install such libraries using `pip install <library-name>` in the command line (e.g. `pip install astropy photutils`).
+`git clone https://github.com/teymursaif/GCTOOLS.git`. You probably need to also install several Python libraries such as `Astropy` and `photutils` (latest versions) as well as packages `Galfit` (the executable is available in the repository), `SExtractor` and `SWarp`. you can install such libraries using `pip install <library-name>` in the command line (e.g. `pip install astropy photutils`).
 
 
 **Setup the input data**
