@@ -17,10 +17,9 @@ def initialize_params() :
     ##################################################
     ##### PARAMETERS THAT USER NEEDS TO CONFIGURE
 
-    working_directory = '/data/users/saifollahi/Euclid/ERO/'
+
+    WORKING_DIR = '/data/users/saifollahi/Euclid/ERO/'
     FRAME_SIZE_ARCSEC = 240 #cut-out size from the original frame for the general anlaysis (arcsec)
-    GAL_FRAME_SIZE_ARCSEC  = 120 #cut-out size from the original frame for sersic fitting anlaysis (arcsec)
-    PHOTOM_APERS = '2,4,8,16,24,32' #aperture-sizes (diameters) in pixels for aperture photometry with Sextractor
 
     # List of targets as a string with:
     # Object-ID Object name RA Dec Distance-in-Mpc List-of-filters comment
@@ -38,7 +37,7 @@ def initialize_params() :
     ##################################################
     ### MORE ADVANCED PARAMETERS
     ### (!!! DO NOT CHANGE UNLESS YOU KNOW WHATYOU ARE DOING)
-
+    working_directory = WORKING_DIR
     input_dir = working_directory+'inputs/'
     output_dir = working_directory+'outputs/'
     main_data_dir = input_dir+'main_data/'
@@ -62,6 +61,8 @@ def initialize_params() :
     galfit_executable = external_dir+'galfit'
 
     PRIMARY_FRAME_SIZE_ARCSEC = 1*FRAME_SIZE_ARCSEC #arcsec
+    GAL_FRAME_SIZE_ARCSEC  = 1*FRAME_SIZE_ARCSEC #cut-out size from the original frame for sersic fitting anlaysis (arcsec)
+    PHOTOM_APERS = '2,4,8,16,24,32' #aperture-sizes (diameters) in pixels for aperture photometry with Sextractor
     BACKGROUND_ANNULUS_START = 3 #The size of background annulus for forced photoemtry as a factor of FWHM
     BACKGROUND_ANNULUS_TICKNESS = 20 # the thickness of the background annulus in pixels
     CROSS_MATCH_RADIUS_ARCSEC = 0.25

@@ -23,13 +23,13 @@ In your working directory, execute the following command in the command line:
 
 All the configuration of the pipeline is done in `modules/initialize.py`. Make sure that you have adjusted all the necessary inputs in `modules/initialize.py`. There are two kind of inputs: the first group that you need to adjust based on your environment and study, and the second group that by default are set to a reasonable value and control the work of the pipeline. You may leave them as they are. The most important parameters are:
 
-- `working_directory`: obviously, your working directory
+- `WORKING_DIR`: obviously, your working directory
 - `FRAME_SIZE_ARCSEC`: the dimension (in arcsec) of the area that you would like to analyze
 - `TARGETS`: list your targets targets in this parameter in the format `<some-ID> <some-given-name> <RA-in-deg> <Dec-in-deg> <distance-in-Mpc> <list-of-filters-separated-by-comma> <some-comments-about-the-target>`
 - `SE_executable` and `swarp_executable`: the command that runs these applications (`SExtractor` and `SWarp`) in the command line.
 
 Make sure data is prepared for the analysis by keeping them in the `data_dir` parameter as defined in `modules/initialize.py`. Frames for a given galaxy should be in the following format:
-`<galaxy-name>_<filter-name>.science.fits` (for science frame), and `<galaxy-name>_<filter-name>.weight.fits` (for the associated weight-map, if available)). Make sure you have PSF models stored in the `psf_dir` parameter as defined in `modules/pipeline_functions`. PSF model for a given filter should be given in the following format: `psf_F606W.fits`
+`<galaxy-name>_<filter-name>.science.fits` (for science frame), and `<galaxy-name>_<filter-name>.weight.fits` (for the associated weight-map, if available). Make sure you have PSF models stored in the `psf_dir` parameter as defined in `modules/pipeline_functions`. PSF model for a given filter should be given in the following format: `psf_F606W.fits`
 
 
 **Run the pipeline_functions**
