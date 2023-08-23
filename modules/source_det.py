@@ -384,8 +384,9 @@ def make_multiwavelength_cat(gal_id, mode='forced-photometry'):
             photom_frame = data_dir+gal_name+'_'+fn+'_cropped.fits'
             mask_frame = sex_dir+gal_name+'_'+fn+'_'+'mask'+'_cropped.fits'
             back_rms_frame = sex_dir+gal_name+'_'+fn+'_check_image_back_rms.fits'
+            back_frame = sex_dir+gal_name+'_'+fn+'_check_image_background.fits'
             print ("- Force photometry of frame in filter "+fn)
-            forced_photometry(det_cat, photom_frame, mask_frame, back_rms_frame, fn, output)
+            forced_photometry(det_cat, photom_frame, mask_frame, back_frame, back_rms_frame, fn, output)
 
         os.system('mv '+output+' '+cats_dir+gal_name+'_master_cat_forced.fits')
 
@@ -420,10 +421,11 @@ def crop_fits_data(fits_file,ra,dec,crop_size):
 
 ############################################################
 
-def forced_photometry(det_cat, photom_frame, mask_frame, back_rms_frame, fn, output):
+def forced_photometry(det_cat, photom_frame, mask_frame, back_frame, back_rms_frame, fn, output):
 
     cat = fits.open(det_cat)
     cat_data = cat[1].data
+
     fits_file = fits.open(photom_frame)
 
     try:
@@ -438,6 +440,9 @@ def forced_photometry(det_cat, photom_frame, mask_frame, back_rms_frame, fn, out
     fits_file = fits.open(photom_frame)
     fits_data = fits_file[0].data
     fits_header = fits_file[0].header
+
+    back_file = fits.open(back_frame)
+    back_data = back_file[0].data
 
     mask_file = fits.open(mask_frame)
     mask_data = mask_file[0].data
@@ -457,7 +462,7 @@ def forced_photometry(det_cat, photom_frame, mask_frame, back_rms_frame, fn, out
     zp = ZPS[fn]
     exptime = EXPTIME[fn]
     #zp = zp - 2.5*np.log10(exptime)
-    error_data = (back_rms_data**2+fits_data/GAIN[fn])
+    error_data = (back_rms_data**2+0*(fits_data-back_data)/GAIN[fn])
     #error_data[error_data<=0] = 99999
     error_data = np.sqrt(error_data)/np.sqrt(exptime)
     #(np.sqrt((flux_err**2)*exptime+(flux_sky_sub*exptime / GAIN[fn] / (PSF_REF_RAD_FRAC[fn]))))/exptime
@@ -502,7 +507,7 @@ def forced_photometry(det_cat, photom_frame, mask_frame, back_rms_frame, fn, out
         #error_data_cropped = error_data_cropped.data
 
         #print (np.shape(fits_data_cropped))
-
+        
         if (mag_det) < 22 and (mag_det > 18) :
             fig, ax = plt.subplots(1, 3, figsize=(10,3))
             ax[0].imshow(fits_data_cropped)
@@ -513,7 +518,7 @@ def forced_photometry(det_cat, photom_frame, mask_frame, back_rms_frame, fn, out
             ax[2].imshow(mask_data_bool_cropped_int)
             plt.savefig(check_plots_dir+'object_'+str(i)+'_'+fn+'.png')
             plt.close()
-
+        
 
         aper = CircularAperture((x, y), aper_size)
         sky_aper = CircularAnnulus((x, y), sky_aper_size_1, sky_aper_size_2)
@@ -526,13 +531,14 @@ def forced_photometry(det_cat, photom_frame, mask_frame, back_rms_frame, fn, out
         sky_flux, sky_flux_err = sky_aper.do_photometry(data=fits_data_cropped,mask=mask_data_bool_cropped,error=error_data_cropped,method='exact')
         #print (flux, sky_flux)
         #print (flux_err, sky_flux_err)
+
         flux = flux[0]
         flux_err = flux_err[0]
         sky_flux = sky_flux[0]
         sky_flux_err = sky_flux_err[0]
         flux_sky_sub = float(flux)-float(sky_flux)/(sky_area/aper_area)
         flux_total = (flux_sky_sub) / (PSF_REF_RAD_FRAC[fn])
-        #flux_err = (np.sqrt((flux_err**2)*exptime+(flux_sky_sub*exptime / GAIN[fn] / (PSF_REF_RAD_FRAC[fn]))))/exptime
+        flux_err = (np.sqrt((flux_err**2)*exptime+(flux_sky_sub/GAIN[fn]))) / np.sqrt(exptime)
         #print (flux, sky_flux)
         if flux_total <= 0 :
             FLUX.append(-99)
@@ -551,7 +557,7 @@ def forced_photometry(det_cat, photom_frame, mask_frame, back_rms_frame, fn, out
             MAG_ERR.append(mag_err)
             BACK_FLUX.append(float(sky_flux))
             BACK_FLUX_ERR.append(float(sky_flux_err))
-            #print ('- flux, sky-flux and magnitude for object are:', flux_err, sky_flux_err, mag_err)
+            #print ('- flux, sky-flux and magnitude for object are:', flux_err, sky_flux_err, mag_err) 
 
         text = "+ Photometry for " + str(N_objects) + " sources in filter "+\
             fn+" in progress: " + str(int((i+1)*100/N_objects)) + "%"
