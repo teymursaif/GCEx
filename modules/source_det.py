@@ -382,7 +382,7 @@ def make_multiwavelength_cat(gal_id, mode='forced-photometry'):
         output = temp_dir+'join.fits'
         os.system('rm '+output)
         shutil.copy(det_cat,output)
-        for fn in filters[:1]:
+        for fn in filters:
             photom_frame = data_dir+gal_name+'_'+fn+'_cropped.fits'
             mask_frame = sex_dir+gal_name+'_'+fn+'_'+'mask'+'_cropped.fits'
             back_rms_frame = sex_dir+gal_name+'_'+fn+'_check_image_back_rms.fits'
@@ -504,7 +504,6 @@ def forced_photometry(det_cat, photom_frame, mask_frame, back_rms_frame, fn, out
         #error_data_cropped = error_data_cropped.data
 
         #print (np.shape(fits_data_cropped))
-
 
         if (mag_det) < 22 and (mag_det > 18) :
             fig, ax = plt.subplots(1, 3, figsize=(10,3))

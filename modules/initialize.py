@@ -28,8 +28,8 @@ def initialize_params() :
     # comments: LSB,N,etc
     # (lines with # in the beginning will be skipped)
     # example: '1 DF44 195.2416667 +26.9763889 100 F814W,F475W,F606W'
-    #TARGETS = ['1 MATLAS2019 226.33460 +01.81282 25 F814W,F606W,g,i LSB,nN']
-    TARGETS = ['2 DWARF-MER-SIM 269.06658 +65.00640 20 VIS LSB,N']
+    TARGETS = ['1 MATLAS2019 226.33460 +01.81282 25 F814W,F606W,g,i LSB,nN']
+    #TARGETS = ['2 DWARF-MER-SIM 269.06658 +65.00640 20 VIS LSB,N']
 
     # defining the executables (what you type in the command-line that executes the program)
     SE_executable = 'sex'
