@@ -10,6 +10,7 @@ from photutils.aperture import CircularAperture
 from photutils.aperture import CircularAnnulus
 from modules.pipeline_functions import *
 from modules.initialize import *
+import random
 
 ############################################################
 
@@ -94,6 +95,79 @@ def getFWHM_GaussianFitScaledAmp(img):
     FWHM_x = np.abs(4*sigmaX*np.sqrt(-0.5*np.log(0.5)))
     FWHM_y = np.abs(4*sigmaY*np.sqrt(-0.5*np.log(0.5)))
     return (FWHM_x, FWHM_y)
+
+############################################################
+
+def simulate_GCS_all_filters(gal_id):
+    gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
+    for fn in filters:
+        psf_file = psf_dir+'psf_'+fn+'.fits'
+        print ('- Making artificial GCs for data in filter:', fn)
+        if os.path.exists(psf_file):
+            simualte_GCs(gal_id,psf,psf_file,fn)
+        else:
+            print ("* PSF file is not found. GC simulations can not be done.")
+
+
+def simualte_GCs(gal_id,psf_file,fn):
+    gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
+    # randomly select magnitudes and sizes of GCs
+    for n in range(N_SIM_GCs):
+        print ('+ simulating GCs: frame ',n,'out of',N_SIM_GCs)
+        GCS_MAG = np.arange(GC_SIZE_RANGE[0],GC_SIZE_RANGE[1]+0.01,0.01)
+        GCS_MAG = random.sample(GCS_MAG, N_ART_GCS)
+        GCS_SIZE = np.arange(GC_MAG_RANGE[0],GC_MAG_RANGE[1]+0.01,0.01)
+        GCS_SIZE = random.sample(GCS_SIZE, N_ART_GCS)
+
+        # Randomly select X and Y in data that overalps with the science pixels
+        science_frame = data_dir+gal_name+'_'+fn+'_cropped.fits'
+        weight_frame = data_dir+gal_name+'_'+fn+'_cropped.weight.fits'
+        weight = fits.open(weight_frame)
+        weight_data = weight[0].data
+        weight_header = weight[0].header
+        X = weight_header['NAXIS1']
+        Y = weight_header['NAXIS2']
+        GCS_X = []
+        GCS_Y = []
+        for x in range(X):
+            for y in range(Y):
+                if weight_data[x,y] > 0:
+                    GCS_X.append(x)
+                    GCS_Y.append(y)
+
+        GCS_X = random.sample(GCS_X,N_ART_GCS)
+        DX = random.sample(np.arange(0,1,1./RATIO_OVERSAMPLE_PSF),N_ART_GCS)
+        #GCS_X = GCS_X + DX
+        GCS_Y = random.sample(GCS_Y,N_ART_GCS)
+        DY = random.sample(np.arange(0,1,1./RATIO_OVERSAMPLE_PSF),N_ART_GCS)
+        #GCS_Y = GC_Y + DY
+
+        shutil.copy(science_frame,'temp.fits')
+        temp = fits.open('temp.fits')
+        temp[0].data = 0
+        temp.writeto('temp.fits',overwrite=True)
+
+        for i in range(N_ART_GCS):
+            size = GCS_SIZE[i]
+            mag = GCS_MAG[i]
+            x = GCS_X[i]
+            y = GCS_Y[i]
+            print (x, y, dx, dy, mag, size)
+            gc_file = art_dir+gal_name+'_'+fn+'_ART_GC_'+str(i)+'.fits'
+            simulate_GC(x,y,mag,size,psf_file,gc_file)
+            add_GC_to_frame(gc_file,art_dir+'temp.fits',output=art_dir+'temp.fits')
+
+        add_fits_files(science_frame,art_dir+'temp.fits',art_dir+gal_name+'_'+fn+'_ART_+'str(n)'.fits'))
+
+############################################################
+
+def simulate_GC(x,y,dx,dy,mag,size,psf_file,gc_file):
+    return 0
+
+############################################################
+
+def add_GC_to_frame(gc_file, science_file, output):
+    return 0
 
 ############################################################
 

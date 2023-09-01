@@ -193,6 +193,16 @@ def get_exptime(fitsfile):
     exptime = header['EXPTIME']
     return exptime
 
+############################################################
+
+def add_fits_files(fits1, fits2, out_fits):
+    img1 = fits.open(fits1)
+    img2 = fits.open(fits2)
+    data1 = img1[0].data
+    data2 = img2[0].data
+    data1 = data1+data2
+    img1[0].data = data1
+    img1.writeto(out_fits,overwrite=True)
 
 ############################################################
 

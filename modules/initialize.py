@@ -9,9 +9,9 @@ def initialize_params() :
     # Getting the objcts and data info
     global gal_id, gal_name, ra, dec, distance, filters, comments, gal_params
     # Configuring the pipeline parameters
-    global PRIMARY_FRAME_SIZE_ARCSEC, FRAME_SIZE_ARCSEC, GAL_FRAME_SIZE_ARCSEC, N_ART_GCS, PSF_IMAGE_SIZE, INSTR_FOV, COSMIC_CLEAN, GAIN, \
+    global PRIMARY_FRAME_SIZE_ARCSEC, FRAME_SIZE_ARCSEC, GAL_FRAME_SIZE_ARCSEC, N_ART_GCS, N_SIM_GCs, PSF_IMAGE_SIZE, INSTR_FOV, COSMIC_CLEAN, GAIN, \
     PHOTOM_APERS, FWHMS_ARCSEC, PSF_REF_RAD_ARCSEC, PSF_REF_RAD_FRAC, BACKGROUND_ANNULUS_START, BACKGROUND_ANNULUS_TICKNESS, TARGETS, \
-    MAG_LIMIT_CAT, CROSS_MATCH_RADIUS_ARCSEC, \
+    MAG_LIMIT_CAT, CROSS_MATCH_RADIUS_ARCSEC, GC_SIZE_RANGE, GC_MAG_RANGE, RATIO_OVERSAMPLE_PSF, \
     SE_executable,galfit_executable,swarp_executable
 
     ##################################################
@@ -66,10 +66,14 @@ def initialize_params() :
     BACKGROUND_ANNULUS_START = 3 #The size of background annulus for forced photoemtry as a factor of FWHM
     BACKGROUND_ANNULUS_TICKNESS = 20 # the thickness of the background annulus in pixels
     CROSS_MATCH_RADIUS_ARCSEC = 0.25
-    MAG_LIMIT_CAT = 30
+    MAG_LIMIT_CAT = 26
     PSF_IMAGE_SIZE_PIXELS = 100
     N_ART_GCS = 1000
+    N_SIM_GCs = 1
     COSMIC_CLEAN = False
+    GC_SIZE_RANGE = [1,5]
+    GC_MAG_RANGE = [-10,-4]
+    RATIO_OVERSAMPLE_PSF = 5
 
     for dir in [working_directory,input_dir,output_dir,data_dir,main_data_dir,clean_data_dir,img_dir,sex_dir,fit_dir,plots_dir,\
     detection_dir,cats_dir,psfs_dir,art_dir,final_cats_dir,temp_dir,sbf_dir,psf_dir,check_plots_dir] :
