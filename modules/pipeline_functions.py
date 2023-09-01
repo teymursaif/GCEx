@@ -90,6 +90,7 @@ def get_data_info(gal_id):
     FRAME_SIZE = {}
     GAL_FRAME_SIZE = {}
     EXPTIME = {}
+    GAIN = {}
     for fn in filters:
         pixel_scale = get_pixel_scale(main_data_dir+gal_name+'_'+fn+'.fits')
         PIXEL_SCALES[fn] = pixel_scale
@@ -164,8 +165,6 @@ def get_gain(fitsfile):
     header = get_fits_header(fitsfile)
     gain = header['CCDGAIN']
     return gain
-
-
 
 ############################################################
 

@@ -67,7 +67,7 @@ def initialize_params() :
     BACKGROUND_ANNULUS_TICKNESS = 20 # the thickness of the background annulus in pixels
     CROSS_MATCH_RADIUS_ARCSEC = 0.25
     MAG_LIMIT_CAT = 26
-    PSF_IMAGE_SIZE_PIXELS = 100
+    PSF_IMAGE_SIZE = 2 #radius in arcsec
     N_ART_GCS = 1000
     N_SIM_GCs = 1
     COSMIC_CLEAN = False
