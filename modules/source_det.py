@@ -14,9 +14,11 @@ from astropy.visualization import *
 from astropy.visualization import make_lupton_rgb
 from astropy.table import Table, join_skycoord
 from astropy import table
+import photutils
 from photutils.aperture import CircularAperture
 from photutils.aperture import CircularAnnulus
 from photutils.centroids import centroid_1dg, centroid_2dg, centroid_com, centroid_quadratic
+from photutils.utils import CutoutImage
 import time as TIME
 from modules.pipeline_functions import *
 from modules.initialize import *
@@ -31,7 +33,7 @@ def prepare_sex_cat(source_cat_name_input,source_cat_name_output,gal_name,filter
     (sex_cat_data ['MAG_AUTO'] > 20) & \
     (sex_cat_data ['MAG_AUTO'] < MAG_LIMIT_CAT) & \
     (sex_cat_data ['FWHM_IMAGE'] < 999) & \
-    (sex_cat_data ['FWHM_IMAGE'] > 0.5) )
+    (sex_cat_data ['FWHM_IMAGE'] > 1) )
     sex_cat_data = sex_cat_data[mask]
     #print (len(sex_cat_data))
     hdul = fits.BinTableHDU(data=sex_cat_data)
@@ -41,7 +43,7 @@ def prepare_sex_cat(source_cat_name_input,source_cat_name_output,gal_name,filter
     magerr_apers = np.array(sex_cat_data['MAGERR_APER'])
     flux_apers = np.array(sex_cat_data['FLUX_APER'])
     fluxerr_apers = np.array(sex_cat_data['FLUXERR_APER'])
-    psf_dia_ref_pixel = 2*(PSF_REF_RAD_ARCSEC[filter_name])/PIXEL_SCALES[filter_name]
+    psf_dia_ref_pixel = 2*(APERTURE_SIZE[filter_name])/PIXEL_SCALES[filter_name]
     psf_dia_ref_pixel = int(psf_dia_ref_pixel*1000+0.4999)/1000
     apertures = (str(psf_dia_ref_pixel)+','+PHOTOM_APERS).split(',')
     expand_fits_table(source_cat_name_output,'MAG_APER_REF',mag_apers[:,0])
@@ -294,7 +296,7 @@ def make_source_cat(gal_id):
 
         weight_command = '-WEIGHT_TYPE  MAP_WEIGHT -WEIGHT_IMAGE '+weight_map+' -WEIGHT_THRESH 0.001'
 
-        psf_dia_ref_pixel = 2*(PSF_REF_RAD_ARCSEC[fn])/PIXEL_SCALES[fn]
+        psf_dia_ref_pixel = 2*(APERTURE_SIZE[fn])/PIXEL_SCALES[fn]
         psf_dia_ref_pixel = int(psf_dia_ref_pixel*100+0.4999)/100
         apertures = (str(psf_dia_ref_pixel)+','+PHOTOM_APERS).split(',')
         n = len(apertures)
@@ -380,13 +382,12 @@ def make_multiwavelength_cat(gal_id, mode='forced-photometry'):
         output = temp_dir+'join.fits'
         os.system('rm '+output)
         shutil.copy(det_cat,output)
-        for fn in filters:
+        for fn in filters[:1]:
             photom_frame = data_dir+gal_name+'_'+fn+'_cropped.fits'
             mask_frame = sex_dir+gal_name+'_'+fn+'_'+'mask'+'_cropped.fits'
             back_rms_frame = sex_dir+gal_name+'_'+fn+'_check_image_back_rms.fits'
-            back_frame = sex_dir+gal_name+'_'+fn+'_check_image_background.fits'
             print ("- Force photometry of frame in filter "+fn)
-            forced_photometry(det_cat, photom_frame, mask_frame, back_frame, back_rms_frame, fn, output)
+            forced_photometry(det_cat, photom_frame, mask_frame, back_rms_frame, fn, output)
 
         os.system('mv '+output+' '+cats_dir+gal_name+'_master_cat_forced.fits')
 
@@ -421,11 +422,10 @@ def crop_fits_data(fits_file,ra,dec,crop_size):
 
 ############################################################
 
-def forced_photometry(det_cat, photom_frame, mask_frame, back_frame, back_rms_frame, fn, output):
+def forced_photometry(det_cat, photom_frame, mask_frame, back_rms_frame, fn, output):
 
     cat = fits.open(det_cat)
     cat_data = cat[1].data
-
     fits_file = fits.open(photom_frame)
 
     try:
@@ -440,9 +440,6 @@ def forced_photometry(det_cat, photom_frame, mask_frame, back_frame, back_rms_fr
     fits_file = fits.open(photom_frame)
     fits_data = fits_file[0].data
     fits_header = fits_file[0].header
-
-    back_file = fits.open(back_frame)
-    back_data = back_file[0].data
 
     mask_file = fits.open(mask_frame)
     mask_data = mask_file[0].data
@@ -462,7 +459,7 @@ def forced_photometry(det_cat, photom_frame, mask_frame, back_frame, back_rms_fr
     zp = ZPS[fn]
     exptime = EXPTIME[fn]
     #zp = zp - 2.5*np.log10(exptime)
-    error_data = (back_rms_data**2+0*(fits_data-back_data)/GAIN[fn])
+    error_data = (back_rms_data**2+fits_data/GAIN[fn])
     #error_data[error_data<=0] = 99999
     error_data = np.sqrt(error_data)/np.sqrt(exptime)
     #(np.sqrt((flux_err**2)*exptime+(flux_sky_sub*exptime / GAIN[fn] / (PSF_REF_RAD_FRAC[fn]))))/exptime
@@ -477,7 +474,7 @@ def forced_photometry(det_cat, photom_frame, mask_frame, back_frame, back_rms_fr
     w=WCS(photom_frame)
     X = get_header(photom_frame,keyword='NAXIS1')
     Y = get_header(photom_frame,keyword='NAXIS2')
-    aper_size = ((PSF_REF_RAD_ARCSEC[fn]))/PIXEL_SCALES[fn]
+    aper_size = ((APERTURE_SIZE[fn]))/PIXEL_SCALES[fn]
     sky_aper_size_1 = int(BACKGROUND_ANNULUS_START*FWHMS_ARCSEC[fn]/PIXEL_SCALES[fn])
     sky_aper_size_2 = int(sky_aper_size_1+BACKGROUND_ANNULUS_TICKNESS)
     print ("- apreture radius for forced photometry is (pixels):", aper_size)
@@ -489,7 +486,7 @@ def forced_photometry(det_cat, photom_frame, mask_frame, back_frame, back_rms_fr
         mag_det = MAG_det[i]
         #y, x, = w.all_world2pix(ra, dec, 0)
 
-        crop_size = 2*sky_aper_size_2+10
+        crop_size = 5*sky_aper_size_2+10
         fits_file = fits.open(photom_frame)
         fits_data_cropped, data_header_cropped, lly, ury, llx, urx = crop_fits_data(fits_file, ra, dec, crop_size)
         error_data_cropped = error_data[lly:ury,llx:urx]
@@ -507,7 +504,7 @@ def forced_photometry(det_cat, photom_frame, mask_frame, back_frame, back_rms_fr
         #error_data_cropped = error_data_cropped.data
 
         #print (np.shape(fits_data_cropped))
-        
+
         if (mag_det) < 22 and (mag_det > 18) :
             fig, ax = plt.subplots(1, 3, figsize=(10,3))
             ax[0].imshow(fits_data_cropped)
@@ -518,7 +515,6 @@ def forced_photometry(det_cat, photom_frame, mask_frame, back_frame, back_rms_fr
             ax[2].imshow(mask_data_bool_cropped_int)
             plt.savefig(check_plots_dir+'object_'+str(i)+'_'+fn+'.png')
             plt.close()
-        
 
         aper = CircularAperture((x, y), aper_size)
         sky_aper = CircularAnnulus((x, y), sky_aper_size_1, sky_aper_size_2)
@@ -531,14 +527,13 @@ def forced_photometry(det_cat, photom_frame, mask_frame, back_frame, back_rms_fr
         sky_flux, sky_flux_err = sky_aper.do_photometry(data=fits_data_cropped,mask=mask_data_bool_cropped,error=error_data_cropped,method='exact')
         #print (flux, sky_flux)
         #print (flux_err, sky_flux_err)
-
         flux = flux[0]
         flux_err = flux_err[0]
         sky_flux = sky_flux[0]
         sky_flux_err = sky_flux_err[0]
         flux_sky_sub = float(flux)-float(sky_flux)/(sky_area/aper_area)
         flux_total = (flux_sky_sub) / (PSF_REF_RAD_FRAC[fn])
-        flux_err = (np.sqrt((flux_err**2)*exptime+(flux_sky_sub/GAIN[fn]))) / np.sqrt(exptime)
+        #flux_err = (np.sqrt((flux_err**2)*exptime+(flux_sky_sub*exptime / GAIN[fn] / (PSF_REF_RAD_FRAC[fn]))))/exptime
         #print (flux, sky_flux)
         if flux_total <= 0 :
             FLUX.append(-99)
@@ -557,7 +552,7 @@ def forced_photometry(det_cat, photom_frame, mask_frame, back_frame, back_rms_fr
             MAG_ERR.append(mag_err)
             BACK_FLUX.append(float(sky_flux))
             BACK_FLUX_ERR.append(float(sky_flux_err))
-            #print ('- flux, sky-flux and magnitude for object are:', flux_err, sky_flux_err, mag_err) 
+            #print ('- flux, sky-flux and magnitude for object are:', flux_err, sky_flux_err, mag_err)
 
         text = "+ Photometry for " + str(N_objects) + " sources in filter "+\
             fn+" in progress: " + str(int((i+1)*100/N_objects)) + "%"

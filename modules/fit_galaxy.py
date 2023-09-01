@@ -8,7 +8,6 @@ from astropy.wcs import WCS
 from astropy import wcs
 from astropy.io import fits
 import os.path
-import scipy
 from scipy import signal
 from scipy import ndimage
 from pylab import *

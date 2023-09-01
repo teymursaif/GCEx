@@ -81,7 +81,7 @@ def median_filter_array(data,fsize = 3):
 ############################################################
 
 def get_data_info(gal_id):
-    global PIXEL_SCALES, ZPS, PRIMARY_FRAME_SIZE, FRAME_SIZE, GAL_FRAME_SIZE, EXPTIME
+    global PIXEL_SCALES, ZPS, PRIMARY_FRAME_SIZE, FRAME_SIZE, GAL_FRAME_SIZE, EXPTIME, GAIN
     print ('- Extracting pixel-size and zero-point values from the data')
     gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
     PIXEL_SCALES = {}
@@ -93,6 +93,8 @@ def get_data_info(gal_id):
     for fn in filters:
         pixel_scale = get_pixel_scale(main_data_dir+gal_name+'_'+fn+'.fits')
         PIXEL_SCALES[fn] = pixel_scale
+        gain = get_gain(main_data_dir+gal_name+'_'+fn+'.fits')
+        GAIN[fn] = gain
         zp = get_zp_AB(main_data_dir+gal_name+'_'+fn+'.fits')
         exptime = get_exptime(main_data_dir+gal_name+'_'+fn+'.fits')
         ZPS[fn] = zp
@@ -155,6 +157,15 @@ def get_pixel_scale(fitsfile):
     #print (pixel_scale,pixel_scale1,pixel_scale2)
     pixel_scale = (int(pixel_scale*100+0.49999))/100
     return pixel_scale
+
+############################################################
+
+def get_gain(fitsfile):
+    header = get_fits_header(fitsfile)
+    gain = header['CCDGAIN']
+    return gain
+
+
 
 ############################################################
 

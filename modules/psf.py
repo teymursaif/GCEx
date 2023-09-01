@@ -19,7 +19,7 @@ def estimate_aper_corr(gal_id):
     for fn in filters:
         psf_file = psf_dir+'psf_'+fn+'.fits'
         if os.path.exists(psf_file):
-            aper_size_arcsec = (PSF_REF_RAD_ARCSEC[fn])
+            aper_size_arcsec = (APERTURE_SIZE[fn])
             #aper_size_pixel = aper_size_arcsec/PIXEL_SCALES[fn]
             psf_fits_file = fits.open(psf_file)
             psf_data = psf_fits_file[0].data
@@ -57,6 +57,7 @@ def estimate_fwhm(gal_id):
             #print (FWHM_x,FWHM_y)
             #print (FWHM_x*psf_pixel_scale ,FWHM_y*psf_pixel_scale)
             FWHMS_ARCSEC[fn] = np.mean([FWHM_x*psf_pixel_scale ,FWHM_y*psf_pixel_scale])
+            APERTURE_SIZE[fn] = 2*FWHMS_ARCSEC[fn]
             print ('- FWHM in filter', fn, 'is', FWHMS_ARCSEC[fn], 'arcsec')
 
         else:

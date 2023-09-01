@@ -1,4 +1,4 @@
-**GCEx pipeline (August 2023)**
+**GCEx pipeline (August 2023)** 
 
 Developed by Teymoor Saifollahi, Kapteyn Astronomical Institute
 
@@ -25,7 +25,7 @@ All the configuration of the pipeline is done in `modules/initialize.py`. Make s
 
 - `WORKING_DIR`: obviously, your working directory
 - `FRAME_SIZE_ARCSEC`: the dimension (in arcsec) of the area that you would like to analyze
-- `TARGETS`: your target(s) inside a list, where each component of the list is a string associated to a target and in this format: `<some-ID> <some-given-name> <RA-in-deg> <Dec-in-deg> <distance-in-Mpc> <list-of-filters-separated-by-comma> <some-comments-about-the-target>`. 
+- `TARGETS`: your target(s) inside a list, where each component of the list is a string associated to a target and in this format: `<some-ID> <some-given-name> <RA-in-deg> <Dec-in-deg> <distance-in-Mpc> <list-of-filters-separated-by-comma> <some-comments-about-the-target>`.
 - `SE_executable` and `swarp_executable`: the command that runs these applications (`SExtractor` and `SWarp`) in the command line.
 
 Make sure data is prepared for the analysis by keeping them in the `data_dir` parameter as defined in `modules/initialize.py`. Frames for a given galaxy should be in the following format:

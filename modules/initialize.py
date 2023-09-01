@@ -10,7 +10,7 @@ def initialize_params() :
     global gal_id, gal_name, ra, dec, distance, filters, comments, gal_params
     # Configuring the pipeline parameters
     global PRIMARY_FRAME_SIZE_ARCSEC, FRAME_SIZE_ARCSEC, GAL_FRAME_SIZE_ARCSEC, N_ART_GCS, N_SIM_GCs, PSF_IMAGE_SIZE, INSTR_FOV, COSMIC_CLEAN, GAIN, \
-    PHOTOM_APERS, FWHMS_ARCSEC, PSF_REF_RAD_ARCSEC, PSF_REF_RAD_FRAC, BACKGROUND_ANNULUS_START, BACKGROUND_ANNULUS_TICKNESS, TARGETS, \
+    PHOTOM_APERS, FWHMS_ARCSEC, APERTURE_SIZE, PSF_REF_RAD_FRAC, BACKGROUND_ANNULUS_START, BACKGROUND_ANNULUS_TICKNESS, TARGETS, APERTURE_SIZE, \
     MAG_LIMIT_CAT, CROSS_MATCH_RADIUS_ARCSEC, GC_SIZE_RANGE, GC_MAG_RANGE, RATIO_OVERSAMPLE_PSF, \
     SE_executable,galfit_executable,swarp_executable
 
@@ -27,7 +27,7 @@ def initialize_params() :
     # comments: LSB,N,etc
     # (lines with # in the beginning will be skipped)
     # example: '1 DF44 195.2416667 +26.9763889 100 F814W,F475W,F606W'
-    TARGETS = ['1 MATLAS2019 226.33460 +01.81282 25 F814W,F606W,g,i LSB,nN']
+    TARGETS = ['1 MATLAS2019 226.33460 +01.81282 25 F814W,F606W LSB,nN']
     #TARGETS = ['2 DWARF-MER-SIM 269.06658 +65.00640 20 VIS LSB,N']
 
     # defining the executables (what you type in the command-line that executes the program)
@@ -88,10 +88,9 @@ def initialize_params() :
         #print (gal_name, ra, dec, distance, filters, comments)
 
     # if no PSF is given to the pipeline, FWHM and flux-correction value in each filter must be given to the pipeline
-    FWHMS_ARCSEC = {'F606W':0.08, 'F814W':0.09,'g':1, 'i':1, 'VIS':0.16}
-    PSF_REF_RAD_ARCSEC = {'F606W':0.16, 'F814W':0.2, 'g':0.8, 'i':0.8, 'VIS':0.08}
-    PSF_REF_RAD_FRAC = {'F606W':0.8, 'F814W':0.8, 'g':0.8, 'i':0.8, 'VIS':0.8}
-    GAIN = {'F606W':1.5, 'F814W':2, 'g':2.5, 'i':2.5, 'VIS':3}
+    FWHMS_ARCSEC = {}
+    APERTURE_SIZE = {}
+    PSF_REF_RAD_FRAC = {}
 
 ############################################################
 
