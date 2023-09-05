@@ -81,16 +81,8 @@ def median_filter_array(data,fsize = 3):
 ############################################################
 
 def get_data_info(gal_id):
-    global PIXEL_SCALES, ZPS, PRIMARY_FRAME_SIZE, FRAME_SIZE, GAL_FRAME_SIZE, EXPTIME, GAIN
     print ('- Extracting pixel-size and zero-point values from the data')
     gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
-    PIXEL_SCALES = {}
-    ZPS = {}
-    PRIMARY_FRAME_SIZE = {}
-    FRAME_SIZE = {}
-    GAL_FRAME_SIZE = {}
-    EXPTIME = {}
-    GAIN = {}
     for fn in filters:
         pixel_scale = get_pixel_scale(main_data_dir+gal_name+'_'+fn+'.fits')
         PIXEL_SCALES[fn] = pixel_scale

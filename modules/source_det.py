@@ -20,8 +20,8 @@ from photutils.aperture import CircularAnnulus
 from photutils.centroids import centroid_1dg, centroid_2dg, centroid_com, centroid_quadratic
 from photutils.utils import CutoutImage
 import time as TIME
-from modules.pipeline_functions import *
 from modules.initialize import *
+from modules.pipeline_functions import *
 
 def prepare_sex_cat(source_cat_name_input,source_cat_name_output,gal_name,filter_name,distance):
     main = fits.open(source_cat_name_input)
