@@ -123,30 +123,34 @@ def simualte_GCs(gal_id,n):
     GC_RA = []
     GC_DEC = []
     m = 0
+
     X_list = np.arange(1,X,1)
     Y_list = np.arange(1,Y,1)
     X_random = X_list.copy()
     Y_random = Y_list.copy()
     np.random.shuffle(X_random)
     np.random.shuffle(Y_random)
+
+    m = 0
     #print (X_random)
-    for x in X_random:
-        for y in Y_random:
-            if weight_data[x,y] > 0:
-                w=WCS(science_frame)
-                dx = np.arange(-0.5,0.51,0.1)
-                dx = random.sample(list(dx),1)
-                dy = np.arange(-0.5,0.51,0.1)
-                dy = random.sample(list(dy),1)
-                ra, dec = w.all_pix2world(x+dx, y+dy,0)
-                GC_RA.append(ra[0])
-                GC_DEC.append(dec[0])
-                m = m+1
+    for i in range(10*N_ART_GCS):
+        x = X_random[i]
+        y = Y_random[i]
+        if weight_data[x,y] > 0:
+            w=WCS(science_frame)
+            dx = np.arange(-0.5,0.51,0.1)
+            dx = random.sample(list(dx),1)
+            dy = np.arange(-0.5,0.51,0.1)
+            dy = random.sample(list(dy),1)
+            ra, dec = w.all_pix2world(x+dx, y+dy,0)
+            GC_RA.append(ra[0])
+            GC_DEC.append(dec[0])
+            m = m+1
+            if m == N_ART_GCS:
                 break
-                #print (m, ra[0], dec[0])
-                if m >= N_ART_GCS: break
-            if m >= N_ART_GCS: break
-        if m >= N_ART_GCS: break
+
+    plt.plot(GC_RA,GC_DEC,'r.')
+    plt.savefig(check_plots_dir+gal_name+'_ART_GCs_RA_DEC_'+str(n)+'.png')
 
     for fn in filters:
         psf_file = psf_dir+'psf_'+fn+'.fits'
@@ -226,14 +230,15 @@ def simualte_GCs(gal_id,n):
         img1.writeto(art_dir+gal_name+'_'+fn+'_ART_'+str(n)+'_resampled.fits',overwrite=True)
 
 
-    # undersample the simulated frame
-    swarp_cmd = swarp_executable+' '+art_dir+gal_name+'_'+fn+'_ART_'+str(n)+'.fits'+\
-    ' -c '+external_dir+'default.swarp -IMAGEOUT_NAME '+art_dir+gal_name+'_'+fn+'_ART_'+str(n)+'.fits'+\
-        ' -IMAGE_SIZE '+str(X)+','+str(Y)+' -PIXELSCALE_TYPE MANUAL -PIXEL_SCALE '+str(RATIO_OVERSAMPLE_PSF)+\
-        ' -RESAMPLE Y -CENTER_TYPE MANUAL -CENTER '+str(x)+','+str(y)+' -SUBTRACT_BACK N'
-    os.system(swarp_cmd)
+        # undersample the simulated frame
+        swarp_cmd = swarp_executable+' '+art_dir+gal_name+'_'+fn+'_ART_'+str(n)+'.fits'+\
+            ' -c '+external_dir+'default.swarp -IMAGEOUT_NAME '+art_dir+gal_name+'_'+fn+'_ART_'+str(n)+'.fits'+\
+            ' -IMAGE_SIZE 0 -PIXELSCALE_TYPE MANUAL -PIXEL_SCALE '+str(RATIO_OVERSAMPLE_PSF)+\
+            ' -RESAMPLE Y -CENTER_TYPE MANUAL -CENTER '+str(x)+','+str(y)+' -SUBTRACT_BACK N'
+        os.system(swarp_cmd)
 
-    add_fits_files(science_frameart_dir+gal_name+'_'+fn+'_ART_'+str(n)+'.fits',art_dir+gal_name+'_'+fn+'_ART_'+str(n)+'.science.fits')
+        add_fits_files(science_frame,art_dir+gal_name+'_'+fn+'_ART_'+str(n)+'.fits',art_dir+gal_name+'_'+fn+'_ART_'+str(n)+'.science.fits')
+
 ############################################################
 
 def simulate_GC(mag,size_arcsec,zp,pixel_size,psf_file,gc_file):
