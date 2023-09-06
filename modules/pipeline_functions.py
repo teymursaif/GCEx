@@ -21,7 +21,6 @@ from photutils.aperture import CircularAnnulus
 import scipy.optimize as opt
 from fitsio import FITS
 from modules.initialize import *
-from modules.psf import *
 #from lacosmic import lacosmic
 
 
@@ -285,13 +284,13 @@ def resample_swarp(fitsfile, fitsfile_weight, obj_name, radius_pix, filter_name,
         command = swarp_executable+' '+temp_dir+'temp.fits -c '+external_dir+'default.swarp -IMAGEOUT_NAME '+output+' -WEIGHTOUT_NAME '+output_weight+\
             ' -WEIGHT_TYPE MAP_WEIGHT '+'-WEIGHT_IMAGE '+fitsfile_weight+\
             ' -IMAGE_SIZE '+str(radius_pix)+','+str(radius_pix)+' -PIXEL_SCALE '+str(pixel_size)+\
-            ' -CENTER_TYPE MANUAL -CENTER '+str(ra)+','+str(dec)+' -SUBTRACT_BACK N'
+            ' -CENTER_TYPE MANUAL -CENTER '+str(ra)+','+str(dec)+' -SUBTRACT_BACK N -VERBOSE_TYPE QUIET'
 
     else :
         command = swarp_executable+' '+temp_dir+'temp.fits -c '+external_dir+'default.swarp -IMAGEOUT_NAME '+output+' -WEIGHTOUT_NAME '+output_weight+\
             ' -WEIGHT_TYPE MAP_WEIGHT '+'-WEIGHT_IMAGE '+fitsfile_weight+\
             ' -IMAGE_SIZE '+str(radius_pix)+','+str(radius_pix)+' -PIXELSCALE_TYPE MANUAL -PIXEL_SCALE '+str(pixel_size)+\
-            ' -RESAMPLE Y -CENTER_TYPE MANUAL -CENTER '+str(ra)+','+str(dec)+' -SUBTRACT_BACK N'
+            ' -RESAMPLE Y -CENTER_TYPE MANUAL -CENTER '+str(ra)+','+str(dec)+' -SUBTRACT_BACK N -VERBOSE_TYPE QUIET'
 
     #print (command)
     os.system(command)
@@ -471,6 +470,12 @@ def clean_cosmic(dirty_frame,clean_frame,gain=1):
     fits_dirty_data = fits_dirty[0].data
     fits_dirty[0].data = cleaned_image
     fits_dirty.writeto(clean_frame,overwrite=True)
+
+############################################################
+
+def color(fn1,fn2):
+    c = GC_REF_MAG[fn1] - GC_REF_MAG[fn2]
+    return c
 
 ############################################################
 

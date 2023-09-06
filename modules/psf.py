@@ -1,6 +1,7 @@
 import os, sys
 import math
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 import scipy.optimize as opt
 from astropy.io import fits
@@ -111,48 +112,78 @@ def simulate_GCs_all(gal_id):
 
 def simualte_GCs(gal_id,n):
     gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
-    print ('- simulating GCs: frame ',n+1,'out of',N_SIM_GCs)
     fn_det = filters[0]
+    print ('- simulating GCs: frame ',n+1,'out of',N_SIM_GCs)
     science_frame = data_dir+gal_name+'_'+fn_det+'_cropped.fits'
+    w=WCS(science_frame)
     weight_frame = data_dir+gal_name+'_'+fn_det+'_cropped.weight.fits'
     weight = fits.open(weight_frame)
     weight_data = weight[0].data
     weight_header = weight[0].header
     X = weight_header['NAXIS1']
     Y = weight_header['NAXIS2']
-    GC_RA = []
-    GC_DEC = []
-    m = 0
+    art_coords_cat_name = art_dir+gal_name+'_'+fn_det+'_ART_GCs_coords.csv'
 
-    X_list = np.arange(1,X,1)
-    Y_list = np.arange(1,Y,1)
-    X_random = X_list.copy()
-    Y_random = Y_list.copy()
-    np.random.shuffle(X_random)
-    np.random.shuffle(Y_random)
+    if os.path.exists(art_coords_cat_name):
+        print ('+ Coordinates of the simulated GCs are:')
+        donothing = 1
+        df = pd.read_csv(art_coords_cat_name, sep=',')
+        coords = df
+        print (df)
+        #print (coords.values)
+        GC_RA = list(coords['RA'])
+        GC_DEC = list(coords['DEC'])
 
-    m = 0
-    #print (X_random)
-    for i in range(10*N_ART_GCS):
-        x = X_random[i]
-        y = Y_random[i]
-        if weight_data[x,y] > 0:
-            w=WCS(science_frame)
-            dx = np.arange(-0.5,0.51,0.1)
-            dx = random.sample(list(dx),1)
-            dy = np.arange(-0.5,0.51,0.1)
-            dy = random.sample(list(dy),1)
-            ra, dec = w.all_pix2world(x+dx, y+dy,0)
-            GC_RA.append(ra[0])
-            GC_DEC.append(dec[0])
-            m = m+1
-            if m == N_ART_GCS:
-                break
+    else :
+    #if True:
+        coords = []
+        GC_RA = []
+        GC_DEC = []
+        m = 0
+
+        X_list = np.arange(1,X,1)
+        Y_list = np.arange(1,Y,1)
+        X_random = X_list.copy()
+        Y_random = Y_list.copy()
+        np.random.shuffle(X_random)
+        np.random.shuffle(Y_random)
+
+        m = 0
+        #print (X_random)
+        for i in range(1000*N_ART_GCS):
+            x = X_random[i]
+            y = Y_random[i]
+            if weight_data[x,y] > 0 :#and x > 3000 and y > 4000:
+                dx = np.arange(-0.5,0.51,0.1)
+                dx = random.sample(list(dx),1)
+                dy = np.arange(-0.5,0.51,0.1)
+                dy = random.sample(list(dy),1)
+                dx = dx[0]
+                dy = dy[0]
+                ra, dec = w.all_pix2world(y+dy,x+dx,0)
+                GC_RA.append(ra)
+                GC_DEC.append(dec)
+                coords.append([x+dx,y+dy,ra,dec])
+                #print (x+dx,y+dy)
+                m = m+1
+                if m == N_ART_GCS:
+                    break
+
+        coords = np.array(coords)
+        #print (coords)
+        print ('+ Coordinates of the simulated GCs are:')
+        df = pd.DataFrame(coords, columns=['X','Y','RA','DEC'])
+        df.to_csv(art_coords_cat_name, header=True, sep=',', index=False)
+        print (df)
 
     plt.plot(GC_RA,GC_DEC,'r.')
     plt.savefig(check_plots_dir+gal_name+'_ART_GCs_RA_DEC_'+str(n)+'.png')
 
     for fn in filters:
+
+        science_frame = data_dir+gal_name+'_'+fn+'_cropped.fits'
+        w=WCS(science_frame)
+
         psf_file = psf_dir+'psf_'+fn+'.fits'
         print ('- Making artificial GCs for data in filter:', fn)
         if os.path.exists(psf_file):
@@ -162,14 +193,12 @@ def simualte_GCs(gal_id,n):
             continue
 
         zp = ZPS[fn]
+        exptime = EXPTIME[fn]
 
         GC_MAG = np.arange(GC_MAG_RANGE[0],GC_MAG_RANGE[1]+0.01,1./N_ART_GCS)
         GC_MAG = random.sample(list(GC_MAG), N_ART_GCS)
         GC_SIZE = np.arange(GC_SIZE_RANGE[0],GC_SIZE_RANGE[1]+0.01,1./N_ART_GCS)
         GC_SIZE = random.sample(list(GC_SIZE), N_ART_GCS)
-
-        GC_RA = random.sample(GC_RA,N_ART_GCS)
-        GC_DEC = random.sample(GC_DEC,N_ART_GCS)
 
         psf_fits_file = fits.open(psf_file)
         psf_pixel_scale = psf_fits_file[0].header['PIXELSCL']
@@ -180,8 +209,8 @@ def simualte_GCs(gal_id,n):
 
         shutil.copy(science_frame,art_dir+'temp.fits')
         temp = fits.open(art_dir+'temp.fits')
-        X_oversampled = temp[0].header['NAXIS1']*RATIO_OVERSAMPLE_PSF
-        Y_oversampled = temp[0].header['NAXIS2']*RATIO_OVERSAMPLE_PSF
+        X_oversampled = temp[0].header['NAXIS1']*1#RATIO_OVERSAMPLE_PSF
+        Y_oversampled = temp[0].header['NAXIS2']*1#RATIO_OVERSAMPLE_PSF
         temp[0].data = np.zeros((X_oversampled,Y_oversampled))
         temp[0].header['NAXIS1'] = X_oversampled
         temp[0].header['NAXIS2'] = Y_oversampled
@@ -191,59 +220,79 @@ def simualte_GCs(gal_id,n):
         data1 = img1[0].data
 
         for i in range(N_ART_GCS):
-            print ('- making psf:',str(i+1),'out of',N_ART_GCS)
+
+            #text = "+ Making " + str(N_ART_GCS) + " artificial GCs"+\
+            #    " in progress: " + str(int((i+1)*100/N_ART_GCS)) + "%"
+            #print ("\r" + text + " ", end='')
+
             size = GC_SIZE[i]
             size_arcsec = GC_SIZE[i] / distance  * 0.206265
-            abs_mag = GC_MAG[i]
+            abs_mag = GC_MAG[i] + color(fn,fn_det)
             mag = GC_MAG[i] + 5*np.log10(distance*1e+5)
 
+            #print (len(GC_RA), i)
             ra = GC_RA[i]
             dec = GC_DEC[i]
-            x, y = w.all_world2pix(ra, dec, 0)
-            xos = x * RATIO_OVERSAMPLE_PSF
-            yos = y * RATIO_OVERSAMPLE_PSF
-
-            print (mag, abs_mag, size, size_arcsec)
-            print (xos, yos, x, y)
+            y, x = w.all_world2pix(ra, dec, 0)
+            x0 = int(x+0.5)
+            y0 = int(y+0.5)
+            #xos = x * RATIO_OVERSAMPLE_PSF
+            #yos = y * RATIO_OVERSAMPLE_PSF
+            #print (mag, size_arcsec, ra, dec, x, y)
+            #rint (x0,y0)
 
             gc_file = art_dir+gal_name+'_'+fn+'_ART_GC_'+str(i)+'.fits'
-            simulate_GC(mag,size_arcsec,zp,psf_pixel_scale,psf_file,gc_file)
+            simulate_GC(mag,size_arcsec,zp,psf_pixel_scale,exptime,psf_file,gc_file)
 
             # add GCs to frame
+            gc_fits_file = fits.open(gc_file)
+            xc = (gc_fits_file[0].header['NAXIS1']+0.5)/2
+            yc = (gc_fits_file[0].header['NAXIS2']+0.5)/2
+            xos = xc #+ (x-x0)
+            yos = yc #+ (y-y0)
 
             swarp_cmd = swarp_executable+' '+gc_file+' -c '+external_dir+'default.swarp -IMAGEOUT_NAME '+gc_file+'.resampled.fits'+\
-                ' -IMAGE_SIZE 0 -PIXELSCALE_TYPE MANUAL -PIXEL_SCALE 1'+\
-                ' -RESAMPLE Y -CENTER_TYPE MANUAL -CENTER '+str(x)+','+str(y)+' -SUBTRACT_BACK N'
+                ' -IMAGE_SIZE 0 -PIXELSCALE_TYPE MANUAL -PIXEL_SCALE '+str(RATIO_OVERSAMPLE_PSF)+\
+                ' -RESAMPLE Y -CENTER_TYPE ALL -SUBTRACT_BACK N -VERBOSE_TYPE QUIET'
             os.system(swarp_cmd)
 
-            x0 = int(xos)
-            y0 = int(yos)
+            #swarp_cmd = swarp_executable+' '+gc_file+'.resampled.fits'+' -c '+external_dir+'default.swarp -IMAGEOUT_NAME '+gc_file+'.resampled_displaced.fits'+\
+            #    ' -IMAGE_SIZE 0 -PIXELSCALE_TYPE MEDIAN -PIXEL_SCALE '+str(0)+\
+            #    ' -RESAMPLE Y -CENTER_TYPE MANUAL -CENTER '+str(x-x0)+','+str(y-y0)+' -SUBTRACT_BACK N -VERBOSE_TYPE QUIET'
+            #os.system(swarp_cmd)
+
             img2 = fits.open(gc_file+'.resampled.fits')
             data2 = img2[0].data
             x_psf = img2[0].header['NAXIS1']
             y_psf = img2[0].header['NAXIS2']
-            dx = int(x_psf)
-            dy = int(y_psf)
-            data1[x0-dx:x0-dx+x_psf,y0-dy:y0-dy+y_psf] = data1[x0-dx:x0-dx+x_psf,y0-dy:y0-dy+y_psf]+data2
+            dx = int(x_psf/2)
+            dy = int(y_psf/2)
+
+            x1 = x0-dx
+            x2 = x0-dx+x_psf
+            y1 = y0-dy
+            y2 = y0-dy+y_psf
+            #print (X,Y)
+            #print (x1,x2,y1,y2)
+            #print (x1,x2,y1,y2)
+            x1_psf = 0
+            x2_psf = x_psf
+            y1_psf = 0
+            y2_psf = y_psf
+
+            data1[x1:x2,y1:y2] = data1[x1:x2,y1:y2]+data2[x1_psf:x2_psf,y1_psf:y2_psf]
 
         img1[0].data = data1
-        img1.writeto(art_dir+gal_name+'_'+fn+'_ART_'+str(n)+'_resampled.fits',overwrite=True)
-
-
-        # undersample the simulated frame
-        swarp_cmd = swarp_executable+' '+art_dir+gal_name+'_'+fn+'_ART_'+str(n)+'.fits'+\
-            ' -c '+external_dir+'default.swarp -IMAGEOUT_NAME '+art_dir+gal_name+'_'+fn+'_ART_'+str(n)+'.fits'+\
-            ' -IMAGE_SIZE 0 -PIXELSCALE_TYPE MANUAL -PIXEL_SCALE '+str(RATIO_OVERSAMPLE_PSF)+\
-            ' -RESAMPLE Y -CENTER_TYPE MANUAL -CENTER '+str(x)+','+str(y)+' -SUBTRACT_BACK N'
-        os.system(swarp_cmd)
+        img1.writeto(art_dir+gal_name+'_'+fn+'_ART_'+str(n)+'.fits',overwrite=True)
 
         add_fits_files(science_frame,art_dir+gal_name+'_'+fn+'_ART_'+str(n)+'.fits',art_dir+gal_name+'_'+fn+'_ART_'+str(n)+'.science.fits')
+        print ('')
 
 ############################################################
 
-def simulate_GC(mag,size_arcsec,zp,pixel_size,psf_file,gc_file):
+def simulate_GC(mag,size_arcsec,zp,pix_size,exptime,psf_file,gc_file):
     #print (mag,size_arcsec,zp,pixel_size)
-    stamp = makeKing2D(1, size_arcsec, mag, zp, 1, pixel_size)
+    stamp = makeKing2D(1, size_arcsec, mag, zp, 1, pix_size)
     n = np.arange(100.0)
     hdu = fits.PrimaryHDU(n)
     hdul = fits.HDUList([hdu])
@@ -255,7 +304,13 @@ def simulate_GC(mag,size_arcsec,zp,pixel_size,psf_file,gc_file):
     psf_fits_file = fits.open(psf_file)
     psf_data = psf_fits_file[0].data
     stamp = signal.convolve2d(stamp, psf_data, boundary='symm', mode='same')
-    #stamp = numpy.random.poisson(stamp)
+
+
+    vals = len(np.unique(abs(stamp)*exptime))
+    vals = 2 ** np.ceil(np.log2(vals))
+    noisy = np.random.poisson(abs(stamp)*exptime*vals) / float(vals)
+    stamp = noisy/exptime
+
     n = np.arange(100.0)
     hdu = fits.PrimaryHDU(n)
     hdul = fits.HDUList([hdu])
@@ -291,8 +346,8 @@ def makeKing2D(cc, rc, mag, zeropoint, exptime, pixel_size):
 
     # get stamp size: we require that the galaxy is in the exact center of the matrix. Therefore we set even size always.
 
-    # Size: double of truncation radius + 2 pixel as a border
-    Size = int(2 * round(trunc_radius / float(pixel_size))) + 2
+    # Size: 10 times of truncation radius + 2 pixel as a border
+    Size = int(10 * round(trunc_radius / float(pixel_size))) + 2
     # make even
     if (Size % 2) != 0:
         Size = Size + 1
