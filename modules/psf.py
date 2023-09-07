@@ -137,6 +137,8 @@ def simualte_GCs(gal_id,n):
     weight_header = weight[0].header
     X = weight_header['NAXIS1']
     Y = weight_header['NAXIS2']
+    x_gal = X-x_gal
+    y_gal = Y-y_gal
     art_coords_cat_name = art_dir+gal_name+'_'+fn_det+'_ART'+str(n)+'_'+str(N_ART_GCS)+'GCs_coords.csv'
 
     if os.path.exists(art_coords_cat_name):
@@ -182,8 +184,8 @@ def simualte_GCs(gal_id,n):
         for i in range(1000*N_ART_GCS):
             #x = X_random[i]
             #y = Y_random[i]
-            x = int(x_gal) + int(random.gauss(0, X/5))
-            y = int(y_gal) + int(random.gauss(0, Y/5))
+            x = int(x_gal) + int(random.gauss(0, X/20))
+            y = int(y_gal) + int(random.gauss(0, Y/20))
 
             if (x<1) or (x>(X-1)) or (y<1) or (y>(Y-1)):
                 continue
