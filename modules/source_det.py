@@ -23,6 +23,26 @@ import time as TIME
 from modules.initialize import *
 from modules.pipeline_functions import *
 
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKCYAN = '\033[96m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
+############################################################
+
+def make_source_cat_full(gal_id):
+    print (f"{bcolors.OKCYAN}- making source catalogs and photometry"+ bcolors.ENDC)
+    make_source_cat(gal_id)
+    make_multiwavelength_cat(gal_id, mode='forced-photometry')
+
+############################################################
+
 def prepare_sex_cat(source_cat_name_input,source_cat_name_output,gal_name,filter_name,distance):
     main = fits.open(source_cat_name_input)
     sex_cat_data = main[1].data
@@ -569,3 +589,50 @@ def forced_photometry(det_cat, photom_frame, mask_frame, back_rms_frame, fn, out
     expand_fits_table(output, 'F_MAGERR_APER_CORR_'+fn,np.array(MAG_ERR))
     expand_fits_table(output, 'F_BACK_FLUX_'+fn,np.array(BACK_FLUX))
     expand_fits_table(output, 'F_BACK_FLUX_ERR_'+fn,np.array(BACK_FLUX_ERR))
+
+############################################################
+
+def copy_sims(gal_id):
+
+    gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
+
+    for fn in filters:
+        for n in range(N_SIM_GCS) :
+
+            gal_name_orig = gal_name
+            gal_name = gal_name+'_SIM_'+str(n)
+            (gal_params[gal_id])[0] = gal_name
+
+            shutil.copy(art_dir+gal_name_orig+'_'+fn+'_ART_'+str(n)+'.science.fits',\
+                art_dir+gal_name+'_'+fn+'_cropped.fits')
+            shutil.copy(data_dir+gal_name_orig+'_'+fn+'_cropped.weight.fits',\
+                art_dir+gal_name+'_'+fn+'_cropped.weight.fits')
+
+            gal_name = gal_name_orig
+            (gal_params[gal_id])[0] = gal_name
+
+############################################################
+
+def make_source_cat_for_sim(gal_id):
+
+    print (f"{bcolors.OKCYAN}- source detection for the simulated data"+ bcolors.ENDC)
+
+    copy_sims(gal_id)
+    gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
+    global data_dir
+    data_dir = art_dir
+
+    for n in range(N_SIM_GCS) :
+
+        gal_name_orig = gal_name
+        gal_name = gal_name+'_SIM_'+str(n)
+        (gal_params[gal_id])[0] = gal_name
+
+        make_source_cat(gal_id)
+        make_multiwavelength_cat(gal_id, mode='forced-photometry')
+
+        (gal_params[gal_id])[0] = gal_name_orig
+        gal_name = gal_name_orig
+
+    data_dir = data_dir_orig
+    print (data_dir)

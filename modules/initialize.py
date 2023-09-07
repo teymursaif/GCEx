@@ -5,11 +5,11 @@ def initialize_params() :
     print ('+ Initializing the pipeline')
     # Defining the working directories
     global working_directory,input_dir,output_dir,data_dir,main_data_dir,clean_data_dir,img_dir,sex_dir,fit_dir,plots_dir,\
-    detection_dir,cats_dir,psfs_dir,art_dir,final_cats_dir,temp_dir,sbf_dir,psf_dir, check_plots_dir, external_dir
+    detection_dir,cats_dir,psfs_dir,art_dir,final_cats_dir,temp_dir,sbf_dir,psf_dir, check_plots_dir, external_dir, data_dir_orig
     # Getting the objcts and data info
     global gal_id, gal_name, ra, dec, distance, filters, comments, gal_params
     # Configuring the pipeline parameters
-    global PRIMARY_FRAME_SIZE_ARCSEC, FRAME_SIZE_ARCSEC, GAL_FRAME_SIZE_ARCSEC, N_ART_GCS, N_SIM_GCs, PSF_IMAGE_SIZE, INSTR_FOV, COSMIC_CLEAN, \
+    global PRIMARY_FRAME_SIZE_ARCSEC, FRAME_SIZE_ARCSEC, GAL_FRAME_SIZE_ARCSEC, N_ART_GCS, N_SIM_GCS, PSF_IMAGE_SIZE, INSTR_FOV, COSMIC_CLEAN, \
     PHOTOM_APERS, FWHMS_ARCSEC, APERTURE_SIZE, PSF_REF_RAD_FRAC, BACKGROUND_ANNULUS_START, BACKGROUND_ANNULUS_TICKNESS, TARGETS, APERTURE_SIZE, \
     MAG_LIMIT_CAT, CROSS_MATCH_RADIUS_ARCSEC, GC_SIZE_RANGE, GC_MAG_RANGE, RATIO_OVERSAMPLE_PSF, \
     PIXEL_SCALES, ZPS, PRIMARY_FRAME_SIZE, FRAME_SIZE, GAL_FRAME_SIZE, EXPTIME, GAIN, GC_REF_MAG, \
@@ -59,6 +59,7 @@ def initialize_params() :
     sbf_dir = output_dir+'sbf/'
     check_plots_dir = output_dir+'check_plots/'
     external_dir = input_dir+'external/'
+    data_dir_orig = data_dir
 
     galfit_executable = external_dir+'galfit'
 
@@ -70,8 +71,8 @@ def initialize_params() :
     CROSS_MATCH_RADIUS_ARCSEC = 0.25
     MAG_LIMIT_CAT = 26
     PSF_IMAGE_SIZE = 2 #radius in arcsec
-    N_ART_GCS = 50
-    N_SIM_GCs = 1
+    N_ART_GCS = 100
+    N_SIM_GCS = 2
     COSMIC_CLEAN = False
     GC_SIZE_RANGE = [1,5]
     GC_MAG_RANGE = [-9,-5]
@@ -122,6 +123,11 @@ def welcome():
     print (f"+ Kapteyn Astronomical Institute"+ bcolors.ENDC)
     print (f"+ contact: saifollahi@astro.rug.nl\n"+ bcolors.ENDC)
     #print (f"{bcolors.OKCYAN}   *****************************************\n"+ bcolors.ENDC)
+
+
+############################################################
+
+
 
 welcome()
 initialize_params()

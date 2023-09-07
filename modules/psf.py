@@ -14,6 +14,17 @@ from modules.pipeline_functions import *
 import random
 from scipy import signal
 
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKCYAN = '\033[96m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
 ############################################################
 
 def estimate_aper_corr(gal_id):
@@ -104,25 +115,29 @@ def getFWHM_GaussianFitScaledAmp(img):
 ############################################################
 
 def simulate_GCs_all(gal_id):
+    print (f"{bcolors.OKCYAN}- making artificial globular clusters"+ bcolors.ENDC)
     gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
-    for n in range(N_SIM_GCs):
+    for n in range(N_SIM_GCS):
         simualte_GCs(gal_id,n)
 
 ############################################################
 
 def simualte_GCs(gal_id,n):
     gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
+    ra_gal = ra
+    dec_gal = dec
     fn_det = filters[0]
-    print ('- simulating GCs: frame ',n+1,'out of',N_SIM_GCs)
+    print ('- simulating GCs: frame ',n+1,'out of',N_SIM_GCS)
     science_frame = data_dir+gal_name+'_'+fn_det+'_cropped.fits'
     w=WCS(science_frame)
+    y_gal, x_gal= w.all_world2pix(ra_gal,dec_gal,0)
     weight_frame = data_dir+gal_name+'_'+fn_det+'_cropped.weight.fits'
     weight = fits.open(weight_frame)
     weight_data = weight[0].data
     weight_header = weight[0].header
     X = weight_header['NAXIS1']
     Y = weight_header['NAXIS2']
-    art_coords_cat_name = art_dir+gal_name+'_'+fn_det+'_ART_GCs_coords.csv'
+    art_coords_cat_name = art_dir+gal_name+'_'+fn_det+'_ART'+str(n)+'_'+str(N_ART_GCS)+'GCs_coords.csv'
 
     if os.path.exists(art_coords_cat_name):
         print ('+ Coordinates of the simulated GCs are:')
@@ -133,13 +148,27 @@ def simualte_GCs(gal_id,n):
         #print (coords.values)
         GC_RA = list(coords['RA'])
         GC_DEC = list(coords['DEC'])
+        GC_ABS_MAG = list(coords['GC_ABS_MAG'])
+        GC_MAG = list(coords['GC_MAG'])
+        GC_SIZE_ARCSEC = list(coords['GC_SIZE_ARCSEC'])
+        GC_SIZE_PC = list(coords['GC_SIZE_PC'])
 
     else :
     #if True:
         coords = []
         GC_RA = []
         GC_DEC = []
+        GC_ABS_MAG = []
+        GC_MAG = []
+        GC_SIZE_ARCSEC = []
+        GC_SIZE_PC = []
+
         m = 0
+
+        MAG = np.arange(GC_MAG_RANGE[0],GC_MAG_RANGE[1]+0.01,1./N_ART_GCS)
+        MAG = random.sample(list(MAG), N_ART_GCS)
+        SIZE = np.arange(GC_SIZE_RANGE[0],GC_SIZE_RANGE[1]+0.01,1./N_ART_GCS)
+        SIZE = random.sample(list(SIZE), N_ART_GCS)
 
         X_list = np.arange(1,X,1)
         Y_list = np.arange(1,Y,1)
@@ -151,9 +180,15 @@ def simualte_GCs(gal_id,n):
         m = 0
         #print (X_random)
         for i in range(1000*N_ART_GCS):
-            x = X_random[i]
-            y = Y_random[i]
-            if weight_data[x,y] > 0 :#and x > 3000 and y > 4000:
+            #x = X_random[i]
+            #y = Y_random[i]
+            x = int(x_gal) + int(random.gauss(0, X/5))
+            y = int(y_gal) + int(random.gauss(0, Y/5))
+
+            if (x<1) or (x>(X-1)) or (y<1) or (y>(Y-1)):
+                continue
+
+            if weight_data[x,y] > 0:
                 dx = np.arange(-0.5,0.51,0.1)
                 dx = random.sample(list(dx),1)
                 dy = np.arange(-0.5,0.51,0.1)
@@ -163,7 +198,13 @@ def simualte_GCs(gal_id,n):
                 ra, dec = w.all_pix2world(y+dy,x+dx,0)
                 GC_RA.append(ra)
                 GC_DEC.append(dec)
-                coords.append([x+dx,y+dy,ra,dec])
+                GC_ABS_MAG.append(MAG[m])
+                mag = MAG[m] + 5*np.log10(distance*1e+5)
+                GC_MAG.append(MAG[m] + 5*np.log10(distance*1e+5))
+                GC_SIZE_PC.append(SIZE[m])
+                size_arcsec = SIZE[m] / distance  * 0.206265
+                GC_SIZE_ARCSEC.append(size_arcsec)
+                coords.append([x+dx,y+dy,ra,dec,MAG[m],mag,SIZE[m],size_arcsec])
                 #print (x+dx,y+dy)
                 m = m+1
                 if m == N_ART_GCS:
@@ -172,17 +213,26 @@ def simualte_GCs(gal_id,n):
         coords = np.array(coords)
         #print (coords)
         print ('+ Coordinates of the simulated GCs are:')
-        df = pd.DataFrame(coords, columns=['X','Y','RA','DEC'])
+        df = pd.DataFrame(coords, columns=['X','Y','RA','DEC','GC_ABS_MAG','GC_MAG','GC_SIZE_PC','GC_SIZE_ARCSEC'])
         df.to_csv(art_coords_cat_name, header=True, sep=',', index=False)
         print (df)
 
     plt.plot(GC_RA,GC_DEC,'r.')
     plt.savefig(check_plots_dir+gal_name+'_ART_GCs_RA_DEC_'+str(n)+'.png')
 
+    df = pd.read_csv(art_coords_cat_name)
+    art_cat_name = art_dir+gal_name+'_'+fn_det+'_ART'+str(n)+'_'+str(N_ART_GCS)+'GCs.full_info.csv'
+
     for fn in filters:
 
         science_frame = data_dir+gal_name+'_'+fn+'_cropped.fits'
         w=WCS(science_frame)
+
+        weight_frame = data_dir+gal_name+'_'+fn+'_cropped.weight.fits'
+        weight = fits.open(weight_frame)
+        weight_data = weight[0].data
+        mask = weight_data
+        mask[mask>0]=1
 
         psf_file = psf_dir+'psf_'+fn+'.fits'
         print ('- Making artificial GCs for data in filter:', fn)
@@ -194,11 +244,9 @@ def simualte_GCs(gal_id,n):
 
         zp = ZPS[fn]
         exptime = EXPTIME[fn]
-
-        GC_MAG = np.arange(GC_MAG_RANGE[0],GC_MAG_RANGE[1]+0.01,1./N_ART_GCS)
-        GC_MAG = random.sample(list(GC_MAG), N_ART_GCS)
-        GC_SIZE = np.arange(GC_SIZE_RANGE[0],GC_SIZE_RANGE[1]+0.01,1./N_ART_GCS)
-        GC_SIZE = random.sample(list(GC_SIZE), N_ART_GCS)
+        ART_GC_FLAG = []
+        GC_ABS_MAG_FILTER = []
+        GC_MAG_FILTER = []
 
         psf_fits_file = fits.open(psf_file)
         psf_pixel_scale = psf_fits_file[0].header['PIXELSCL']
@@ -221,15 +269,14 @@ def simualte_GCs(gal_id,n):
 
         for i in range(N_ART_GCS):
 
-            #text = "+ Making " + str(N_ART_GCS) + " artificial GCs"+\
-            #    " in progress: " + str(int((i+1)*100/N_ART_GCS)) + "%"
-            #print ("\r" + text + " ", end='')
+            text = "+ Making " + str(N_ART_GCS) + " artificial GCs"+\
+                " in progress: " + str(int((i+1)*100/N_ART_GCS)) + "%"
+            print ("\r" + text + " ", end='')
 
-            size = GC_SIZE[i]
-            size_arcsec = GC_SIZE[i] / distance  * 0.206265
-            abs_mag = GC_MAG[i] + color(fn,fn_det)
-            mag = GC_MAG[i] + 5*np.log10(distance*1e+5)
-
+            size_arcsec = GC_SIZE_ARCSEC[i]
+            mag = GC_MAG[i] + color(fn,fn_det)
+            GC_ABS_MAG_FILTER.append(GC_MAG[i])
+            GC_MAG_FILTER.append(mag)
             #print (len(GC_RA), i)
             ra = GC_RA[i]
             dec = GC_DEC[i]
@@ -238,10 +285,9 @@ def simualte_GCs(gal_id,n):
             y0 = int(y+0.5)
             #xos = x * RATIO_OVERSAMPLE_PSF
             #yos = y * RATIO_OVERSAMPLE_PSF
-            #print (mag, size_arcsec, ra, dec, x, y)
+            print (' -> GC properties:',' mag=',mag,'size=',size_arcsec,'RA=',ra,'Dec=',dec,'X=',x,'Y=',y)
             #rint (x0,y0)
-
-            gc_file = art_dir+gal_name+'_'+fn+'_ART_GC_'+str(i)+'.fits'
+            gc_file = art_dir+gal_name+'_'+fn+'_ART_'+str(n)+'_GC_'+str(i)+'.fits'
             simulate_GC(mag,size_arcsec,zp,psf_pixel_scale,exptime,psf_file,gc_file)
 
             # add GCs to frame
@@ -267,11 +313,18 @@ def simualte_GCs(gal_id,n):
             y_psf = img2[0].header['NAXIS2']
             dx = int(x_psf/2)
             dy = int(y_psf/2)
-
             x1 = x0-dx
             x2 = x0-dx+x_psf
             y1 = y0-dy
             y2 = y0-dy+y_psf
+
+            if x1 < 0 or y1 < 0 or x2 > X or y2 > Y:
+                print ('--- GC outside of the frame, skipping simulating the GC ...')
+                ART_GC_FLAG.append(-1)
+                continue
+            else:
+                ART_GC_FLAG.append(1)
+
             #print (X,Y)
             #print (x1,x2,y1,y2)
             #print (x1,x2,y1,y2)
@@ -279,14 +332,19 @@ def simualte_GCs(gal_id,n):
             x2_psf = x_psf
             y1_psf = 0
             y2_psf = y_psf
-
             data1[x1:x2,y1:y2] = data1[x1:x2,y1:y2]+data2[x1_psf:x2_psf,y1_psf:y2_psf]
 
-        img1[0].data = data1
+        df['GC_ABS_MAG_'+fn] = GC_ABS_MAG_FILTER
+        df['GC_MAG_'+fn] = GC_MAG_FILTER
+        df['ART_GC_FLAG_'+fn] = ART_GC_FLAG
+
+        img1[0].data = data1*mask
         img1.writeto(art_dir+gal_name+'_'+fn+'_ART_'+str(n)+'.fits',overwrite=True)
 
         add_fits_files(science_frame,art_dir+gal_name+'_'+fn+'_ART_'+str(n)+'.fits',art_dir+gal_name+'_'+fn+'_ART_'+str(n)+'.science.fits')
         print ('')
+
+    df.to_csv(art_cat_name, index=False)
 
 ############################################################
 

@@ -31,6 +31,7 @@ from modules.initialize import *
 
 def fit_galaxy_sersic_all_filters(gal_id):
 
+    print (f"{bcolors.OKCYAN}- Sersic modeling of the host galaxy"+ bcolors.ENDC)
     gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
     gal_cat = cats_dir+gal_name+'_sersic_params.csv'
     cat = open(gal_cat, 'w')
