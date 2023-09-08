@@ -181,12 +181,12 @@ def simualte_GCs(gal_id,n):
         #Y_random = Y_list.copy()
         #np.random.shuffle(X_random)
         #np.random.shuffle(Y_random)
-        X1_random = x_gal + np.random.normal(0,X/5,1000*N_ART_GCS)
-        Y1_random = y_gal + np.random.normal(0,Y/5,1000*N_ART_GCS)
-        X2_random = x_gal + np.random.normal(0,X/10,1000*N_ART_GCS)
-        Y2_random = y_gal + np.random.normal(0,Y/10,1000*N_ART_GCS)
-        X3_random = x_gal + np.random.normal(0,X/20,1000*N_ART_GCS)
-        Y3_random = y_gal + np.random.normal(0,Y/20,1000*N_ART_GCS)
+        X1_random = x_gal + np.random.normal(0,X/1,1000*N_ART_GCS)
+        Y1_random = y_gal + np.random.normal(0,Y/1,1000*N_ART_GCS)
+        X2_random = x_gal + np.random.normal(0,X/5,1000*N_ART_GCS)
+        Y2_random = y_gal + np.random.normal(0,Y/5,1000*N_ART_GCS)
+        X3_random = x_gal + np.random.normal(0,X/25,1000*N_ART_GCS)
+        Y3_random = y_gal + np.random.normal(0,Y/25,1000*N_ART_GCS)
         X1_random = np.append(X1_random,X2_random)
         X1_random = np.append(X1_random,X3_random)
         Y1_random = np.append(Y1_random,Y2_random)
@@ -415,52 +415,6 @@ def simulate_GC(mag,size_arcsec,zp,pix_size,exptime,psf_file,gc_file):
     hdul[0].data = stamp
     hdul.writeto(gc_file, overwrite=True)
     #return 0
-
-############################################################
-
-def convolve2D(image, kernel, padding=0, strides=1):
-    # Cross Correlation
-    kernel = np.flipud(np.fliplr(kernel))
-
-    # Gather Shapes of Kernel + Image + Padding
-    xKernShape = kernel.shape[0]
-    yKernShape = kernel.shape[1]
-    xImgShape = image.shape[0]
-    yImgShape = image.shape[1]
-
-    # Shape of Output Convolution
-    xOutput = int(((xImgShape - xKernShape + 2 * padding) / strides) + 1)
-    yOutput = int(((yImgShape - yKernShape + 2 * padding) / strides) + 1)
-    output = np.zeros((xOutput, yOutput))
-
-    # Apply Equal Padding to All Sides
-    if padding != 0:
-        imagePadded = np.zeros((image.shape[0] + padding*2, image.shape[1] + padding*2))
-        imagePadded[int(padding):int(-1 * padding), int(padding):int(-1 * padding)] = image
-        print(imagePadded)
-    else:
-        imagePadded = image
-
-    # Iterate through image
-    for y in range(image.shape[1]):
-        # Exit Convolution
-        if y > image.shape[1] - yKernShape:
-            break
-        # Only Convolve if y has gone down by the specified Strides
-        if y % strides == 0:
-            for x in range(image.shape[0]):
-                # Go to next row once kernel is out of bounds
-                if x > image.shape[0] - xKernShape:
-                    break
-                try:
-                    # Only Convolve if x has moved by the specified Strides
-                    if x % strides == 0:
-                        output[x, y] = (kernel * imagePadded[x: x + xKernShape, y: y + yKernShape]).sum()
-                except:
-                    break
-
-    return output
-
 
 ############################################################
 
