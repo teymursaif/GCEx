@@ -402,7 +402,7 @@ def make_multiwavelength_cat(gal_id, mode='forced-photometry'):
         output = temp_dir+'join.fits'
         os.system('rm '+output)
         shutil.copy(det_cat,output)
-        for fn in filters[:1]:
+        for fn in filters:
             photom_frame = data_dir+gal_name+'_'+fn+'_cropped.fits'
             mask_frame = sex_dir+gal_name+'_'+fn+'_'+'mask'+'_cropped.fits'
             back_rms_frame = sex_dir+gal_name+'_'+fn+'_check_image_back_rms.fits'
@@ -635,4 +635,6 @@ def make_source_cat_for_sim(gal_id):
         gal_name = gal_name_orig
 
     data_dir = data_dir_orig
-    print (data_dir)
+    #print (data_dir)
+
+############################################################

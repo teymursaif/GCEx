@@ -71,10 +71,10 @@ def initialize_params() :
     CROSS_MATCH_RADIUS_ARCSEC = 0.25
     MAG_LIMIT_CAT = 26
     PSF_IMAGE_SIZE = 2 #radius in arcsec
-    N_ART_GCS = 100
-    N_SIM_GCS = 2
+    N_ART_GCS = 200
+    N_SIM_GCS = 1
     COSMIC_CLEAN = False
-    GC_SIZE_RANGE = [1,5]
+    GC_SIZE_RANGE = [0.5,6] #lower value should be small enough to make some point-sources for performance check
     GC_MAG_RANGE = [-9,-5]
     #RATIO_OVERSAMPLE_PSF = 5
 

@@ -148,6 +148,8 @@ def simualte_GCs(gal_id,n):
         coords = df
         print (df)
         #print (coords.values)
+        GC_X = list(coords['X'])
+        GC_Y = list(coords['Y'])
         GC_RA = list(coords['RA'])
         GC_DEC = list(coords['DEC'])
         GC_ABS_MAG = list(coords['GC_ABS_MAG'])
@@ -158,6 +160,8 @@ def simualte_GCs(gal_id,n):
     else :
     #if True:
         coords = []
+        GC_X = []
+        GC_Y = []
         GC_RA = []
         GC_DEC = []
         GC_ABS_MAG = []
@@ -165,27 +169,42 @@ def simualte_GCs(gal_id,n):
         GC_SIZE_ARCSEC = []
         GC_SIZE_PC = []
 
-        m = 0
-
-        MAG = np.arange(GC_MAG_RANGE[0],GC_MAG_RANGE[1]+0.01,1./N_ART_GCS)
+        MAG = np.arange(GC_MAG_RANGE[0],GC_MAG_RANGE[1]+0.01,abs(GC_MAG_RANGE[1]-GC_MAG_RANGE[0])/N_ART_GCS)
         MAG = random.sample(list(MAG), N_ART_GCS)
-        SIZE = np.arange(GC_SIZE_RANGE[0],GC_SIZE_RANGE[1]+0.01,1./N_ART_GCS)
+        SIZE = np.arange(GC_SIZE_RANGE[0],GC_SIZE_RANGE[1]+0.01,abs(GC_SIZE_RANGE[1]-GC_SIZE_RANGE[0])/N_ART_GCS)
+        #print (SIZE)
         SIZE = random.sample(list(SIZE), N_ART_GCS)
 
-        X_list = np.arange(1,X,1)
-        Y_list = np.arange(1,Y,1)
-        X_random = X_list.copy()
-        Y_random = Y_list.copy()
+        #X_list = np.arange(1,X,1)
+        #Y_list = np.arange(1,Y,1)
+        #X_random = X_list.copy()
+        #Y_random = Y_list.copy()
+        #np.random.shuffle(X_random)
+        #np.random.shuffle(Y_random)
+        X1_random = x_gal + np.random.normal(0,X/5,1000*N_ART_GCS)
+        Y1_random = y_gal + np.random.normal(0,Y/5,1000*N_ART_GCS)
+        X2_random = x_gal + np.random.normal(0,X/10,1000*N_ART_GCS)
+        Y2_random = y_gal + np.random.normal(0,Y/10,1000*N_ART_GCS)
+        X3_random = x_gal + np.random.normal(0,X/20,1000*N_ART_GCS)
+        Y3_random = y_gal + np.random.normal(0,Y/20,1000*N_ART_GCS)
+        X1_random = np.append(X1_random,X2_random)
+        X1_random = np.append(X1_random,X3_random)
+        Y1_random = np.append(Y1_random,Y2_random)
+        Y1_random = np.append(Y1_random,Y3_random)
+        #print (len(X1_random))
+        X_random = X1_random.copy()
+        Y_random = Y1_random.copy()
         np.random.shuffle(X_random)
         np.random.shuffle(Y_random)
 
         m = 0
+        i = -1
         #print (X_random)
-        for i in range(1000*N_ART_GCS):
-            #x = X_random[i]
-            #y = Y_random[i]
-            x = int(x_gal) + int(random.gauss(0, X/20))
-            y = int(y_gal) + int(random.gauss(0, Y/20))
+        while m < N_ART_GCS :
+        #for i in range(N_ART_GCS):
+            i = i+1
+            x = int(X_random[i])
+            y = int(Y_random[i])
 
             if (x<1) or (x>(X-1)) or (y<1) or (y>(Y-1)):
                 continue
@@ -198,6 +217,8 @@ def simualte_GCs(gal_id,n):
                 dx = dx[0]
                 dy = dy[0]
                 ra, dec = w.all_pix2world(y+dy,x+dx,0)
+                GC_X.append(x+dx)
+                GC_Y.append(y+dy)
                 GC_RA.append(ra)
                 GC_DEC.append(dec)
                 GC_ABS_MAG.append(MAG[m])
@@ -221,6 +242,15 @@ def simualte_GCs(gal_id,n):
 
     plt.plot(GC_RA,GC_DEC,'r.')
     plt.savefig(check_plots_dir+gal_name+'_ART_GCs_RA_DEC_'+str(n)+'.png')
+    plt.close()
+
+    plt.hist(GC_X)
+    plt.savefig(check_plots_dir+gal_name+'_ART_GCs_X_HIST_'+str(n)+'.png')
+    plt.close()
+
+    plt.hist(GC_Y)
+    plt.savefig(check_plots_dir+gal_name+'_ART_GCs_Y_HIST_'+str(n)+'.png')
+    plt.close()
 
     df = pd.read_csv(art_coords_cat_name)
     art_cat_name = art_dir+gal_name+'_'+fn_det+'_ART'+str(n)+'_'+str(N_ART_GCS)+'GCs.full_info.csv'
@@ -277,7 +307,7 @@ def simualte_GCs(gal_id,n):
 
             size_arcsec = GC_SIZE_ARCSEC[i]
             mag = GC_MAG[i] + color(fn,fn_det)
-            GC_ABS_MAG_FILTER.append(GC_MAG[i])
+            GC_ABS_MAG_FILTER.append(GC_MAG[i]-5*np.log10(distance*1e+5))
             GC_MAG_FILTER.append(mag)
             #print (len(GC_RA), i)
             ra = GC_RA[i]
@@ -351,25 +381,32 @@ def simualte_GCs(gal_id,n):
 ############################################################
 
 def simulate_GC(mag,size_arcsec,zp,pix_size,exptime,psf_file,gc_file):
+    # Conclusion from Ariane: For c in [1.3,1.5], the half-light radius is about  2.5Rc( ±10%) and
+    # Rc itself contains about 20% of the light (i.e 40% of the light within the half-light radius).
     #print (mag,size_arcsec,zp,pixel_size)
-    stamp = makeKing2D(1, size_arcsec, mag, zp, 1, pix_size)
+    #rh/rc ~ 2.5
+    stamp = makeKing2D(1, size_arcsec/2.5, mag, zp, 1, pix_size)
     n = np.arange(100.0)
     hdu = fits.PrimaryHDU(n)
     hdul = fits.HDUList([hdu])
     #hdul[0].header = header
     hdul[0].data = stamp
     hdul.writeto(gc_file+'.temp.fits', overwrite=True)
+    #print ('king', np.sum(stamp))
 
     # convolving with psf
     psf_fits_file = fits.open(psf_file)
     psf_data = psf_fits_file[0].data
+    psf_data = psf_data/np.sum(psf_data)
     stamp = signal.convolve2d(stamp, psf_data, boundary='symm', mode='same')
-
+    #stamp = convolve2D(stamp, psf_data)
+    #print ('king+psf', np.sum(stamp))
 
     vals = len(np.unique(abs(stamp)*exptime))
     vals = 2 ** np.ceil(np.log2(vals))
     noisy = np.random.poisson(abs(stamp)*exptime*vals) / float(vals)
     stamp = noisy/exptime
+    #print ('king+psf+noise', np.sum(stamp))
 
     n = np.arange(100.0)
     hdu = fits.PrimaryHDU(n)
@@ -378,6 +415,51 @@ def simulate_GC(mag,size_arcsec,zp,pix_size,exptime,psf_file,gc_file):
     hdul[0].data = stamp
     hdul.writeto(gc_file, overwrite=True)
     #return 0
+
+############################################################
+
+def convolve2D(image, kernel, padding=0, strides=1):
+    # Cross Correlation
+    kernel = np.flipud(np.fliplr(kernel))
+
+    # Gather Shapes of Kernel + Image + Padding
+    xKernShape = kernel.shape[0]
+    yKernShape = kernel.shape[1]
+    xImgShape = image.shape[0]
+    yImgShape = image.shape[1]
+
+    # Shape of Output Convolution
+    xOutput = int(((xImgShape - xKernShape + 2 * padding) / strides) + 1)
+    yOutput = int(((yImgShape - yKernShape + 2 * padding) / strides) + 1)
+    output = np.zeros((xOutput, yOutput))
+
+    # Apply Equal Padding to All Sides
+    if padding != 0:
+        imagePadded = np.zeros((image.shape[0] + padding*2, image.shape[1] + padding*2))
+        imagePadded[int(padding):int(-1 * padding), int(padding):int(-1 * padding)] = image
+        print(imagePadded)
+    else:
+        imagePadded = image
+
+    # Iterate through image
+    for y in range(image.shape[1]):
+        # Exit Convolution
+        if y > image.shape[1] - yKernShape:
+            break
+        # Only Convolve if y has gone down by the specified Strides
+        if y % strides == 0:
+            for x in range(image.shape[0]):
+                # Go to next row once kernel is out of bounds
+                if x > image.shape[0] - xKernShape:
+                    break
+                try:
+                    # Only Convolve if x has moved by the specified Strides
+                    if x % strides == 0:
+                        output[x, y] = (kernel * imagePadded[x: x + xKernShape, y: y + yKernShape]).sum()
+                except:
+                    break
+
+    return output
 
 
 ############################################################
@@ -406,8 +488,8 @@ def makeKing2D(cc, rc, mag, zeropoint, exptime, pixel_size):
 
     # get stamp size: we require that the galaxy is in the exact center of the matrix. Therefore we set even size always.
 
-    # Size: 10 times of truncation radius + 2 pixel as a border
-    Size = int(10 * round(trunc_radius / float(pixel_size))) + 2
+    # Size: 5 times of truncation radius + 50 pixel as a border
+    Size = int(5 * round(trunc_radius / float(pixel_size))) + 50
     # make even
     if (Size % 2) != 0:
         Size = Size + 1
@@ -463,6 +545,10 @@ def makeKing2D(cc, rc, mag, zeropoint, exptime, pixel_size):
     file_name = os.path.join('output', 'king.fits')
     hdu.writeto(file_name, overwrite=True)
     '''
+
+    # correct for missing light:
+    #stamp = stamp * (1./np.sum(stamp))
+
     return stamp
 
 ############################################################
