@@ -28,6 +28,17 @@ from astropy.visualization import *
 from modules.pipeline_functions import *
 from modules.initialize import *
 
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKCYAN = '\033[96m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
 
 def fit_galaxy_sersic_all_filters(gal_id):
 
@@ -189,7 +200,7 @@ def cut(fitsfile, ra, dec, radius_pix, objectname='none', filtername='none',  ba
 
 ############################################################
 
-def mask_stars (frame, weight_frame, ra, dec, objname, filtername, zp, q=1, pa=0, blurred=0, label='') :
+def mask_stars (frame, weight_frame, ra, dec, objname, filtername, zp, q=1, pa=0, blurred=0, label='', type='LSB') :
     #frame = main_data
     #print ('+++ Making mask frame for '+frame)
     X = get_header(frame,keyword='NAXIS1')
@@ -286,12 +297,21 @@ def mask_stars (frame, weight_frame, ra, dec, objname, filtername, zp, q=1, pa=0
     img2[0].data = (data2)
     img2.writeto(fit_dir+objname+'_'+filtername+'_masked.fits',overwrite=True)
 
-    median_filter_data = abs(median_filter_array(data,fsize=7))
-    sigma_data = sqrt(1./weight_data+0*median_filter_data/GAIN[filtername])
-    where_are_NaNs = isnan(sigma_data)
-    sigma_data[where_are_NaNs] = 10e+8
-    weight[0].data = (sigma_data)
-    weight.writeto(fit_dir+objname+'_'+filtername+'.sigma.fits',overwrite=True)
+    if type == 'LSB':
+        median_filter_data = abs(median_filter_array(data,fsize=7))
+        sigma_data = sqrt(1./weight_data+0*median_filter_data/GAIN[filtername])
+        where_are_NaNs = isnan(sigma_data)
+        sigma_data[where_are_NaNs] = 10e+8
+        weight[0].data = (sigma_data)
+        weight.writeto(fit_dir+objname+'_'+filtername+'.sigma.fits',overwrite=True)
+
+    else:
+        median_filter_data = abs(median_filter_array(data,fsize=7))
+        sigma_data = sqrt(1./weight_data+1*median_filter_data/GAIN[filtername])
+        where_are_NaNs = isnan(sigma_data)
+        sigma_data[where_are_NaNs] = 10e+8
+        weight[0].data = (sigma_data)
+        weight.writeto(fit_dir+objname+'_'+filtername+'.sigma.fits',overwrite=True)
 
     mask = 1 - data2
     data = data * mask
@@ -755,7 +775,11 @@ def fit_galaxy_sersic(main_data,weight_data,ra,dec,obj_name,filter_name,pix_size
     back_average, back_std = estimate_frame_back(cropped_frame, obj_name, filter_name)
 
     print ('- masking ')
-    mask_frame, masked_frame, check_frame, sigma_frame = mask_stars(cropped_frame, weight_frame, ra, dec, obj_name, filter_name, zp)
+    if 'LSB' in comments:
+        fit_type = 'LSB'
+    else:
+        fit_type = 'Normal'
+    mask_frame, masked_frame, check_frame, sigma_frame = mask_stars(cropped_frame, weight_frame, ra, dec, obj_name, filter_name, zp, type=fit_type)
     #sigma_frame='None'
 
     print ('- fitting ')

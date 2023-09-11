@@ -36,7 +36,10 @@ def estimate_aper_corr(gal_id):
             #aper_size_pixel = aper_size_arcsec/PIXEL_SCALES[fn]
             psf_fits_file = fits.open(psf_file)
             psf_data = psf_fits_file[0].data
-            psf_pixel_scale = psf_fits_file[0].header['PIXELSCL']
+            try :
+                psf_pixel_scale = psf_fits_file[0].header['PIXELSCL']
+            except :
+                psf_pixel_scale = PSF_PIXEL_SCALE
             X = float(psf_fits_file[0].header['NAXIS1'])
             Y = float(psf_fits_file[0].header['NAXIS2'])
             aper_size_pixel = aper_size_arcsec/psf_pixel_scale
@@ -63,7 +66,10 @@ def estimate_fwhm(gal_id):
         if os.path.exists(psf_file):
             psf_fits_file = fits.open(psf_file)
             psf_data = psf_fits_file[0].data
-            psf_pixel_scale = psf_fits_file[0].header['PIXELSCL']
+            try :
+                psf_pixel_scale = psf_fits_file[0].header['PIXELSCL']
+            except :
+                psf_pixel_scale = PSF_PIXEL_SCALE
             X = float(psf_fits_file[0].header['NAXIS1'])
             Y = float(psf_fits_file[0].header['NAXIS2'])
             (FWHM_x, FWHM_y) = getFWHM_GaussianFitScaledAmp(psf_data)
@@ -281,11 +287,16 @@ def simualte_GCs(gal_id,n):
         GC_MAG_FILTER = []
 
         psf_fits_file = fits.open(psf_file)
-        psf_pixel_scale = psf_fits_file[0].header['PIXELSCL']
+
+        try :
+            psf_pixel_scale = psf_fits_file[0].header['PIXELSCL']
+        except :
+            psf_pixel_scale = PSF_PIXEL_SCALE
         X_psf = float(psf_fits_file[0].header['NAXIS1'])
         Y_psf = float(psf_fits_file[0].header['NAXIS2'])
 
         RATIO_OVERSAMPLE_PSF = int(PIXEL_SCALES[fn]/psf_pixel_scale+0.5)
+        #print (RATIO_OVERSAMPLE_PSF)
 
         shutil.copy(science_frame,art_dir+'temp.fits')
         temp = fits.open(art_dir+'temp.fits')
@@ -385,7 +396,7 @@ def simulate_GC(mag,size_arcsec,zp,pix_size,exptime,psf_file,gc_file):
     # Rc itself contains about 20% of the light (i.e 40% of the light within the half-light radius).
     #print (mag,size_arcsec,zp,pixel_size)
     #rh/rc ~ 2.5
-    stamp = makeKing2D(1, size_arcsec/2.5, mag, zp, 1, pix_size)
+    stamp = makeKing2D(1.4, size_arcsec/2.5, mag, zp, 1, pix_size)
     n = np.arange(100.0)
     hdu = fits.PrimaryHDU(n)
     hdul = fits.HDUList([hdu])
@@ -397,6 +408,7 @@ def simulate_GC(mag,size_arcsec,zp,pix_size,exptime,psf_file,gc_file):
     # convolving with psf
     psf_fits_file = fits.open(psf_file)
     psf_data = psf_fits_file[0].data
+    #print (np.sum(psf_data))
     psf_data = psf_data/np.sum(psf_data)
     stamp = signal.convolve2d(stamp, psf_data, boundary='symm', mode='same')
     #stamp = convolve2D(stamp, psf_data)
@@ -436,6 +448,8 @@ def makeKing2D(cc, rc, mag, zeropoint, exptime, pixel_size):
 
     :return:
     '''
+    resample_factor = 5
+    pixel_size =  pixel_size/resample_factor
     # Calculate truncation radius in arcsec
     trunc_radius = rc * (10 ** (cc))  # arcsec
     # print(trunc_radius)
@@ -443,7 +457,7 @@ def makeKing2D(cc, rc, mag, zeropoint, exptime, pixel_size):
     # get stamp size: we require that the galaxy is in the exact center of the matrix. Therefore we set even size always.
 
     # Size: 5 times of truncation radius + 50 pixel as a border
-    Size = int(5 * round(trunc_radius / float(pixel_size))) + 50
+    Size = int(int(5 * round(trunc_radius / float(pixel_size))) + 50)
     # make even
     if (Size % 2) != 0:
         Size = Size + 1
@@ -500,10 +514,22 @@ def makeKing2D(cc, rc, mag, zeropoint, exptime, pixel_size):
     hdu.writeto(file_name, overwrite=True)
     '''
 
-    # correct for missing light:
-    #stamp = stamp * (1./np.sum(stamp))
+    s = int(Size/resample_factor)
+    #print (Size, s)
+    stamp0 = np.zeros((s,s))
 
-    return stamp
+    for i in range(0, s):
+        for j in range(0, s):
+            pixel_values = stamp[i*resample_factor:i*resample_factor+resample_factor,\
+                j*resample_factor:j*resample_factor+resample_factor]
+            flux = np.sum(pixel_values)
+            stamp0[i, j] = flux
+
+    #print ('ratio check:')
+    #print (np.sum(stamp)/totalflux)
+    #print (np.sum(stamp0)/totalflux)
+
+    return stamp0
 
 ############################################################
 

@@ -154,7 +154,10 @@ def get_pixel_scale(fitsfile):
 
 def get_gain(fitsfile):
     header = get_fits_header(fitsfile)
-    gain = header['CCDGAIN']
+    try:
+        gain = header['CCDGAIN']
+    except:
+        gain = header['GAIN']
     return gain
 
 ############################################################

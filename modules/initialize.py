@@ -11,7 +11,7 @@ def initialize_params() :
     # Configuring the pipeline parameters
     global PRIMARY_FRAME_SIZE_ARCSEC, FRAME_SIZE_ARCSEC, GAL_FRAME_SIZE_ARCSEC, N_ART_GCS, N_SIM_GCS, PSF_IMAGE_SIZE, INSTR_FOV, COSMIC_CLEAN, \
     PHOTOM_APERS, FWHMS_ARCSEC, APERTURE_SIZE, PSF_REF_RAD_FRAC, BACKGROUND_ANNULUS_START, BACKGROUND_ANNULUS_TICKNESS, TARGETS, APERTURE_SIZE, \
-    MAG_LIMIT_CAT, CROSS_MATCH_RADIUS_ARCSEC, GC_SIZE_RANGE, GC_MAG_RANGE, RATIO_OVERSAMPLE_PSF, \
+    MAG_LIMIT_CAT, CROSS_MATCH_RADIUS_ARCSEC, GC_SIZE_RANGE, GC_MAG_RANGE, RATIO_OVERSAMPLE_PSF, PSF_PIXEL_SCALE, \
     PIXEL_SCALES, ZPS, PRIMARY_FRAME_SIZE, FRAME_SIZE, GAL_FRAME_SIZE, EXPTIME, GAIN, GC_REF_MAG, \
     SE_executable,galfit_executable,swarp_executable
 
@@ -21,6 +21,8 @@ def initialize_params() :
 
     WORKING_DIR = '/data/users/saifollahi/Euclid/ERO/'
     FRAME_SIZE_ARCSEC = 240 #cut-out size from the original frame for the general anlaysis (arcsec)
+    #FRAME_SIZE_ARCSEC = 720
+    GAL_FRAME_SIZE_ARCSEC  = 240 #cut-out size from the original frame for sersic fitting anlaysis (arcsec)
 
     # List of targets as a string with:
     # Object-ID Object name RA Dec Distance-in-Mpc List-of-filters comment
@@ -31,6 +33,9 @@ def initialize_params() :
     TARGETS = ['1 MATLAS2019 226.33460 +01.81282 25 F814W,F606W LSB,nN']
     #TARGETS = ['2 DWARF-MER-SIM 269.06658 +65.00640 20 VIS LSB,N']
     GC_REF_MAG = {'F814W':-8,'F606W':-7.5}
+
+    #TARGETS = ['1 EUC-SIM1 231.50075 +30.45227 20 VIS E,N']
+    #GC_REF_MAG = {'VIS':-8}
 
     # defining the executables (what you type in the command-line that executes the program)
     SE_executable = 'sex'
@@ -64,7 +69,6 @@ def initialize_params() :
     galfit_executable = external_dir+'galfit'
 
     PRIMARY_FRAME_SIZE_ARCSEC = 1*FRAME_SIZE_ARCSEC #arcsec
-    GAL_FRAME_SIZE_ARCSEC  = 1*FRAME_SIZE_ARCSEC #cut-out size from the original frame for sersic fitting anlaysis (arcsec)
     PHOTOM_APERS = '2,4,8,16,24,32' #aperture-sizes (diameters) in pixels for aperture photometry with Sextractor
     BACKGROUND_ANNULUS_START = 3 #The size of background annulus for forced photoemtry as a factor of FWHM
     BACKGROUND_ANNULUS_TICKNESS = 20 # the thickness of the background annulus in pixels
@@ -77,6 +81,7 @@ def initialize_params() :
     GC_SIZE_RANGE = [0.5,6] #lower value should be small enough to make some point-sources for performance check
     GC_MAG_RANGE = [-10,-5]
     #RATIO_OVERSAMPLE_PSF = 5
+    PSF_PIXEL_SCALE = 0.03333 #if 'PIXELSCL' is not in the header, specify it here.
 
     for dir in [working_directory,input_dir,output_dir,data_dir,main_data_dir,clean_data_dir,img_dir,sex_dir,fit_dir,plots_dir,\
     detection_dir,cats_dir,psfs_dir,art_dir,final_cats_dir,temp_dir,sbf_dir,psf_dir,check_plots_dir] :
