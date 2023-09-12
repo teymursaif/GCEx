@@ -405,7 +405,7 @@ def simulate_GC(mag,size_arcsec,zp,pix_size,exptime,psf_file,gc_file):
     hdul = fits.HDUList([hdu])
     #hdul[0].header = header
     hdul[0].data = stamp
-    hdul.writeto(gc_file+'.temp.fits', overwrite=True)
+    hdul.writeto(gc_file+'.king.fits', overwrite=True)
     #print ('king', np.sum(stamp))
 
     # convolving with psf
@@ -417,7 +417,11 @@ def simulate_GC(mag,size_arcsec,zp,pix_size,exptime,psf_file,gc_file):
     #stamp = convolve2D(stamp, psf_data)
     #print ('king+psf', np.sum(stamp))
 
-    stamp_noisy = stamp + np.random.normal(0,np.sqrt(stamp)/np.sqrt(exptime)/RATIO_OVERSAMPLE_PSF)
+    noise = np.random.normal(0,np.sqrt(stamp)/np.sqrt(exptime)/RATIO_OVERSAMPLE_PSF)
+    stamp_noisy = stamp + noise
+    hdul[0].data = stamp_noisy
+    hdul.writeto(gc_file+'.noise.fits', overwrite=True)
+    #print (stamp-stamp_noisy)
     stamp = stamp_noisy
     #print ('king+psf+noise', np.sum(stamp))
 
