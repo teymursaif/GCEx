@@ -292,9 +292,12 @@ def simualte_GCs(gal_id,n):
             psf_pixel_scale = psf_fits_file[0].header['PIXELSCL']
         except :
             psf_pixel_scale = PSF_PIXEL_SCALE
+
+        global X_psf, Y_psf
         X_psf = float(psf_fits_file[0].header['NAXIS1'])
         Y_psf = float(psf_fits_file[0].header['NAXIS2'])
 
+        global RATIO_OVERSAMPLE_PSF 
         RATIO_OVERSAMPLE_PSF = int(PIXEL_SCALES[fn]/psf_pixel_scale+0.5)
         #print (RATIO_OVERSAMPLE_PSF)
 
@@ -414,10 +417,8 @@ def simulate_GC(mag,size_arcsec,zp,pix_size,exptime,psf_file,gc_file):
     #stamp = convolve2D(stamp, psf_data)
     #print ('king+psf', np.sum(stamp))
 
-    vals = len(np.unique(abs(stamp)*exptime))
-    vals = 2 ** np.ceil(np.log2(vals))
-    noisy = np.random.poisson(abs(stamp)*exptime*vals) / float(vals)
-    stamp = noisy/exptime
+    stamp_noisy = stamp + np.random.normal(0,np.sqrt(stamp)/np.sqrt(exptime)/RATIO_OVERSAMPLE_PSF)
+    stamp = stamp_noisy
     #print ('king+psf+noise', np.sum(stamp))
 
     n = np.arange(100.0)
@@ -427,6 +428,8 @@ def simulate_GC(mag,size_arcsec,zp,pix_size,exptime,psf_file,gc_file):
     hdul[0].data = stamp
     hdul.writeto(gc_file, overwrite=True)
     #return 0
+    if len(stamp[stamp>0]) == 0:
+        print ('*** Warning: the output frame of the simulated GC looks blank.')
 
 ############################################################
 
@@ -448,8 +451,8 @@ def makeKing2D(cc, rc, mag, zeropoint, exptime, pixel_size):
 
     :return:
     '''
-    resample_factor = 5
-    pixel_size =  pixel_size/resample_factor
+    resample_factor = 3 #integer value
+    pixel_size =  (pixel_size/float(resample_factor))
     # Calculate truncation radius in arcsec
     trunc_radius = rc * (10 ** (cc))  # arcsec
     # print(trunc_radius)
@@ -457,7 +460,10 @@ def makeKing2D(cc, rc, mag, zeropoint, exptime, pixel_size):
     # get stamp size: we require that the galaxy is in the exact center of the matrix. Therefore we set even size always.
 
     # Size: 5 times of truncation radius + 50 pixel as a border
-    Size = int(int(5 * round(trunc_radius / float(pixel_size))) + 50)
+    Size = int(int(5 * round(trunc_radius / float(pixel_size))) + 50*resample_factor)
+    print (Size, X_psf)
+    #if Size < X_psf:
+    #    Size = int(X_psf)
     # make even
     if (Size % 2) != 0:
         Size = Size + 1
@@ -530,6 +536,15 @@ def makeKing2D(cc, rc, mag, zeropoint, exptime, pixel_size):
     #print (np.sum(stamp0)/totalflux)
 
     return stamp0
+
+############################################################
+
+def select_GC_candidates(gal_id):
+    gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
+    #source_cat = 
+    #source_cat_with_art = 
+    
+
 
 ############################################################
 

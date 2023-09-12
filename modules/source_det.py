@@ -18,7 +18,7 @@ import photutils
 from photutils.aperture import CircularAperture
 from photutils.aperture import CircularAnnulus
 from photutils.centroids import centroid_1dg, centroid_2dg, centroid_com, centroid_quadratic
-from photutils.utils import CutoutImage
+#from photutils.utils import CutoutImage
 import time as TIME
 from modules.initialize import *
 from modules.pipeline_functions import *
@@ -50,7 +50,7 @@ def prepare_sex_cat(source_cat_name_input,source_cat_name_output,gal_name,filter
     #print (len(sex_cat_data))
     mask = ((sex_cat_data['FLAGS'] < 4) & \
     (sex_cat_data ['ELLIPTICITY'] < 1) & \
-    (sex_cat_data ['MAG_AUTO'] > 20) & \
+    (sex_cat_data ['MAG_AUTO'] > 10) & \
     (sex_cat_data ['MAG_AUTO'] < MAG_LIMIT_CAT) & \
     (sex_cat_data ['FWHM_IMAGE'] < 999) & \
     (sex_cat_data ['FWHM_IMAGE'] > 1) )
@@ -92,7 +92,7 @@ def prepare_sex_cat(source_cat_name_input,source_cat_name_output,gal_name,filter
     Re = fwhm_int/2
     expand_fits_table(source_cat_name_output,'FWHM_INT',fwhm_int)
     expand_fits_table(source_cat_name_output,'Re_arcsec',Re)
-    expand_fits_table(source_cat_name_output,'Re_pc',Re*distance*0.206265)
+    expand_fits_table(source_cat_name_output,'Re_pc',Re*distance/0.206265)
 
     for a in range(len(apertures)-1):
         expand_fits_table(source_cat_name_output,'MAG_APER_'+str(apertures[a+1]),mag_apers[:,a+1])
@@ -357,6 +357,7 @@ def crossmatch(cat1,cat2,ra_param1,dec_param1,ra_param2,dec_param2,max_sep_arcse
     ra1 = cat1_data[ra_param1]
     dec1 = cat1_data[dec_param1]
 
+
     cat = fits.open(cat2, ignore_missing_end=True)
     cat2_data = cat[1].data
     ra2 = cat2_data[ra_param2]
@@ -376,6 +377,7 @@ def crossmatch(cat1,cat2,ra_param1,dec_param1,ra_param2,dec_param2,max_sep_arcse
     t1 = Table.read(temp_dir+'temp1.fits',format='fits')
     t2 = Table.read(temp_dir+'temp2.fits',format='fits')
     t12 = table.join(t1, t2, keys='JOIN_ID_'+filter_name2)
+    print (t12)
     t12.write(output_cat,overwrite=True)
     #print(t12)
 
@@ -621,6 +623,7 @@ def make_source_cat_for_sim(gal_id):
     gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
     global data_dir
     data_dir = art_dir
+    tables = []
 
     for n in range(N_SIM_GCS) :
 
@@ -631,8 +634,22 @@ def make_source_cat_for_sim(gal_id):
         make_source_cat(gal_id)
         make_multiwavelength_cat(gal_id, mode='forced-photometry')
 
+        fn_det = filters[0]
+        art_cat_name_csv = art_dir+gal_name_orig+'_'+fn_det+'_ART'+str(n)+'_'+str(N_ART_GCS)+'GCs.full_info.csv'
+        art_cat_name = art_dir+gal_name_orig+'_'+fn_det+'_ART'+str(n)+'_'+str(N_ART_GCS)+'GCs.full_info.fits'
+        os.system('rm '+art_cat_name)
+        csv_to_fits(art_cat_name_csv,art_cat_name)
+
+        source_cat_with_art = cats_dir+gal_name+'_master_cat_forced.fits'
+        crossmatch(art_cat_name,source_cat_with_art,'RA','DEC','RA','DEC',2.*PIXEL_SCALES[fn_det],fn_det,\
+            art_dir+'temp'+str(n)+'.fits')
+        tables.append(art_dir+'temp'+str(n)+'.fits')
+
         (gal_params[gal_id])[0] = gal_name_orig
         gal_name = gal_name_orig
+    
+
+    attach_sex_tables(tables,art_dir+gal_name+'_'+fn_det+'_ALL_ART_GCs.fits')
 
     data_dir = data_dir_orig
     #print (data_dir)

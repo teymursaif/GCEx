@@ -494,4 +494,66 @@ def update_header(fits_file_name, header_keyword, value):
     fits_file[0].header[header_keyword] = value
     fits_file.writeto(fits_file_name, overwrite=True)
 
+############################################################
+
+def csv_to_fits(input_csv,output_fits):
+    """
+    csv-to-fits.py  INPUT.csv  OUTPUT.fits
+
+    Convert a CSV file to a FITS bintable
+
+    - In the first line of the CSV are described names of columns.
+        - A column named "id" is treated as 64bit integer.
+        - A column named "starnotgal" is treated as boolean (0/1).
+        - Columns named "ra" and "dec" are treated as double precision float.
+        - Other columns are treated as single precision float.
+    """
+
+    recarray = loadCsvAsNumpy(input_csv)
+    bintable = convertNumpyToFitsBinTable(recarray)
+    saveFitsBinTable(bintable, output_fits)
+
+
+def loadCsvAsNumpy(filename):
+    dtypes = {
+        "id" : np.int64,
+        "starnotgal" : np.bool_,
+        "RA" : np.float64,
+        "DEC" : np.float64,
+    }
+
+    def nameFilter(name):
+        uname = name.upper()
+        if uname == "RA" or uname == "DEC":
+            return uname
+        elif uname == "RA_ERR":
+            return "RA_err"
+        elif uname == "DEC_ERR":
+            return "DEC_err"
+        elif uname == "ID" or uname == "STARNOTGAL":
+            return name.lower()
+        else:
+            return name
+
+    with open(filename) as f:
+        headers = map(nameFilter, f.readline().strip().split(','))
+
+    dtype = [ (name, dtypes[name] if name in dtypes else np.float32)
+        for name in headers ]
+
+    return np.loadtxt(filename,
+        dtype = dtype, delimiter = ',', skiprows = 1)
+
+
+def convertNumpyToFitsBinTable(recarray):
+    return fits.FITS_rec.from_columns(fits.ColDefs(recarray))
+
+
+def saveFitsBinTable(bintable, filename):
+    primaryHDU = fits.PrimaryHDU()
+    binTableHDU = fits.BinTableHDU(bintable)
+    fits.HDUList([primaryHDU, binTableHDU]).writeto(filename)
+
+############################################################
+
 get_data_info(gal_id)
