@@ -19,10 +19,10 @@ def initialize_params() :
     ##### PARAMETERS THAT USER NEEDS TO CONFIGURE
 
 
-    WORKING_DIR = './'
-    #FRAME_SIZE_ARCSEC = 240 #cut-out size from the original frame for the general anlaysis (arcsec)
-    FRAME_SIZE_ARCSEC = 720
+    WORKING_DIR = '/data/users/saifollahi/Euclid/ERO/'
+    FRAME_SIZE_ARCSEC = 240 #cut-out size from the original frame for the general anlaysis (arcsec)
     GAL_FRAME_SIZE_ARCSEC  = 240 #cut-out size from the original frame for sersic fitting anlaysis (arcsec)
+    #FRAME_SIZE_ARCSEC = 720
 
     # List of targets as a string with:
     # Object-ID Object name RA Dec Distance-in-Mpc List-of-filters comment
@@ -31,16 +31,18 @@ def initialize_params() :
     # (lines with # in the beginning will be skipped)
     # example: '1 DF44 195.2416667 +26.9763889 100 F814W,F475W,F606W'
     
-    ## TARGETS = ['1 MATLAS2019 226.33460 +01.81282 25 F814W,F606W LSB,nN']
-    #TARGETS = ['2 DWARF-MER-SIM 269.06658 +65.00640 20 VIS LSB,N']
-    ## GC_REF_MAG = {'F814W':-8,'F606W':-7.5}
+    TARGETS = ['1 MATLAS2019 226.33460 +01.81282 25 F814W,F606W LSB,nN']
+    GC_REF_MAG = {'F814W':-8,'F606W':-7.5}
 
-    TARGETS = ['1 EUC-SIM1 231.50075 +30.45227 20 VIS E,N']
-    GC_REF_MAG = {'VIS':-8}
+    #TARGETS = ['1 EUC-SIM1 231.50075 +30.45227 20 VIS E,N']
+    #TARGETS = ['2 DWARF-MER-SIM 269.06658 +65.00640 20 VIS LSB,N']
+    #GC_REF_MAG = {'VIS':-8}
 
     # defining the executables (what you type in the command-line that executes the program)
-    SE_executable = 'sextractor'
-    swarp_executable = 'SWarp'
+    SE_executable = 'sex'
+    swarp_executable = 'swarp'
+    #SE_executable = 'sextractor'
+    #swarp_executable = 'SWarp'
 
     ##################################################
     ### MORE ADVANCED PARAMETERS
@@ -70,16 +72,16 @@ def initialize_params() :
     galfit_executable = external_dir+'galfit'
 
     PRIMARY_FRAME_SIZE_ARCSEC = 1*FRAME_SIZE_ARCSEC #arcsec
-    PHOTOM_APERS = '2,4,8,16,24,32' #aperture-sizes (diameters) in pixels for aperture photometry with Sextractor
+    PHOTOM_APERS = '2,4,6,8,10,12,16,20,24,32' #aperture-sizes (diameters) in pixels for aperture photometry with Sextractor
     BACKGROUND_ANNULUS_START = 3 #The size of background annulus for forced photoemtry as a factor of FWHM
     BACKGROUND_ANNULUS_TICKNESS = 20 # the thickness of the background annulus in pixels
     CROSS_MATCH_RADIUS_ARCSEC = 0.25
     MAG_LIMIT_CAT = 26
     PSF_IMAGE_SIZE = 2 #radius in arcsec
-    N_ART_GCS = 50
-    N_SIM_GCS = 1
+    N_ART_GCS = 200
+    N_SIM_GCS = 3
     COSMIC_CLEAN = False
-    GC_SIZE_RANGE = [3.0,3.001] #lower value should be small enough to make some point-sources for performance check
+    GC_SIZE_RANGE = [1.,5.] #lower value should be small enough to make some point-sources for performance check
     GC_MAG_RANGE = [-10,-5]
     #RATIO_OVERSAMPLE_PSF = 5
     PSF_PIXEL_SCALE = 0.03333 #if 'PIXELSCL' is not in the header, specify it here.
