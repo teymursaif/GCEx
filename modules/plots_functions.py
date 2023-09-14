@@ -56,7 +56,7 @@ def assess_figures_GC_simulations(gal_id):
         ax[0][n_filter].scatter(mag_source_sim,mag_source_obs- mag_source_sim,s=20,color=colors[n_filter],alpha=0.5,marker='o',label='Detected Artificial GCs')
         #ax[0][n_filter].set_title(gal_name+', '+sfn)
         ax[0][n_filter].set_xlabel('$m_{'+sfn+',SIM} \ [mag]$')
-        ax[0][n_filter].set_ylabel('$m_{'+sfn+',AP} - m_{'+sfn_det+',SIM} \ [mag]$')
+        ax[0][n_filter].set_ylabel('$m_{'+sfn+',AP} - m_{'+sfn+',SIM} \ [mag]$')
         mag1 = GC_MAG_RANGE[0]+5*np.log10(distance*1e+5)-0.25+color(fn,fn_det)
         #mag2 = GC_MAG_RANGE[1]+5*np.log10(distance*1e+5)+0.25+color(fn,fn_det)
         mag2 =np.max(mag_source_obs)
