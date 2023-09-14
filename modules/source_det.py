@@ -52,7 +52,7 @@ def prepare_sex_cat(source_cat_name_input,source_cat_name_output,gal_name,filter
     (sex_cat_data ['ELLIPTICITY'] < 1) & \
     (sex_cat_data ['MAG_AUTO'] > 10) & \
     (sex_cat_data ['MAG_AUTO'] < MAG_LIMIT_CAT) & \
-    (sex_cat_data ['FWHM_IMAGE'] < 999) & \
+    (sex_cat_data ['FWHM_IMAGE'] < 0.5*FWHMS_ARCSEC[filter_name]/PIXEL_SCALES[filter_name]) & \
     (sex_cat_data ['FWHM_IMAGE'] > 1) )
     sex_cat_data = sex_cat_data[mask]
     #print (len(sex_cat_data))
