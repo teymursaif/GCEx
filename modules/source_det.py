@@ -527,16 +527,19 @@ def forced_photometry(det_cat, photom_frame, mask_frame, back_rms_frame, fn, out
 
         #print (np.shape(fits_data_cropped))
 
+        N_check = 0
         if (mag_det) < 22 and (mag_det > 18) :
-            fig, ax = plt.subplots(1, 3, figsize=(10,3))
-            ax[0].imshow(fits_data_cropped)
-            ax[1].imshow(error_data_cropped)
-            mask_data_bool_cropped_int = mask_data_bool_cropped
-            mask_data_bool_cropped_int[mask_data_bool_cropped_int==True]=1
-            mask_data_bool_cropped_int[mask_data_bool_cropped_int==False]=0
-            ax[2].imshow(mask_data_bool_cropped_int)
-            plt.savefig(check_plots_dir+'object_'+str(i)+'_'+fn+'.png')
-            plt.close()
+            N_check = N_check + 1
+            if N_check <= 10 :
+                fig, ax = plt.subplots(1, 3, figsize=(10,3))
+                ax[0].imshow(fits_data_cropped)
+                ax[1].imshow(error_data_cropped)
+                mask_data_bool_cropped_int = mask_data_bool_cropped
+                mask_data_bool_cropped_int[mask_data_bool_cropped_int==True]=1
+                mask_data_bool_cropped_int[mask_data_bool_cropped_int==False]=0
+                ax[2].imshow(mask_data_bool_cropped_int)
+                plt.savefig(check_plots_dir+'object_'+str(i)+'_'+fn+'.png')
+                plt.close()
 
         aper = CircularAperture((x, y), aper_size)
         sky_aper = CircularAnnulus((x, y), sky_aper_size_1, sky_aper_size_2)
@@ -624,6 +627,7 @@ def make_source_cat_for_sim(gal_id):
     global data_dir
     data_dir = art_dir
     tables = []
+    tables2 = []
 
     for n in range(N_SIM_GCS) :
 
@@ -644,12 +648,14 @@ def make_source_cat_for_sim(gal_id):
         crossmatch(art_cat_name,source_cat_with_art,'RA','DEC','RA','DEC',2.*PIXEL_SCALES[fn_det],fn_det,\
             art_dir+'temp'+str(n)+'.fits')
         tables.append(art_dir+'temp'+str(n)+'.fits')
+        tables2.append(art_cat_name)
 
         (gal_params[gal_id])[0] = gal_name_orig
         gal_name = gal_name_orig
     
 
-    attach_sex_tables(tables,art_dir+gal_name+'_'+fn_det+'_ALL_ART_GCs.fits')
+    attach_sex_tables(tables,art_dir+gal_name+'_'+fn_det+'_DET_ART_GCs.fits')
+    attach_sex_tables(tables2,art_dir+gal_name+'_'+fn_det+'_ALL_ART_GCs.fits')
 
     data_dir = data_dir_orig
     #print (data_dir)

@@ -84,7 +84,7 @@ def fit_galaxy_sersic_all_filters(gal_id):
         except Exception as error:
             # handle the exception
             print("An exception occurred:", error)
-            print ("*** Fitting failed.")
+            print (f"{bcolors.FAIL}*** Fitting failed."+ bcolors.ENDC)
             ra_, dec_, Re_, mag_, n_, PA_, q_ = -99, -99, -99, -99, -99, -99, -99
 
         Re_ = round(Re_, 2)

@@ -37,7 +37,7 @@ def estimate_aper_corr(gal_id):
             psf_fits_file = fits.open(psf_file)
             psf_data = psf_fits_file[0].data
             try :
-                psf_pixel_scale = psf_fits_file[0].header['PIXELSCL']
+                psf_pixel_scale = psf_fits_file[0].header['PIXELSCALE']
             except :
                 psf_pixel_scale = PSF_PIXEL_SCALE
             X = float(psf_fits_file[0].header['NAXIS1'])
@@ -67,7 +67,7 @@ def estimate_fwhm(gal_id):
             psf_fits_file = fits.open(psf_file)
             psf_data = psf_fits_file[0].data
             try :
-                psf_pixel_scale = psf_fits_file[0].header['PIXELSCL']
+                psf_pixel_scale = psf_fits_file[0].header['PIXELSCALE']
             except :
                 psf_pixel_scale = PSF_PIXEL_SCALE
             X = float(psf_fits_file[0].header['NAXIS1'])
@@ -187,8 +187,8 @@ def simualte_GCs(gal_id,n):
         #Y_random = Y_list.copy()
         #np.random.shuffle(X_random)
         #np.random.shuffle(Y_random)
-        X1_random = x_gal + np.random.normal(0,X/1,2000*N_ART_GCS)
-        Y1_random = y_gal + np.random.normal(0,Y/1,2000*N_ART_GCS)
+        X1_random = x_gal + np.random.normal(0,X/5,2000*N_ART_GCS)
+        Y1_random = y_gal + np.random.normal(0,Y/5,2000*N_ART_GCS)
         X2_random = x_gal + np.random.normal(0,X/10,2000*N_ART_GCS)
         Y2_random = y_gal + np.random.normal(0,Y/10,2000*N_ART_GCS)
         X3_random = x_gal + np.random.normal(0,X/20,500*N_ART_GCS)
@@ -289,7 +289,7 @@ def simualte_GCs(gal_id,n):
         psf_fits_file = fits.open(psf_file)
 
         try :
-            psf_pixel_scale = psf_fits_file[0].header['PIXELSCL']
+            psf_pixel_scale = psf_fits_file[0].header['PIXELSCALE']
         except :
             psf_pixel_scale = PSF_PIXEL_SCALE
 
@@ -417,8 +417,8 @@ def simulate_GC(mag,size_arcsec,zp,pix_size,exptime,psf_file,gc_file):
     #stamp = convolve2D(stamp, psf_data)
     #print ('king+psf', np.sum(stamp))
 
-    noise = np.random.normal(0,np.sqrt(stamp)/np.sqrt(exptime)/RATIO_OVERSAMPLE_PSF)
-    stamp_noisy = stamp + noise
+    stamp_noisy = np.random.normal(stamp*exptime,1*np.sqrt(stamp*exptime))#/RATIO_OVERSAMPLE_PSF)
+    stamp_noisy = stamp_noisy/exptime
     hdul[0].data = stamp_noisy
     hdul.writeto(gc_file+'.noise.fits', overwrite=True)
     #print (stamp-stamp_noisy)
@@ -433,7 +433,7 @@ def simulate_GC(mag,size_arcsec,zp,pix_size,exptime,psf_file,gc_file):
     hdul.writeto(gc_file, overwrite=True)
     #return 0
     if len(stamp[stamp>0]) == 0:
-        print ('*** Warning: the output frame of the simulated GC looks blank.')
+        print (f"{bcolors.WARNING}*** Warning: the output frame of the simulated GC looks blank."+ bcolors.ENDC)
 
 ############################################################
 
@@ -455,7 +455,11 @@ def makeKing2D(cc, rc, mag, zeropoint, exptime, pixel_size):
 
     :return:
     '''
-    resample_factor = 3 #integer value
+    if RATIO_OVERSAMPLE_PSF < 5:
+        resample_factor = 5./RATIO_OVERSAMPLE_PSF #integer value
+    else :
+        resample_factor = 1
+
     pixel_size =  (pixel_size/float(resample_factor))
     # Calculate truncation radius in arcsec
     trunc_radius = rc * (10 ** (cc))  # arcsec
@@ -537,7 +541,15 @@ def makeKing2D(cc, rc, mag, zeropoint, exptime, pixel_size):
 
     #print ('ratio check:')
     #print (np.sum(stamp)/totalflux)
-    #print (np.sum(stamp0)/totalflux)
+    
+    final_flux_ratio = (np.sum(stamp0)/totalflux)
+    if final_flux_ratio < 0.95:
+        print (f"{bcolors.WARNING}*** Warning: the simulated GCs are missing a fraction of the light larger than 5%."+ bcolors.ENDC)
+    elif final_flux_ratio < 0.98:
+        print (f"{bcolors.WARNING}*** Warning: the simulated GCs are missing a fraction of the light between 2% to 5%."+ bcolors.ENDC)
+    elif final_flux_ratio < 0.99:
+        print (f"{bcolors.WARNING}*** Warning: the simulated GCs are missing a fraction of the light between 1% to 2%."+ bcolors.ENDC)
+        
 
     return stamp0
 

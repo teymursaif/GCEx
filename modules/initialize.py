@@ -31,8 +31,8 @@ def initialize_params() :
     # (lines with # in the beginning will be skipped)
     # example: '1 DF44 195.2416667 +26.9763889 100 F814W,F475W,F606W'
     
-    TARGETS = ['1 MATLAS2019 226.33460 +01.81282 25 F814W,F606W LSB,nN']
-    GC_REF_MAG = {'F814W':-8,'F606W':-7.5}
+    TARGETS = ['1 MATLAS2019 226.33460 +01.81282 25 HST-ACS-F606W,HST-ACS-F814W LSB,nN']
+    GC_REF_MAG = {'HST-ACS-F606W':-7.5,'HST-ACS-F814W':-8.0}
 
     #TARGETS = ['1 EUC-SIM1 231.50075 +30.45227 20 VIS E,N']
     #TARGETS = ['2 DWARF-MER-SIM 269.06658 +65.00640 20 VIS LSB,N']
@@ -72,19 +72,19 @@ def initialize_params() :
     galfit_executable = external_dir+'galfit'
 
     PRIMARY_FRAME_SIZE_ARCSEC = 1*FRAME_SIZE_ARCSEC #arcsec
-    PHOTOM_APERS = '2,4,6,8,10,12,16,20,24,32' #aperture-sizes (diameters) in pixels for aperture photometry with Sextractor
+    PHOTOM_APERS = '2,4,8,12,16,20,24,32' #aperture-sizes (diameters) in pixels for aperture photometry with Sextractor
     BACKGROUND_ANNULUS_START = 3 #The size of background annulus for forced photoemtry as a factor of FWHM
     BACKGROUND_ANNULUS_TICKNESS = 20 # the thickness of the background annulus in pixels
     CROSS_MATCH_RADIUS_ARCSEC = 0.25
     MAG_LIMIT_CAT = 26
     PSF_IMAGE_SIZE = 2 #radius in arcsec
     N_ART_GCS = 200
-    N_SIM_GCS = 3
+    N_SIM_GCS = 1
     COSMIC_CLEAN = False
-    GC_SIZE_RANGE = [1.,5.] #lower value should be small enough to make some point-sources for performance check
+    GC_SIZE_RANGE = [1.,10.] #lower value should be small enough to make some point-sources for performance check
     GC_MAG_RANGE = [-10,-5]
     #RATIO_OVERSAMPLE_PSF = 5
-    PSF_PIXEL_SCALE = 0.03333 #if 'PIXELSCL' is not in the header, specify it here.
+    PSF_PIXEL_SCALE = 0.00625 #0.03333 #if 'PIXELSCL' is not in the header, specify it here.
 
     for dir in [working_directory,input_dir,output_dir,data_dir,main_data_dir,clean_data_dir,img_dir,sex_dir,fit_dir,plots_dir,\
     detection_dir,cats_dir,psfs_dir,art_dir,final_cats_dir,temp_dir,sbf_dir,psf_dir,check_plots_dir] :
