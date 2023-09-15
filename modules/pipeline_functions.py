@@ -171,7 +171,7 @@ def get_gain(fitsfile):
         except:
             gain = header['GAIN']
     except:
-        print (f"{bcolors.OKCYAN}*** no GAIN has been foudn in the header of the input data. Gain is set on 1.0."+ bcolors.ENDC)
+        print (f"{bcolors.WARNING}*** no GAIN has been found in the header of the input data. Gain is set on 1.0."+ bcolors.ENDC)
         gain = 1
     return gain
 
