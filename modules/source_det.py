@@ -47,13 +47,15 @@ def prepare_sex_cat(source_cat_name_input,source_cat_name_output,gal_name,filter
     main = fits.open(source_cat_name_input)
     sex_cat_data = main[1].data
     fn = filter_name
+    FWHM_limit = 0.75*FWHMS_ARCSEC[filter_name]/PIXEL_SCALES[filter_name]
+    #print (FWHM_limit)
     #print (len(sex_cat_data))
     mask = ((sex_cat_data['FLAGS'] < 4) & \
     (sex_cat_data ['ELLIPTICITY'] < 1) & \
     (sex_cat_data ['MAG_AUTO'] > 10) & \
     (sex_cat_data ['MAG_AUTO'] < MAG_LIMIT_CAT) & \
-    (sex_cat_data ['FWHM_IMAGE'] < 0.5*FWHMS_ARCSEC[filter_name]/PIXEL_SCALES[filter_name]) & \
-    (sex_cat_data ['FWHM_IMAGE'] > 1) )
+    (sex_cat_data ['FWHM_IMAGE'] < 999) & \
+    (sex_cat_data ['FWHM_IMAGE'] > FWHM_limit) )
     sex_cat_data = sex_cat_data[mask]
     #print (len(sex_cat_data))
     hdul = fits.BinTableHDU(data=sex_cat_data)
@@ -645,7 +647,7 @@ def make_source_cat_for_sim(gal_id):
         csv_to_fits(art_cat_name_csv,art_cat_name)
 
         source_cat_with_art = cats_dir+gal_name+'_master_cat_forced.fits'
-        crossmatch(art_cat_name,source_cat_with_art,'RA','DEC','RA','DEC',2.*PIXEL_SCALES[fn_det],fn_det,\
+        crossmatch(art_cat_name,source_cat_with_art,'RA_GC','DEC_GC','RA','DEC',2.*PIXEL_SCALES[fn_det],fn_det,\
             art_dir+'temp'+str(n)+'.fits')
         tables.append(art_dir+'temp'+str(n)+'.fits')
         tables2.append(art_cat_name)
@@ -654,7 +656,7 @@ def make_source_cat_for_sim(gal_id):
         gal_name = gal_name_orig
     
 
-    attach_sex_tables(tables,art_dir+gal_name+'_'+fn_det+'_DET_ART_GCs.fits')
+    attach_sex_tables(tables,art_dir+gal_name+'_'+fn_det+'_ALL_DET_ART_GCs.fits')
     attach_sex_tables(tables2,art_dir+gal_name+'_'+fn_det+'_ALL_ART_GCs.fits')
 
     data_dir = data_dir_orig

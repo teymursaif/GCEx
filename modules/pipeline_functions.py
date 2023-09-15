@@ -23,6 +23,17 @@ from fitsio import FITS
 from modules.initialize import *
 #from lacosmic import lacosmic
 
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKCYAN = '\033[96m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
 
 ############################################################
 
@@ -155,9 +166,13 @@ def get_pixel_scale(fitsfile):
 def get_gain(fitsfile):
     header = get_fits_header(fitsfile)
     try:
-        gain = header['CCDGAIN']
+        try:
+            gain = header['CCDGAIN']
+        except:
+            gain = header['GAIN']
     except:
-        gain = header['GAIN']
+        print (f"{bcolors.OKCYAN}*** no GAIN has been foudn in the header of the input data. Gain is set on 1.0."+ bcolors.ENDC)
+        gain = 1
     return gain
 
 ############################################################
@@ -486,6 +501,11 @@ def expand_fits_table(table,new_param,new_param_values) :
     fits = FITS(table,'rw')
     fits[-1].insert_column(name = new_param, data = new_param_values)
     fits.close()
+    #f = fits.open(table)
+    #values_to_add = new_param_values
+    #column = fits.Column(name=new_param, format="L", array=values_to_add)
+    #f[1].columns.add_col(column)
+    #f.writeto(table,overwrite=True)
 
 ############################################################
 

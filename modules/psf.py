@@ -13,6 +13,7 @@ from modules.initialize import *
 from modules.pipeline_functions import *
 import random
 from scipy import signal
+from scipy.ndimage import gaussian_filter
 
 class bcolors:
     HEADER = '\033[95m'
@@ -37,7 +38,7 @@ def estimate_aper_corr(gal_id):
             psf_fits_file = fits.open(psf_file)
             psf_data = psf_fits_file[0].data
             try :
-                psf_pixel_scale = psf_fits_file[0].header['PIXELSCALE']
+                psf_pixel_scale = psf_fits_file[0].header[PSF_PIXELSCL_KEY]
             except :
                 psf_pixel_scale = PSF_PIXEL_SCALE
             X = float(psf_fits_file[0].header['NAXIS1'])
@@ -67,7 +68,7 @@ def estimate_fwhm(gal_id):
             psf_fits_file = fits.open(psf_file)
             psf_data = psf_fits_file[0].data
             try :
-                psf_pixel_scale = psf_fits_file[0].header['PIXELSCALE']
+                psf_pixel_scale = psf_fits_file[0].header[PSF_PIXELSCL_KEY]
             except :
                 psf_pixel_scale = PSF_PIXEL_SCALE
             X = float(psf_fits_file[0].header['NAXIS1'])
@@ -154,10 +155,10 @@ def simualte_GCs(gal_id,n):
         coords = df
         print (df)
         #print (coords.values)
-        GC_X = list(coords['X'])
-        GC_Y = list(coords['Y'])
-        GC_RA = list(coords['RA'])
-        GC_DEC = list(coords['DEC'])
+        GC_X = list(coords['X_GC' ])
+        GC_Y = list(coords['Y_GC' ])
+        GC_RA = list(coords['RA_GC' ])
+        GC_DEC = list(coords['DEC_GC' ])
         GC_ABS_MAG = list(coords['GC_ABS_MAG'])
         GC_MAG = list(coords['GC_MAG'])
         GC_SIZE_ARCSEC = list(coords['GC_SIZE_ARCSEC'])
@@ -242,7 +243,7 @@ def simualte_GCs(gal_id,n):
         coords = np.array(coords)
         #print (coords)
         print ('+ Coordinates of the simulated GCs are:')
-        df = pd.DataFrame(coords, columns=['X','Y','RA','DEC','GC_ABS_MAG','GC_MAG','GC_SIZE_PC','GC_SIZE_ARCSEC'])
+        df = pd.DataFrame(coords, columns=['X_GC' ,'Y_GC' ,'RA_GC' ,'DEC_GC' ,'GC_ABS_MAG','GC_MAG','GC_SIZE_PC','GC_SIZE_ARCSEC'])
         df.to_csv(art_coords_cat_name, header=True, sep=',', index=False)
         print (df)
 
@@ -289,7 +290,7 @@ def simualte_GCs(gal_id,n):
         psf_fits_file = fits.open(psf_file)
 
         try :
-            psf_pixel_scale = psf_fits_file[0].header['PIXELSCALE']
+            psf_pixel_scale = psf_fits_file[0].header[PSF_PIXELSCL_KEY]
         except :
             psf_pixel_scale = PSF_PIXEL_SCALE
 
@@ -413,11 +414,15 @@ def simulate_GC(mag,size_arcsec,zp,pix_size,exptime,psf_file,gc_file):
     psf_data = psf_fits_file[0].data
     #print (np.sum(psf_data))
     psf_data = psf_data/np.sum(psf_data)
+    psf_data = gaussian_filter(psf_data,sigma=3.5)
     stamp = signal.convolve2d(stamp, psf_data, boundary='symm', mode='same')
     #stamp = convolve2D(stamp, psf_data)
     #print ('king+psf', np.sum(stamp))
+    hdul[0].data = stamp
+    hdul.writeto(gc_file+'.conv.fits', overwrite=True)
 
-    stamp_noisy = np.random.normal(stamp*exptime,1*np.sqrt(stamp*exptime))#/RATIO_OVERSAMPLE_PSF)
+    stamp_noisy = np.random.normal(stamp*exptime,1*np.sqrt(stamp*exptime))#/RATIO_OVERSAMPLE_PSF
+    #print (stamp_noisy[20,20],stamp[20,20]*exptime,stamp_noisy[20,20]-stamp[20,20]*exptime)
     stamp_noisy = stamp_noisy/exptime
     hdul[0].data = stamp_noisy
     hdul.writeto(gc_file+'.noise.fits', overwrite=True)
@@ -455,10 +460,8 @@ def makeKing2D(cc, rc, mag, zeropoint, exptime, pixel_size):
 
     :return:
     '''
-    if RATIO_OVERSAMPLE_PSF < 5:
-        resample_factor = 5./RATIO_OVERSAMPLE_PSF #integer value
-    else :
-        resample_factor = 1
+
+    resample_factor = 2
 
     pixel_size =  (pixel_size/float(resample_factor))
     # Calculate truncation radius in arcsec
@@ -467,9 +470,9 @@ def makeKing2D(cc, rc, mag, zeropoint, exptime, pixel_size):
 
     # get stamp size: we require that the galaxy is in the exact center of the matrix. Therefore we set even size always.
 
-    # Size: 5 times of truncation radius + 50 pixel as a border
-    Size = int(int(5 * round(trunc_radius / float(pixel_size))) + 50*resample_factor)
-    print (Size, X_psf)
+    # Size: 10 times of truncation radius + 50 pixel as a border
+    Size = int(int(2 * round(trunc_radius / float(pixel_size))) + 50*resample_factor)
+    #print (Size, X_psf)
     #if Size < X_psf:
     #    Size = int(X_psf)
     # make even
@@ -543,12 +546,15 @@ def makeKing2D(cc, rc, mag, zeropoint, exptime, pixel_size):
     #print (np.sum(stamp)/totalflux)
     
     final_flux_ratio = (np.sum(stamp0)/totalflux)
-    if final_flux_ratio < 0.95:
+    if final_flux_ratio < 0.50:
+        print (f"{bcolors.FAIL}*** Serious Warning: the simulated GCs are missing a fraction of the light larger than 50%. Something is wrong!"+ bcolors.ENDC)
+    elif final_flux_ratio < 0.95:
         print (f"{bcolors.WARNING}*** Warning: the simulated GCs are missing a fraction of the light larger than 5%."+ bcolors.ENDC)
     elif final_flux_ratio < 0.98:
         print (f"{bcolors.WARNING}*** Warning: the simulated GCs are missing a fraction of the light between 2% to 5%."+ bcolors.ENDC)
     elif final_flux_ratio < 0.99:
         print (f"{bcolors.WARNING}*** Warning: the simulated GCs are missing a fraction of the light between 1% to 2%."+ bcolors.ENDC)
+    #print (final_flux_ratio)
         
 
     return stamp0

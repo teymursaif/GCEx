@@ -44,14 +44,14 @@ There is already data on MATLAS-2019, a UDG known for its rich GC population. Af
 
 **Notes**
 
-The current version (August 2023) of the pipeline does the first two steps of the desired analysis (out of 4 steps which will be available in the next versions). These two steps are (GCpipeline.png):
+The current version (August 2023) of the pipeline does the first three steps of the desired analysis (out of 4 steps which will be available in the next versions). These two steps are (GCpipeline.png):
 
 1. Sersic modelling of the galaxy to estimate Sersic parameters of objects
-2. Source detection and photometry to make a source catalogue with photometry in all filters
+2. Source detection and photometry to make a source catalog with photometry in all filters
+3. Producing artificial GCs (at the distance of the galaxy and the given PSF) and measuring the completeness of source extractions
 
 The other steps (steps 3 and 4, to be developed) are:
 
-3. Producing artificial GCs (at the distance of the galaxy and the given PSF) and measuring the completeness of source extractions, as well as assessing the compactness index of GC
-4. Using compactness criteria based on simulations and identifying GCs in the data, apply colour selection, measuring their properties
+4. Assesing the compactness index and colours of those imulated GCs, and GC selection criteria based on that and identifying GCs in the data, producing GC catalogs
 
 ![Screenshot](https://raw.githubusercontent.com/teymursaif/GCTOOLS/main/gc_pipeline.png)
