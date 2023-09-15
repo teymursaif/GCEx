@@ -50,7 +50,7 @@ The current version (August 2023) of the pipeline does the first three steps of 
 2. Source detection and photometry to make a source catalog with photometry in all filters
 3. Producing artificial GCs (at the distance of the galaxy and the given PSF) and measuring the completeness of source extractions
 
-The other steps (steps 3 and 4, to be developed) are:
+The 4th step (to be developed) is:
 
 4. Assesing the compactness index and colours of those imulated GCs, and GC selection criteria based on that and identifying GCs in the data, producing GC catalogs
 
