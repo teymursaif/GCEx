@@ -461,7 +461,7 @@ def makeKing2D(cc, rc, mag, zeropoint, exptime, pixel_size):
     :return:
     '''
 
-    resample_factor = 2
+    resample_factor = 5
 
     pixel_size =  (pixel_size/float(resample_factor))
     # Calculate truncation radius in arcsec

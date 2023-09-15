@@ -31,17 +31,17 @@ def initialize_params() :
     # (lines with # in the beginning will be skipped)
     # example: '1 DF44 195.2416667 +26.9763889 100 F814W,F475W,F606W'
     
-    TARGETS = ['1 MATLAS2019 226.33460 +01.81282 25 HST-ACS-F606W,HST-ACS-F814W LSB,nN']
-    GC_REF_MAG = {'HST-ACS-F606W':-7.5,'HST-ACS-F814W':-8.0}
+    #TARGETS = ['1 MATLAS2019 226.33460 +01.81282 25 HST-ACS-F606W,HST-ACS-F814W LSB,nN']
+    #GC_REF_MAG = {'HST-ACS-F606W':-7.5,'HST-ACS-F814W':-8.0}
 
     #JWST
     #TARGETS = ['1 CEERS-LSB1 214.8588333333 +52.7629166667 80 F115W,F150W,F200W,F277W,F356W,F444W LSB,SF']
     #GC_REF_MAG = {'F115W':-8.0,'F150W':-8.0,'F200W':-8.0,'F277W':-8.0,'F356W':-8.0,'F444':-8.0}
 
     #Euclid
-    #TARGETS = ['1 EUC-SIM1 231.50075 +30.45227 20 VIS E,N']
+    TARGETS = ['1 EUC-SIM1 231.50075 +30.45227 20 VIS E,N']
     #TARGETS = ['2 DWARF-MER-SIM 269.06658 +65.00640 20 VIS LSB,N']
-    #GC_REF_MAG = {'VIS':-8}
+    GC_REF_MAG = {'VIS':-8}
 
     # defining the executables (what you type in the command-line that executes the program)
     SE_executable = 'sex'
@@ -89,7 +89,7 @@ def initialize_params() :
     GC_MAG_RANGE = [-10,-5]
     #RATIO_OVERSAMPLE_PSF = 5
     PSF_PIXELSCL_KEY = 'PIXELSCL0'
-    PSF_PIXEL_SCALE = 0.00625 #0.03333 #if 'PIXELSCL' is not in the header, specify it here.
+    PSF_PIXEL_SCALE = 0.03333 #if 'PIXELSCL' is not in the header, specify it here.
 
     for dir in [working_directory,input_dir,output_dir,data_dir,main_data_dir,clean_data_dir,img_dir,sex_dir,fit_dir,plots_dir,\
     detection_dir,cats_dir,psfs_dir,art_dir,final_cats_dir,temp_dir,sbf_dir,psf_dir,check_plots_dir] :
