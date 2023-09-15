@@ -44,7 +44,10 @@ def assess_figures_GC_simulations(gal_id):
 
     colors = ['red','green','cyan','blue','purple','black']
 
-    fig, ax = plt.subplots(4, len(filters), figsize=(6*len(filters),5*3), constrained_layout=True)
+    if len(filters)==1:
+        fig, ax = plt.subplots(4, len(filters)+1, figsize=(6*(len(filters)+1),5*3), constrained_layout=True)
+    else:
+        fig, ax = plt.subplots(4, len(filters)+1, figsize=(6*len(filters),5*3), constrained_layout=True)
 
     n_filter = -1
     for fn in filters:
@@ -59,9 +62,9 @@ def assess_figures_GC_simulations(gal_id):
         ax[0][n_filter].set_ylabel('$m_{'+sfn+', AP} - m_{'+sfn+', SIM} \ [mag]$')
         mag1 = GC_MAG_RANGE[0]+5*np.log10(distance*1e+5)-0.25+color(fn,fn_det)
         #mag2 = GC_MAG_RANGE[1]+5*np.log10(distance*1e+5)+0.25+color(fn,fn_det)
-        mag2 =np.max(mag_source_obs)
+        mag2 =np.nanmax(mag_source_obs)
         ax[0][n_filter].set_xlim([mag1,mag2])
-        ax[0][n_filter].set_ylim([-0.2,0.2])
+        ax[0][n_filter].set_ylim([-0.5,0.5])
         ax[0][n_filter].legend(loc='upper left')
         ax[0][n_filter].tick_params(which='both',direction='in')
 
@@ -74,7 +77,7 @@ def assess_figures_GC_simulations(gal_id):
         ax[1][n_filter].set_ylabel('$m_{'+sfn+', SE-AP} - m_{'+sfn_det+', FP-AP} \ [mag]$')
         mag1 = GC_MAG_RANGE[0]+5*np.log10(distance*1e+5)-0.25+color(fn,fn_det)
         #mag2 = GC_MAG_RANGE[1]+5*np.log10(distance*1e+5)+0.25+color(fn,fn_det)
-        mag2 =np.max(mag_source_obs)
+        mag2 =np.nanmax(mag_source_obs)
         ax[1][n_filter].set_xlim([mag1,mag2])
         ax[1][n_filter].set_ylim([color(fn,fn_det)-0.2,color(fn,fn_det)+0.2])
         ax[1][n_filter].legend(loc='upper left')
@@ -97,7 +100,8 @@ def assess_figures_GC_simulations(gal_id):
             ax[2][n_filter].set_xlim([mag1,mag2])
             fwhm1 = FWHMS_ARCSEC[fn]/PIXEL_SCALES[fn]*0.75 
             fwhm2 = FWHMS_ARCSEC[fn]/PIXEL_SCALES[fn]*1.5
-            ax[2][n_filter].set_ylim([fwhm1,fwhm2])
+            #ax[2][n_filter].set_ylim([fwhm1,fwhm2])
+            ax[2][n_filter].set_ylim([0,10])
             ax[2][n_filter].legend(loc='upper left')
             ax[2][n_filter].tick_params(which='both',direction='in')
 
@@ -148,8 +152,8 @@ def assess_figures_GC_simulations(gal_id):
             r_source_sim = r_source_sim[mag_source_sim<(np.nanmax(mag_source_obs))]
             r_source_obs = r_source_obs[mag_source_obs<(np.nanmax(mag_source_obs))]
 
-            ax[3][n_filter+1].hist(r_source_sim,bins=np.arange(0,np.max(r_source_sim),np.max(r_source_sim)/20),color='black',alpha=1,label='ALL simulated GCs')
-            ax[3][n_filter+1].hist(r_source_obs,bins=np.arange(0,np.max(r_source_sim),np.max(r_source_sim)/20),color=colors[n_filter],alpha=1,label='Detected simulated GCs')
+            ax[3][n_filter+1].hist(r_source_sim,bins=np.arange(0,np.nanmax(r_source_sim),np.nanmax(r_source_sim)/20),color='black',alpha=1,label='ALL simulated GCs')
+            ax[3][n_filter+1].hist(r_source_obs,bins=np.arange(0,np.nanmax(r_source_sim),np.nanmax(r_source_sim)/20),color=colors[n_filter],alpha=1,label='Detected simulated GCs')
             #mag1 = GC_MAG_RANGE[0]+5*np.log10(distance*1e+5)-0.25+color(fn,fn_det)
             #mag2 = GC_MAG_RANGE[1]+5*np.log10(distance*1e+5)+0.25+color(fn,fn_det)
             #ax[3][n_filter].set_xlim([mag1,mag2])

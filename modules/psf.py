@@ -414,7 +414,7 @@ def simulate_GC(mag,size_arcsec,zp,pix_size,exptime,psf_file,gc_file):
     psf_data = psf_fits_file[0].data
     #print (np.sum(psf_data))
     psf_data = psf_data/np.sum(psf_data)
-    psf_data = gaussian_filter(psf_data,sigma=3.5)
+    ####psf_data = gaussian_filter(psf_data,sigma=3.5)
     stamp = signal.convolve2d(stamp, psf_data, boundary='symm', mode='same')
     #stamp = convolve2D(stamp, psf_data)
     #print ('king+psf', np.sum(stamp))
