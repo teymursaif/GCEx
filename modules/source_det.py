@@ -355,11 +355,8 @@ def make_source_cat(gal_id):
         make_fancy_png(check_image_filtered,check_image_filtered+'.jpg',zoom=2)
         make_fancy_png(check_image_segm,check_image_segm+'.jpg',zoom=2)
 
-        try :
-            prepare_sex_cat(source_cat_name,source_cat_name_proc,gal_name,fn,distance)
-        except :
-            #shutil.copy(source_cat_name,source_cat_name_proc)
-            donothing = 1
+        prepare_sex_cat(source_cat_name,source_cat_name_proc,gal_name,fn,distance)
+
 
 ############################################################
 

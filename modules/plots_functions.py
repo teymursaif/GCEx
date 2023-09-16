@@ -47,7 +47,7 @@ def assess_GC_simulations(gal_id):
     if len(filters)==1:
         fig, ax = plt.subplots(4, len(filters)+1, figsize=(6*(len(filters)+1),5*3), constrained_layout=True)
     else:
-        fig, ax = plt.subplots(4, len(filters)+1, figsize=(6*len(filters),5*3), constrained_layout=True)
+        fig, ax = plt.subplots(4, len(filters), figsize=(6*len(filters),5*3), constrained_layout=True)
 
     n_filter = -1
     for fn in filters:
@@ -98,10 +98,10 @@ def assess_GC_simulations(gal_id):
             #mag2 = GC_MAG_RANGE[1]+5*np.log10(distance*1e+5)+0.25+color(fn,fn_det)
             mag2 = np.nanmax(param2)
             ax[2][n_filter].set_xlim([mag1,mag2])
-            fwhm1 = FWHMS_ARCSEC[fn]/PIXEL_SCALES[fn]*0.75 
-            fwhm2 = FWHMS_ARCSEC[fn]/PIXEL_SCALES[fn]*1.5
-            #ax[2][n_filter].set_ylim([fwhm1,fwhm2])
-            ax[2][n_filter].set_ylim([0,10])
+            fwhm1 = FWHMS_ARCSEC[fn]/PIXEL_SCALES[fn]*0.5 
+            fwhm2 = FWHMS_ARCSEC[fn]/PIXEL_SCALES[fn]*2.5
+            ax[2][n_filter].set_ylim([fwhm1,fwhm2])
+            #ax[2][n_filter].set_ylim([0,10])
             ax[2][n_filter].legend(loc='upper left')
             ax[2][n_filter].tick_params(which='both',direction='in')
 
