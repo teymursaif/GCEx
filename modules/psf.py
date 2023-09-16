@@ -417,13 +417,13 @@ def simulate_GC(mag,size_arcsec,zp,pix_size,exptime,psf_file,gc_file):
     #print (np.sum(psf_data))
     psf_data = psf_data/np.sum(psf_data)
     ####psf_data = gaussian_filter(psf_data,sigma=3.5)
-    stamp = signal.convolve2d(stamp, psf_data, boundary='symm', mode='same')
+    stamp = signal.convolve2d(stamp, psf_data, boundary='symm', mode='valid')
     #stamp = convolve2D(stamp, psf_data)
     #print ('king+psf', np.sum(stamp))
     hdul[0].data = stamp
     hdul.writeto(gc_file+'.conv.fits', overwrite=True)
 
-    stamp_noisy = np.random.normal(stamp*exptime,1*np.sqrt(stamp*exptime))#/RATIO_OVERSAMPLE_PSF
+    stamp_noisy = np.random.normal(stamp*exptime,1*np.sqrt(stamp*exptime)/RATIO_OVERSAMPLE_PSF)#/RATIO_OVERSAMPLE_PSF
     #print (stamp_noisy[20,20],stamp[20,20]*exptime,stamp_noisy[20,20]-stamp[20,20]*exptime)
     stamp_noisy = stamp_noisy/exptime
     hdul[0].data = stamp_noisy
@@ -464,20 +464,15 @@ def makeKing2D(cc, rc, mag, zeropoint, exptime, pixel_size):
     :return:
     '''
 
-    resample_factor = int(10./GC_SIZE_RANGE[0])
-    print ('- oversampling factor for the king profile is:',resample_factor)
-    #print (resample_factor)
-
-    pixel_size =  (pixel_size/float(resample_factor))
     # Calculate truncation radius in arcsec
     trunc_radius = rc * (10 ** (cc))  # arcsec
     # print(trunc_radius)
 
     # get stamp size: we require that the galaxy is in the exact center of the matrix. Therefore we set even size always.
 
-    # Size: 10 times of truncation radius + 50 pixel as a border
-    Size = int(int(2 * round(trunc_radius / float(pixel_size))) + 50*resample_factor)
-    #print (Size, X_psf)
+    # Size: 2 times of truncation radius + 50 pixel as a border
+    Size = int(int(1 * round(trunc_radius / float(pixel_size))) + 2)
+    
     #if Size < X_psf:
     #    Size = int(X_psf)
     # make even
@@ -486,7 +481,6 @@ def makeKing2D(cc, rc, mag, zeropoint, exptime, pixel_size):
 
     stamp = np.zeros((Size, Size))
 
-    # print(Size)
     # Exact center of the image
     # xc = (Size / 2.0 +0.5)*pixel_size
     # yc = (Size / 2.0 +0.5)*pixel_size
@@ -536,21 +530,8 @@ def makeKing2D(cc, rc, mag, zeropoint, exptime, pixel_size):
     hdu.writeto(file_name, overwrite=True)
     '''
 
-    s = int(Size/resample_factor)
-    #print (Size, s)
-    stamp0 = np.zeros((s,s))
+    final_flux_ratio = (np.sum(stamp)/totalflux)
 
-    for i in range(0, s):
-        for j in range(0, s):
-            pixel_values = stamp[i*resample_factor:i*resample_factor+resample_factor,\
-                j*resample_factor:j*resample_factor+resample_factor]
-            flux = np.sum(pixel_values)
-            stamp0[i, j] = flux
-
-    #print ('ratio check:')
-    #print (np.sum(stamp)/totalflux)
-    
-    final_flux_ratio = (np.sum(stamp0)/totalflux)
     if final_flux_ratio < 0.50:
         print (f"{bcolors.FAIL}*** Serious Warning: the simulated GCs are missing a fraction of the light larger than 50%. Something is wrong!"+ bcolors.ENDC)
     elif final_flux_ratio < 0.95:
@@ -559,10 +540,10 @@ def makeKing2D(cc, rc, mag, zeropoint, exptime, pixel_size):
         print (f"{bcolors.WARNING}*** Warning: the simulated GCs are missing a fraction of the light between 2% to 5%."+ bcolors.ENDC)
     elif final_flux_ratio < 0.99:
         print (f"{bcolors.WARNING}*** Warning: the simulated GCs are missing a fraction of the light between 1% to 2%."+ bcolors.ENDC)
+    
     #print (final_flux_ratio)
         
-
-    return stamp0
+    return stamp
     
 ############################################################
 
