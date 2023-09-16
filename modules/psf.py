@@ -603,6 +603,9 @@ def make_psf_for_frame(main_frame,weight_frame,source_cat,filtername,psf_frame):
     table_data = table_main[1].data
     sex_cat_data = table_data
     fn = filtername
+    zp = ZPS[fn]
+    gain = GAIN[fn]
+    pix_size = PIXEL_SCALES[fn]
 
     mask = ((sex_cat_data['FLAGS'] < 4) & \
     (sex_cat_data ['ELLIPTICITY'] < 0.1) & \
@@ -685,7 +688,8 @@ def make_psf_for_frame(main_frame,weight_frame,source_cat,filtername,psf_frame):
     #print (psf_median)
     PSF[0].data = psf_median
     PSF.writeto(psf_frame+'.oversampled.fits', overwrite=True)
-    psf_median = rebin(psf_median, (int(image_size), int(image_size)))
+    #psf_median = rebin(psf_median, (int(image_size), int(image_size)))
+    PSF[0].header['PIXELSCL'] = pix_size/RATIO_OVERSAMPLE_PSF
     PSF[0].data = psf_median
     PSF.writeto(psf_frame, overwrite=True)
 
