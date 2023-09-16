@@ -143,7 +143,7 @@ def welcome():
 
 ############################################################
 
-def end_message(gal_id):
+def finalize(gal_id):
     rm_keys = ['*.fits','*.log','galfit*','*.xml']
     for rm_key in rm_keys:
         os.system('rm '+rm_key)
