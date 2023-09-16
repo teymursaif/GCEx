@@ -40,6 +40,7 @@ class bcolors:
 def intro(gal_id):
     gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
     global main_filter, other_filters, n_other_filters
+    print (f"{bcolors.OKCYAN}- Analysis Started ... "+ bcolors.ENDC)
     print ('\n+ Analysing galaxy: '+str(gal_name))
     main_filter = str(filters[0])
     other_filters = filters[1:]
@@ -573,6 +574,7 @@ def saveFitsBinTable(bintable, filename):
     primaryHDU = fits.PrimaryHDU()
     binTableHDU = fits.BinTableHDU(bintable)
     fits.HDUList([primaryHDU, binTableHDU]).writeto(filename)
+
 
 ############################################################
 

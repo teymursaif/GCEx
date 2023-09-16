@@ -47,7 +47,10 @@ def prepare_sex_cat(source_cat_name_input,source_cat_name_output,gal_name,filter
     main = fits.open(source_cat_name_input)
     sex_cat_data = main[1].data
     fn = filter_name
-    FWHM_limit = 0.75*FWHMS_ARCSEC[filter_name]/PIXEL_SCALES[filter_name]
+    try:
+        FWHM_limit = 0.75*FWHMS_ARCSEC[filter_name]/PIXEL_SCALES[filter_name]
+    except:
+        FWHM_limit = 0.5
     #print (FWHM_limit)
     #print (len(sex_cat_data))
     mask = ((sex_cat_data['FLAGS'] < 4) & \
@@ -318,7 +321,11 @@ def make_source_cat(gal_id):
 
         weight_command = '-WEIGHT_TYPE  MAP_WEIGHT -WEIGHT_IMAGE '+weight_map+' -WEIGHT_THRESH 0.001'
 
-        psf_dia_ref_pixel = 2*(APERTURE_SIZE[fn])/PIXEL_SCALES[fn]
+        try :
+            psf_dia_ref_pixel = 2*(APERTURE_SIZE[fn])/PIXEL_SCALES[fn]
+        except:
+            psf_dia_ref_pixel = 1
+
         psf_dia_ref_pixel = int(psf_dia_ref_pixel*100+0.4999)/100
         apertures = (str(psf_dia_ref_pixel)+','+PHOTOM_APERS).split(',')
         n = len(apertures)
@@ -329,7 +336,7 @@ def make_source_cat(gal_id):
         params.write('FLUXERR_APER('+str(n)+') #RMS error for AUTO flux [count]\n')
         params.close()
 
-        # 2, 1, 1 for JWST
+        ####
         command = SE_executable+' '+detection_frame+','+frame+' -c '+external_dir+'default.sex -CATALOG_NAME '+source_cat_name+' '+ \
         '-PARAMETERS_NAME '+external_dir+'default.param -DETECT_MINAREA 4 -DETECT_THRESH 1.5 -ANALYSIS_THRESH 1.0 ' + \
         '-DEBLEND_NTHRESH 32 -DEBLEND_MINCONT 0.0001 ' + weight_command + ' -PHOT_APERTURES '+str(psf_dia_ref_pixel)+','+str(PHOTOM_APERS)+' -GAIN ' + str(gain) + ' ' \
@@ -348,7 +355,11 @@ def make_source_cat(gal_id):
         make_fancy_png(check_image_filtered,check_image_filtered+'.jpg',zoom=2)
         make_fancy_png(check_image_segm,check_image_segm+'.jpg',zoom=2)
 
-        prepare_sex_cat(source_cat_name,source_cat_name_proc,gal_name,fn,distance)
+        try :
+            prepare_sex_cat(source_cat_name,source_cat_name_proc,gal_name,fn,distance)
+        except :
+            #shutil.copy(source_cat_name,source_cat_name_proc)
+            donothing = 1
 
 ############################################################
 

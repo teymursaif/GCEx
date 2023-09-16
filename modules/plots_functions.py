@@ -27,7 +27,7 @@ class bcolors:
     UNDERLINE = '\033[4m'
     
 
-def assess_figures_GC_simulations(gal_id):
+def assess_GC_simulations(gal_id):
 
     print (f"{bcolors.OKCYAN}- Making assessment plots for source detection and gc simulations"+ bcolors.ENDC)
 

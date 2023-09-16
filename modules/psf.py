@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import scipy.optimize as opt
+import scipy
 from astropy.io import fits
 from astropy.wcs import WCS
 import photutils
@@ -11,6 +12,7 @@ from photutils.aperture import CircularAperture
 from photutils.aperture import CircularAnnulus
 from modules.initialize import *
 from modules.pipeline_functions import *
+from modules.source_det import *
 import random
 from scipy import signal
 from scipy.ndimage import gaussian_filter
@@ -450,6 +452,7 @@ def makeKing2D(cc, rc, mag, zeropoint, exptime, pixel_size):
     https://euclid.roe.ac.uk/issues/16801?issue_count=9&issue_position=8&next_issue_id=16182&prev_issue_id=16802
 
     A.nucita
+    (modified by Teymoor Saifollahi, September 2023)
 
     :param cc: truncation parameter
     :param rc: core radius in arcseconds
@@ -461,7 +464,9 @@ def makeKing2D(cc, rc, mag, zeropoint, exptime, pixel_size):
     :return:
     '''
 
-    resample_factor = 5
+    resample_factor = int(10./GC_SIZE_RANGE[0])
+    print ('- oversampling factor for the king profile is:',resample_factor)
+    #print (resample_factor)
 
     pixel_size =  (pixel_size/float(resample_factor))
     # Calculate truncation radius in arcsec
@@ -558,17 +563,146 @@ def makeKing2D(cc, rc, mag, zeropoint, exptime, pixel_size):
         
 
     return stamp0
-
-############################################################
-
-def select_GC_candidates(gal_id):
-    gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
-    #source_cat = 
-    #source_cat_with_art = 
     
+############################################################
 
+def make_psf_all_filters(gal_id):
+    print (f"{bcolors.OKCYAN}- Making PSF models for all the filters"+ bcolors.ENDC)
+    gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
+    
+    for fn in filters:
+        print ('- Making PSF for filter', fn)
+
+        zp = ZPS[fn]
+        gain = GAIN[fn]
+        pix_size = PIXEL_SCALES[fn]
+
+        main_frame = data_dir+gal_name+'_'+fn+'_gal_cropped.fits'
+        weight_frame = data_dir+gal_name+'_'+fn+'_gal_cropped.weight.fits'
+        source_cat = sex_dir+gal_name+'_'+fn+'_source_cat_for_psf_model.fits'
+        psf_frame = psfs_dir+'psf_'+fn+'.fits'
+
+        # run SE
+        command = SE_executable+' '+main_frame+' -c '+external_dir+'default.sex -CATALOG_NAME '+source_cat+' '+ \
+        '-PARAMETERS_NAME '+external_dir+'default.param -DETECT_MINAREA 8 -DETECT_THRESH 3.0 -ANALYSIS_THRESH 3.0 ' + \
+        '-DEBLEND_NTHRESH 1 -DEBLEND_MINCONT 1 -MAG_ZEROPOINT ' +str(zp) + ' -BACKPHOTO_TYPE GLOBAL '+\
+        '-FILTER Y -FILTER_NAME  '+external_dir+'tophat_1.5_3x3.conv -STARNNW_NAME '+external_dir+'default.nnw -PIXEL_SCALE ' + \
+        str(pix_size)+ ' -BACK_SIZE 128 -BACK_FILTERSIZE 3'
+  
+        os.system(command)
+
+        ###
+
+        make_psf_for_frame(main_frame,weight_frame,source_cat,fn,psf_frame)
 
 ############################################################
 
-estimate_fwhm(gal_id)
-estimate_aper_corr(gal_id)
+def make_psf_for_frame(main_frame,weight_frame,source_cat,filtername,psf_frame):
+
+    table_main = fits.open(source_cat)
+    table_data = table_main[1].data
+    sex_cat_data = table_data
+    fn = filtername
+
+    mask = ((sex_cat_data['FLAGS'] < 4) & \
+    (sex_cat_data ['ELLIPTICITY'] < 0.1) & \
+    (sex_cat_data ['MAG_AUTO'] > 18) & \
+    (sex_cat_data ['MAG_AUTO'] < 22) & \
+    (sex_cat_data ['FWHM_IMAGE'] > 0.5) & \
+    (sex_cat_data ['FWHM_IMAGE'] < 10))
+
+    sex_cat_data = sex_cat_data[mask]
+    fwhm = sex_cat_data['FWHM_IMAGE']
+    fwhm = sigma_clip(fwhm,sigma=2)
+
+    mask = ((sex_cat_data ['FWHM_IMAGE'] >= np.nanmin(fwhm)) & \
+    (sex_cat_data ['FWHM_IMAGE'] <= np.nanmax(fwhm)))
+    #print (np.min(fwhm),np.max(fwhm))
+
+    sex_cat_data = sex_cat_data[mask]
+    
+    N = len(sex_cat_data)
+
+    RA = sex_cat_data['ALPHA_SKY']
+    DEC = sex_cat_data['DELTA_SKY']
+    X = sex_cat_data['X_IMAGE']
+    Y = sex_cat_data['Y_IMAGE']
+    fwhm = sex_cat_data['FWHM_IMAGE']
+
+    psf_frames = list()
+    #os.system('rm ' + psfs_dir +'*'+'psf*')
+    print ('- Number of selected stars: '+str(N))
+    psfs = list()
+    for i in range(N) :
+
+        ra = RA[i]
+        dec = DEC[i]
+        star_fits_file = psfs_dir+gal_name+'_'+fn+'_star_'+str(i)+'.fits'
+        crop_frame(main_frame, '', int(PSF_IMAGE_SIZE/2.), filtername, ra, dec, \
+            output=star_fits_file)
+
+        psf = fits.open(star_fits_file)
+        image_size =  psf[0].header['NAXIS1']
+        psf_data = psf[0].data
+        psf_data_back = np.nanmedian(sigma_clip(psf_data,sigma=3))
+        psf[0].data = psf_data - psf_data_back
+        psf.writeto(star_fits_file, overwrite=True)
+        
+        psf_data = scipy.ndimage.zoom(psf_data, RATIO_OVERSAMPLE_PSF, order=3)
+        psf_data = np.array(psf_data)
+        
+        x_center = int(image_size*RATIO_OVERSAMPLE_PSF/2.+0.5)
+        y_center = int(image_size*RATIO_OVERSAMPLE_PSF/2.+0.5)
+        x_max, y_max = np.unravel_index(psf_data.argmax(), psf_data.shape)
+        #print (x_max,y_max)
+        dx = int(x_max-x_center+(RATIO_OVERSAMPLE_PSF/2.))
+        dy = int(y_max-y_center+(RATIO_OVERSAMPLE_PSF/2.))
+        #print (dx,dy)
+        psf_data = np.roll(psf_data, -1*dx, axis=0)
+        psf_data = np.roll(psf_data, -1*dy, axis=1)
+
+        psf[0].data = psf_data
+        psf.writeto(star_fits_file+'.oversampled.fits', overwrite=True)
+        #psf_data_min = np.sort(psf_data)[:int(len(psf_data)/2)]
+        psf_data_back = np.nanmedian(sigma_clip(psf_data,sigma=3))
+        #print (psf_data_back)
+        psf_data = psf_data - psf_data_back
+        psf_data_sum = np.nansum(psf_data)
+        psf_data = psf_data / psf_data_sum
+        if np.shape(psf_data) == (image_size*RATIO_OVERSAMPLE_PSF,image_size*RATIO_OVERSAMPLE_PSF) :
+            psfs.append(psf_data)
+            psf_frames.append(star_fits_file+'.oversampled.fits')
+        #print (psf_data)
+        #print (np.shape(psf_data))
+        #print ('-------------')
+
+    psf_median = np.median(psfs,axis=0)
+    #print (psfs)
+    psf_median[psf_median<0] = 0
+    psf_median_sum = np.nansum(psf_median)
+    psf_median = psf_median / psf_median_sum
+    PSF = fits.open(star_fits_file+'.oversampled.fits')
+    #print (psf_median)
+    PSF[0].data = psf_median
+    PSF.writeto(psf_frame+'.oversampled.fits', overwrite=True)
+    psf_median = rebin(psf_median, (int(image_size), int(image_size)))
+    PSF[0].data = psf_median
+    PSF.writeto(psf_frame, overwrite=True)
+
+    shutil.copy(psf_frame,psf_dir+'psf_'+fn+'.fits')
+
+############################################################
+
+def rebin(a, shape):
+    sh = shape[0],a.shape[0]//shape[0],shape[1],a.shape[1]//shape[1]
+    return a.reshape(sh).sum(-1).sum(1)
+
+############################################################
+
+def initial_psf(gal_id):
+    if MODEL_PSF == True:
+        make_psf_all_filters(gal_id)
+    estimate_fwhm(gal_id)
+    estimate_aper_corr(gal_id)
+
+############################################################
