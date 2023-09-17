@@ -91,7 +91,7 @@ def initialize_params() :
     PSF_PIXEL_SCALE = 0.05 #if 'PIXELSCL' is not in the header, specify it here.
 
     ### for making PSF
-    MODEL_PSF = True
+    MODEL_PSF = False
     RATIO_OVERSAMPLE_PSF = 25
     PSF_IMAGE_SIZE = 20 #PSF size in the instruments pixel-scale
 

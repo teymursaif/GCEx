@@ -349,6 +349,7 @@ def simualte_GCs(gal_id,n):
             swarp_cmd = swarp_executable+' '+gc_file+' -c '+external_dir+'default.swarp -IMAGEOUT_NAME '+gc_file+'.resampled.fits'+\
                 ' -IMAGE_SIZE 0 -PIXELSCALE_TYPE MANUAL -PIXEL_SCALE '+str(RATIO_OVERSAMPLE_PSF)+\
                 ' -RESAMPLE Y -CENTER_TYPE ALL -SUBTRACT_BACK N -VERBOSE_TYPE QUIET'
+            #print (swarp_cmd)
             os.system(swarp_cmd)
 
             #swarp_cmd = swarp_executable+' '+gc_file+'.resampled.fits'+' -c '+external_dir+'default.swarp -IMAGEOUT_NAME '+gc_file+'.resampled_displaced.fits'+\
