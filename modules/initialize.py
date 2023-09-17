@@ -81,18 +81,18 @@ def initialize_params() :
     BACKGROUND_ANNULUS_START = 3 #The size of background annulus for forced photoemtry as a factor of FWHM
     BACKGROUND_ANNULUS_TICKNESS = 20 # the thickness of the background annulus in pixels
     CROSS_MATCH_RADIUS_ARCSEC = 0.25
-    MAG_LIMIT_CAT = 26
+    MAG_LIMIT_CAT = 27
     N_ART_GCS = 100
     N_SIM_GCS = 1
     COSMIC_CLEAN = False
     GC_SIZE_RANGE = [0.5,0.51] #lower value should be small enough to make some point-sources for performance check, in pc
-    GC_MAG_RANGE = [-10,-9]
+    GC_MAG_RANGE = [-10,-4]
     PSF_PIXELSCL_KEY = 'PIXELSCL'
     PSF_PIXEL_SCALE = 0.05 #if 'PIXELSCL' is not in the header, specify it here.
 
     ### for making PSF
-    MODEL_PSF = True
-    RATIO_OVERSAMPLE_PSF = 20
+    MODEL_PSF = False
+    RATIO_OVERSAMPLE_PSF = 5 #do not go beyond 10, this will have consequences for undersampling later
     PSF_IMAGE_SIZE = 40 #PSF size in the instruments pixel-scale
 
     for dir in [working_directory,input_dir,output_dir,data_dir,main_data_dir,clean_data_dir,img_dir,sex_dir,fit_dir,plots_dir,\

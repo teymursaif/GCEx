@@ -313,6 +313,7 @@ def resample_swarp(fitsfile, fitsfile_weight, obj_name, radius_pix, filter_name,
 
     #print (command)
     os.system(command)
+    return output,output_weight
 
 ############################################################
 

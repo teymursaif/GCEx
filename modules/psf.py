@@ -16,6 +16,7 @@ from modules.source_det import *
 import random
 from scipy import signal
 from scipy.ndimage import gaussian_filter
+from astropy.stats import sigma_clip
 
 class bcolors:
     HEADER = '\033[95m'
@@ -61,10 +62,16 @@ def estimate_aper_corr(gal_id):
 
 ############################################################
 
-def estimate_fwhm_for_psf_fits(psf_fits_file_name, psf_pixel_scale):
+def estimate_fwhm_for_psf_fits(psf_fits_file_name, psf_pixel_scale=-1):
 
     psf_fits_file = fits.open(psf_fits_file_name)
     psf_data = psf_fits_file[0].data
+
+    if psf_pixel_scale == -1:
+        try :
+            psf_pixel_scale = psf_fits_file[0].header[PSF_PIXELSCL_KEY]
+        except :
+            psf_pixel_scale = PSF_PIXEL_SCALE
 
     X = float(psf_fits_file[0].header['NAXIS1'])
     Y = float(psf_fits_file[0].header['NAXIS2'])
@@ -74,6 +81,7 @@ def estimate_fwhm_for_psf_fits(psf_fits_file_name, psf_pixel_scale):
     fwhm_pixel = np.mean([FWHM_x,FWHM_y])
     fwhm_arcsec = np.mean([FWHM_x*psf_pixel_scale ,FWHM_y*psf_pixel_scale])
     print ('- FWHM is', fwhm_pixel, 'pixel and', fwhm_arcsec, 'arcsec')
+    return fwhm_pixel,fwhm_arcsec
 
 ############################################################
 
@@ -363,7 +371,7 @@ def simualte_GCs(gal_id,n):
             yos = yc #+ (y-y0)
 
             swarp_cmd = swarp_executable+' '+gc_file+' -c '+external_dir+'default.swarp -IMAGEOUT_NAME '+gc_file+'.resampled.fits'+\
-                ' -IMAGE_SIZE 0 -PIXELSCALE_TYPE MANUAL -PIXEL_SCALE '+str(RATIO_OVERSAMPLE_PSF)+\
+                ' -RESAMPLING_TYPE LANCZOS4 -IMAGE_SIZE 0 -PIXELSCALE_TYPE MANUAL -PIXEL_SCALE '+str(RATIO_OVERSAMPLE_PSF)+\
                 ' -RESAMPLE Y -CENTER_TYPE ALL -SUBTRACT_BACK N -VERBOSE_TYPE QUIET'
             #print (swarp_cmd)
             os.system(swarp_cmd)
@@ -373,16 +381,15 @@ def simualte_GCs(gal_id,n):
             #    ' -RESAMPLE Y -CENTER_TYPE MANUAL -CENTER '+str(x-x0)+','+str(y-y0)+' -SUBTRACT_BACK N -VERBOSE_TYPE QUIET'
             #os.system(swarp_cmd)
 
-            #print ("resampled images fwhm:")
+            print ("stamps FWHM:")
             #print ('king:')
             #estimate_fwhm_for_psf_fits(gc_file+'.king.fits',psf_pixel_scale)
             #print ('conv:')
             #estimate_fwhm_for_psf_fits(gc_file+'.conv.fits',psf_pixel_scale)
             #print ('noise:')
             #estimate_fwhm_for_psf_fits(gc_file+'.noise.fits',psf_pixel_scale)
-            #estimate_fwhm_for_psf_fits(gc_file,psf_pixel_scale)
-            #print ('resampled:')
-            #estimate_fwhm_for_psf_fits(gc_file+'.resampled.fits',PIXEL_SCALES[fn])
+            print ('resampled:')
+            estimate_fwhm_for_psf_fits(gc_file+'.resampled.fits',PIXEL_SCALES[fn])
 
             img2 = fits.open(gc_file+'.resampled.fits')
             data2 = img2[0].data
@@ -600,7 +607,7 @@ def makeKing2D(cc, rc, mag, zeropoint, exptime, pixel_size):
     elif final_flux_ratio < 0.99:
         print (f"{bcolors.WARNING}*** Warning: the simulated GCs are missing a fraction of the light between 1% to 2%."+ bcolors.ENDC)
     
-    #print (final_flux_ratio)
+    print (final_flux_ratio)
         
     return stamp
     
@@ -632,12 +639,13 @@ def make_psf_all_filters(gal_id):
         os.system(command)
 
         ###
-
+        
         make_psf_for_frame(main_frame,weight_frame,source_cat,fn,psf_frame)
+
 
 ############################################################
 
-def make_psf_for_frame(main_frame,weight_frame,source_cat,filtername,psf_frame):
+def make_psf_for_frame(main_frame,weight_frame,source_cat,filtername,psf_frame,fwhm_cut='auto'):
 
     table_main = fits.open(source_cat)
     table_data = table_main[1].data
@@ -647,19 +655,29 @@ def make_psf_for_frame(main_frame,weight_frame,source_cat,filtername,psf_frame):
     gain = GAIN[fn]
     pix_size = PIXEL_SCALES[fn]
 
-    mask = ((sex_cat_data['FLAGS'] < 4) & \
+    mask = ((sex_cat_data['FLAGS'] < 1) & \
     (sex_cat_data ['ELLIPTICITY'] < 0.1) & \
     (sex_cat_data ['MAG_AUTO'] > 18) & \
-    (sex_cat_data ['MAG_AUTO'] < 22) & \
+    (sex_cat_data ['MAG_AUTO'] < 23) & \
     (sex_cat_data ['FWHM_IMAGE'] > 0.5) & \
     (sex_cat_data ['FWHM_IMAGE'] < 10))
 
     sex_cat_data = sex_cat_data[mask]
     fwhm = sex_cat_data['FWHM_IMAGE']
-    fwhm = sigma_clip(fwhm,sigma=2)
-
-    mask = ((sex_cat_data ['FWHM_IMAGE'] >= np.nanmin(fwhm)) & \
-    (sex_cat_data ['FWHM_IMAGE'] <= np.nanmax(fwhm)))
+    if fwhm_cut == 'auto':
+        fwhm = sigma_clip(fwhm,sigma=2, maxiters=5, masked=False)
+        fwhm_max = np.nanmax(fwhm)
+        fwhm_min = np.nanmin(fwhm)
+    elif fwhm_cut == 'iterative':
+        fwhm_pixel, fwhm_arcsec = estimate_fwhm_for_psf_fits(psf_frame)
+        fwhm = sigma_clip(fwhm,sigma=2, maxiters=5, masked=False)
+        fwhm_std = np.nanstd(fwhm)
+        print (fwhm_std)
+        fwhm_max = fwhm_arcsec/PIXEL_SCALES[fn] + fwhm_std
+        fwhm_min = fwhm_arcsec/PIXEL_SCALES[fn] - fwhm_std
+    print ('- the lower and upper limits for FWHM (for selecting stars) are:',fwhm_min,fwhm_max)
+    mask = ((sex_cat_data ['FWHM_IMAGE'] >= fwhm_min) & \
+    (sex_cat_data ['FWHM_IMAGE'] <= fwhm_max))
     #print (np.min(fwhm),np.max(fwhm))
 
     sex_cat_data = sex_cat_data[mask]
@@ -672,7 +690,8 @@ def make_psf_for_frame(main_frame,weight_frame,source_cat,filtername,psf_frame):
     Y = sex_cat_data['Y_IMAGE']
     fwhm = sex_cat_data['FWHM_IMAGE']
 
-    psf_frames = list()
+    star_frames = ''
+    star_weight_frames = ''
     #os.system('rm ' + psfs_dir +'*'+'psf*')
     print ('- Number of selected stars: '+str(N))
     psfs = list()
@@ -681,57 +700,41 @@ def make_psf_for_frame(main_frame,weight_frame,source_cat,filtername,psf_frame):
         ra = RA[i]
         dec = DEC[i]
         star_fits_file = psfs_dir+gal_name+'_'+fn+'_star_'+str(i)+'.fits'
-        crop_frame(main_frame, '', int(PSF_IMAGE_SIZE/2.), filtername, ra, dec, \
+        star_weight_file = psfs_dir+gal_name+'_'+fn+'_star_'+str(i)+'.weight.fits'
+
+        crop_frame(main_frame, '', int(PSF_IMAGE_SIZE), filtername, ra, dec, \
             output=star_fits_file)
 
-        psf = fits.open(star_fits_file)
-        image_size =  psf[0].header['NAXIS1']
-        psf_data = psf[0].data
-        psf_data_back = np.nanmedian(sigma_clip(psf_data,sigma=3))
-        psf[0].data = psf_data - psf_data_back
-        psf.writeto(star_fits_file, overwrite=True)
-        
-        psf_data = scipy.ndimage.zoom(psf_data, RATIO_OVERSAMPLE_PSF, order=3)
-        psf_data = np.array(psf_data)
-        
-        x_center = int(image_size*RATIO_OVERSAMPLE_PSF/2.+0.5)
-        y_center = int(image_size*RATIO_OVERSAMPLE_PSF/2.+0.5)
-        x_max, y_max = np.unravel_index(psf_data.argmax(), psf_data.shape)
-        #print (x_max,y_max)
-        dx = int(x_max-x_center+(RATIO_OVERSAMPLE_PSF/2.))
-        dy = int(y_max-y_center+(RATIO_OVERSAMPLE_PSF/2.))
-        #print (dx,dy)
-        psf_data = np.roll(psf_data, -1*dx, axis=0)
-        psf_data = np.roll(psf_data, -1*dy, axis=1)
+        crop_frame(weight_frame, '', int(PSF_IMAGE_SIZE), filtername, ra, dec, \
+            output=star_weight_file)
 
-        psf[0].data = psf_data
-        psf.writeto(star_fits_file+'.oversampled.fits', overwrite=True)
-        #psf_data_min = np.sort(psf_data)[:int(len(psf_data)/2)]
-        psf_data_back = np.nanmedian(sigma_clip(psf_data,sigma=3))
-        #print (psf_data_back)
-        psf_data = psf_data - psf_data_back
-        psf_data_sum = np.nansum(psf_data)
-        psf_data = psf_data / psf_data_sum
-        if np.shape(psf_data) == (image_size*RATIO_OVERSAMPLE_PSF,image_size*RATIO_OVERSAMPLE_PSF) :
-            psfs.append(psf_data)
-            psf_frames.append(star_fits_file+'.oversampled.fits')
-        #print (psf_data)
-        #print (np.shape(psf_data))
-        #print ('-------------')
+        output = psfs_dir+gal_name+'_'+fn+'_star_'+str(i)+'.resampled.fits'
+        output_weight = psfs_dir+gal_name+'_'+fn+'_star_'+str(i)+'.resampled.weight.fits'
 
-    psf_median = np.median(psfs,axis=0)
-    #print (psfs)
-    psf_median[psf_median<0] = 0
-    psf_median_sum = np.nansum(psf_median)
-    psf_median = psf_median / psf_median_sum
-    PSF = fits.open(star_fits_file+'.oversampled.fits')
-    #print (psf_median)
-    PSF[0].data = psf_median
-    PSF.writeto(psf_frame+'.oversampled.fits', overwrite=True)
-    #psf_median = rebin(psf_median, (int(image_size), int(image_size)))
-    PSF[0].header['PIXELSCL'] = pix_size/RATIO_OVERSAMPLE_PSF
-    PSF[0].data = psf_median
-    PSF.writeto(psf_frame, overwrite=True)
+        radius_pix = int(PSF_IMAGE_SIZE)/2*RATIO_OVERSAMPLE_PSF
+        command = swarp_executable+' '+star_fits_file+' -c '+external_dir+'default.swarp -IMAGEOUT_NAME '+output+\
+            ' -WEIGHTOUT_NAME '+output_weight+' -WEIGHT_TYPE MAP_WEIGHT '+'-WEIGHT_IMAGE '+star_weight_file+\
+            ' -IMAGE_SIZE '+str(radius_pix)+','+str(radius_pix)+' -PIXELSCALE_TYPE  MANUAL -CELESTIAL_TYPE EQUATORIAL'+\
+            ' -PIXEL_SCALE '+str(pix_size/RATIO_OVERSAMPLE_PSF)+' -CENTER_TYPE MANUAL -CENTER '+str(ra)+','+str(dec)+\
+            ' -SUBTRACT_BACK Y -VERBOSE_TYPE QUIET'
+        os.system(command)
+        star_frames = star_frames+output+','
+        star_weight_frames = star_weight_frames+output_weight+','
+
+    ### stacking all stars
+    psf_weight_frame = psf_frame+'.weight.fits'
+    command = swarp_executable+' '+star_frames+' -c '+external_dir+'default.swarp -IMAGEOUT_NAME '+psf_frame+\
+            ' -WEIGHTOUT_NAME '+psf_weight_frame+' -WEIGHT_TYPE MAP_WEIGHT -SUBTRACT_BACK N -CELESTIAL_TYPE PIXEL'+\
+            ' -RESAMPLE N -VERBOSE_TYPE QUIET'
+            #' -PIXELSCALE_TYPE  MANUAL -PIXEL_SCALE '+str(1)+' -VERBOSE_TYPE QUIET' 
+            #' -IMAGE_SIZE '+str(radius_pix)+','+str(radius_pix)+' -PIXEL_SCALE '+str(pix_size/RATIO_OVERSAMPLE_PSF)+\
+            #' -CENTER_TYPE MANUAL -CENTER '+str(ra)+','+str(dec)+' -SUBTRACT_BACK N -VERBOSE_TYPE QUIET'
+    #print (command)
+    os.system(command)
+
+    psf_data = fits.open(psf_frame)
+    psf_data[0].header['PIXELSCL'] = pix_size/RATIO_OVERSAMPLE_PSF
+    psf_data.writeto(psf_frame,overwrite=True)
 
     shutil.copy(psf_frame,psf_dir+'psf_'+fn+'.fits')
 
