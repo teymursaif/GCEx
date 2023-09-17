@@ -61,6 +61,22 @@ def estimate_aper_corr(gal_id):
 
 ############################################################
 
+def estimate_fwhm_for_psf_fits(psf_fits_file_name, psf_pixel_scale):
+
+    psf_fits_file = fits.open(psf_fits_file_name)
+    psf_data = psf_fits_file[0].data
+
+    X = float(psf_fits_file[0].header['NAXIS1'])
+    Y = float(psf_fits_file[0].header['NAXIS2'])
+    (FWHM_x, FWHM_y) = getFWHM_GaussianFitScaledAmp(psf_data)
+    #print (FWHM_x,FWHM_y)
+    #print (FWHM_x*psf_pixel_scale ,FWHM_y*psf_pixel_scale)
+    fwhm_pixel = np.mean([FWHM_x,FWHM_y])
+    fwhm_arcsec = np.mean([FWHM_x*psf_pixel_scale ,FWHM_y*psf_pixel_scale])
+    print ('- FWHM is', fwhm_pixel, 'pixel and', fwhm_arcsec, 'arcsec')
+
+############################################################
+
 def estimate_fwhm(gal_id):
     gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
     for fn in filters:
@@ -357,6 +373,13 @@ def simualte_GCs(gal_id,n):
             #    ' -RESAMPLE Y -CENTER_TYPE MANUAL -CENTER '+str(x-x0)+','+str(y-y0)+' -SUBTRACT_BACK N -VERBOSE_TYPE QUIET'
             #os.system(swarp_cmd)
 
+            #print ("resampled images fwhm:")
+            #estimate_fwhm_for_psf_fits(gc_file+'.king.fits',psf_pixel_scale)
+            #estimate_fwhm_for_psf_fits(gc_file+'.conv.fits',psf_pixel_scale)
+            #estimate_fwhm_for_psf_fits(gc_file+'.noise.fits',psf_pixel_scale)
+            #estimate_fwhm_for_psf_fits(gc_file,psf_pixel_scale)
+            #estimate_fwhm_for_psf_fits(gc_file+'.resampled.fits',PIXEL_SCALES[fn])
+
             img2 = fits.open(gc_file+'.resampled.fits')
             data2 = img2[0].data
             x_psf = img2[0].header['NAXIS1']
@@ -421,27 +444,60 @@ def simulate_GC(mag,size_arcsec,zp,pix_size,exptime,psf_file,gc_file):
     stamp = signal.convolve2d(stamp, psf_data, boundary='symm', mode='valid')
     #stamp = convolve2D(stamp, psf_data)
     #print ('king+psf', np.sum(stamp))
+    n = np.arange(100.0)
+    hdu = fits.PrimaryHDU(n)
+    hdul = fits.HDUList([hdu])
     hdul[0].data = stamp
     hdul.writeto(gc_file+'.conv.fits', overwrite=True)
 
-    stamp_noisy = np.random.normal(stamp*exptime,1*np.sqrt(stamp*exptime)/RATIO_OVERSAMPLE_PSF)#/RATIO_OVERSAMPLE_PSF
+    stamp_noisy = np.random.normal(stamp*exptime,1*np.sqrt(stamp*exptime))#/RATIO_OVERSAMPLE_PSF
     #print (stamp_noisy[20,20],stamp[20,20]*exptime,stamp_noisy[20,20]-stamp[20,20]*exptime)
     stamp_noisy = stamp_noisy/exptime
+
+    n = np.arange(100.0)
+    hdu = fits.PrimaryHDU(n)
+    hdul = fits.HDUList([hdu])
     hdul[0].data = stamp_noisy
     hdul.writeto(gc_file+'.noise.fits', overwrite=True)
     #print (stamp-stamp_noisy)
-    stamp = stamp_noisy
     #print ('king+psf+noise', np.sum(stamp))
 
     n = np.arange(100.0)
     hdu = fits.PrimaryHDU(n)
     hdul = fits.HDUList([hdu])
     #hdul[0].header = header
-    hdul[0].data = stamp
+    hdul[0].data = stamp_noisy
     hdul.writeto(gc_file, overwrite=True)
     #return 0
     if len(stamp[stamp>0]) == 0:
         print (f"{bcolors.WARNING}*** Warning: the output frame of the simulated GC looks blank."+ bcolors.ENDC)
+
+    """
+    ### resampling to the nominal pixel-scale
+    X = hdul[0].header['NAXIS1']
+    Y = hdul[0].header['NAXIS2']
+    #print (X, Y)
+    resampled_image_size = int((np.shape(stamp_noisy))[0]/RATIO_OVERSAMPLE_PSF)
+    res = X % resampled_image_size
+    #print (res)
+    dx1 = int(res/2)
+    dx2 = res-dx1
+    dy1 = int(res/2)
+    dy2 = res-dy1
+    x1 = dx1
+    x2 = X-dx2
+    y1 = dy1
+    y2 = Y-dy2
+    #print (x1, x2, y1, y2, x2-x1, y2-y1)
+    #print (resampled_image_size)
+    stamp_noisy_resampled = stamp_noisy[x1:x2,y1:y2]
+    stamp_noisy_resampled = psf_median = rebin(stamp_noisy_resampled, (int(resampled_image_size), int(resampled_image_size)))
+    n = np.arange(100.0)
+    hdu = fits.PrimaryHDU(n)
+    hdul = fits.HDUList([hdu])
+    hdul[0].data = stamp_noisy_resampled
+    hdul.writeto(gc_file+'.resampled.fits', overwrite=True)
+    """
 
 ############################################################
 
@@ -453,7 +509,6 @@ def makeKing2D(cc, rc, mag, zeropoint, exptime, pixel_size):
     https://euclid.roe.ac.uk/issues/16801?issue_count=9&issue_position=8&next_issue_id=16182&prev_issue_id=16802
 
     A.nucita
-    (modified by Teymoor Saifollahi, September 2023)
 
     :param cc: truncation parameter
     :param rc: core radius in arcseconds
@@ -471,11 +526,10 @@ def makeKing2D(cc, rc, mag, zeropoint, exptime, pixel_size):
 
     # get stamp size: we require that the galaxy is in the exact center of the matrix. Therefore we set even size always.
 
-    # Size: 2 times of truncation radius + 50 pixel as a border
-    Size = int(int(1 * round(trunc_radius / float(pixel_size))) + 2)
-    
-    #if Size < X_psf:
-    #    Size = int(X_psf)
+    # Size: 1 time of truncation radius + 2 pixel as a border 
+    Size = (int(1 * round(trunc_radius / float(pixel_size))) + 2) 
+    #print (Size)
+
     # make even
     if (Size % 2) != 0:
         Size = Size + 1

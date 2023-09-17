@@ -91,9 +91,9 @@ def initialize_params() :
     PSF_PIXEL_SCALE = 0.05 #if 'PIXELSCL' is not in the header, specify it here.
 
     ### for making PSF
-    MODEL_PSF = False
-    RATIO_OVERSAMPLE_PSF = 25
-    PSF_IMAGE_SIZE = 20 #PSF size in the instruments pixel-scale
+    MODEL_PSF = True
+    RATIO_OVERSAMPLE_PSF = 20
+    PSF_IMAGE_SIZE = 40 #PSF size in the instruments pixel-scale
 
     for dir in [working_directory,input_dir,output_dir,data_dir,main_data_dir,clean_data_dir,img_dir,sex_dir,fit_dir,plots_dir,\
     detection_dir,cats_dir,psfs_dir,art_dir,final_cats_dir,temp_dir,sbf_dir,psf_dir,check_plots_dir] :
