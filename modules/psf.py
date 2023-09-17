@@ -374,10 +374,14 @@ def simualte_GCs(gal_id,n):
             #os.system(swarp_cmd)
 
             #print ("resampled images fwhm:")
+            #print ('king:')
             #estimate_fwhm_for_psf_fits(gc_file+'.king.fits',psf_pixel_scale)
+            #print ('conv:')
             #estimate_fwhm_for_psf_fits(gc_file+'.conv.fits',psf_pixel_scale)
+            #print ('noise:')
             #estimate_fwhm_for_psf_fits(gc_file+'.noise.fits',psf_pixel_scale)
             #estimate_fwhm_for_psf_fits(gc_file,psf_pixel_scale)
+            #print ('resampled:')
             #estimate_fwhm_for_psf_fits(gc_file+'.resampled.fits',PIXEL_SCALES[fn])
 
             img2 = fits.open(gc_file+'.resampled.fits')

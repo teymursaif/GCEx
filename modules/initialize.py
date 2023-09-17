@@ -86,7 +86,7 @@ def initialize_params() :
     N_SIM_GCS = 1
     COSMIC_CLEAN = False
     GC_SIZE_RANGE = [0.5,0.51] #lower value should be small enough to make some point-sources for performance check, in pc
-    GC_MAG_RANGE = [-10,-5]
+    GC_MAG_RANGE = [-10,-9]
     PSF_PIXELSCL_KEY = 'PIXELSCL'
     PSF_PIXEL_SCALE = 0.05 #if 'PIXELSCL' is not in the header, specify it here.
 
