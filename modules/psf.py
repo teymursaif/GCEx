@@ -381,15 +381,15 @@ def simualte_GCs(gal_id,n):
             #    ' -RESAMPLE Y -CENTER_TYPE MANUAL -CENTER '+str(x-x0)+','+str(y-y0)+' -SUBTRACT_BACK N -VERBOSE_TYPE QUIET'
             #os.system(swarp_cmd)
 
-            print ("stamps FWHM:")
+            #print ("stamps FWHM:")
             #print ('king:')
             #estimate_fwhm_for_psf_fits(gc_file+'.king.fits',psf_pixel_scale)
             #print ('conv:')
             #estimate_fwhm_for_psf_fits(gc_file+'.conv.fits',psf_pixel_scale)
             #print ('noise:')
             #estimate_fwhm_for_psf_fits(gc_file+'.noise.fits',psf_pixel_scale)
-            print ('resampled:')
-            estimate_fwhm_for_psf_fits(gc_file+'.resampled.fits',PIXEL_SCALES[fn])
+            #print ('resampled:')
+            #estimate_fwhm_for_psf_fits(gc_file+'.resampled.fits',PIXEL_SCALES[fn])
 
             img2 = fits.open(gc_file+'.resampled.fits')
             data2 = img2[0].data
@@ -520,6 +520,7 @@ def makeKing2D(cc, rc, mag, zeropoint, exptime, pixel_size):
     https://euclid.roe.ac.uk/issues/16801?issue_count=9&issue_position=8&next_issue_id=16182&prev_issue_id=16802
 
     A.nucita
+    Modified by Teymoor Saifollahi to correct for the missing light
 
     :param cc: truncation parameter
     :param rc: core radius in arcseconds
@@ -571,23 +572,31 @@ def makeKing2D(cc, rc, mag, zeropoint, exptime, pixel_size):
     psi = np.pi * (psi1 + psi2 + psi3)
     A = (totalflux / psi) * pixel_size ** 2
 
+    n = 10 #
+
     for i in range(0, Size):
         for j in range(0, Size):
+            flux = 0
             # Secondo Cambio aggiunto 0.5
-            xi = (i) * pixel_size + 0.5 * pixel_size
-            yi = (j) * pixel_size + 0.5 * pixel_size
-            '''
-            if ((i == 124) and (j == 124)):
-                print(i, j, xi, yi, xc, yc)
-                # stop()
-            '''
-            r2 = (xi - xc) ** 2 + (yi - yc) ** 2
-            if r2 < trunc_radius ** 2:
-                f1 = 1 / np.sqrt(r2 + rc ** 2)
-                f2 = 1 / np.sqrt(trunc_radius ** 2 + rc ** 2)
-                flux = A * (f1 - f2) ** 2
-            else:
-                flux = 0.0
+            for ii in range(n):
+                for jj in range(n):
+
+                    xi = (i+ii/n) * pixel_size + 0.5 * pixel_size
+                    yi = (j+jj/n) * pixel_size + 0.5 * pixel_size
+
+                    '''
+                    if ((i == 124) and (j == 124)):
+                        print(i, j, xi, yi, xc, yc)
+                        # stop()
+                    '''
+                    r2 = (xi - xc) ** 2 + (yi - yc) ** 2
+                    if r2 < trunc_radius ** 2:
+                        f1 = 1 / np.sqrt(r2 + rc ** 2)
+                        f2 = 1 / np.sqrt(trunc_radius ** 2 + rc ** 2)
+                        f = A / (n ** 2) * (f1 - f2) ** 2
+                    else:
+                        f = 0.0
+                    flux = flux + f
             # print(i,j,flux)
             stamp[j, i] = flux
     '''

@@ -126,6 +126,7 @@ def resample_data(gal_id):
 ############################################################
 
 def get_fits_data(fitsfile):
+    #Function is developed by Aku Venhola
     hdu = fits.open(fitsfile)
     fits_data = hdu[0].data
     return fits_data
@@ -133,6 +134,7 @@ def get_fits_data(fitsfile):
 ############################################################
 
 def get_fits_header(fitsfile):
+    #Function is developed by Aku Venhola
     hdu = fits.open(fitsfile)
     fits_header = hdu[0].header
     return fits_header
@@ -144,7 +146,10 @@ def get_header(file,keyword=None):
 	Reads the fits file and outputs the header dictionary.
 	OR
 	If a keyword is given, returns value of the keyword.
+
 	'''
+    #Function is developed by Aku Venhola
+
 	fitsfile = fits.open(file)
 	if keyword:
 		return fitsfile[0].header[keyword]
@@ -318,6 +323,7 @@ def resample_swarp(fitsfile, fitsfile_weight, obj_name, radius_pix, filter_name,
 ############################################################
 
 def crop_frame(fitsfile, obj_name, radius_pix, filter_name, ra, dec, pixel_size=0, blur=0, back=0, format='_xxx.fits', output=None, save_fits=True) :
+    # original function by Aku Venhola, modified by Teymoor Saifollahi
     if output == None:
         output = data_dir+obj_name+'_'+filter_name+format
     hdu = fits.open(fitsfile)
@@ -529,14 +535,16 @@ def csv_to_fits(input_csv,output_fits):
         - A column named "starnotgal" is treated as boolean (0/1).
         - Columns named "ra" and "dec" are treated as double precision float.
         - Other columns are treated as single precision float.
-    """
 
+    """
+    # Function is developed by some nice people on the internet
     recarray = loadCsvAsNumpy(input_csv)
     bintable = convertNumpyToFitsBinTable(recarray)
     saveFitsBinTable(bintable, output_fits)
 
 
 def loadCsvAsNumpy(filename):
+    # Function is developed by some nice people on the internet
     dtypes = {
         "id" : np.int64,
         "starnotgal" : np.bool_,
@@ -568,10 +576,12 @@ def loadCsvAsNumpy(filename):
 
 
 def convertNumpyToFitsBinTable(recarray):
+    #Function is developed by some nice people on the internet
     return fits.FITS_rec.from_columns(fits.ColDefs(recarray))
 
 
 def saveFitsBinTable(bintable, filename):
+    #Function is developed by some nice people on the internet
     primaryHDU = fits.PrimaryHDU()
     binTableHDU = fits.BinTableHDU(bintable)
     fits.HDUList([primaryHDU, binTableHDU]).writeto(filename)

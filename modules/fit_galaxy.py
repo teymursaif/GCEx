@@ -119,6 +119,7 @@ def get_ellipse(xc,yc,a,b,pa,res=360):
     Returns an ellipse with the given parameters.
     pa in degrees and context of astronomy.
     '''
+    #Function is developed by Aku Venhola
     try:
         dum=len(xc)
     except:
@@ -143,6 +144,7 @@ def cut(fitsfile, ra, dec, radius_pix, objectname='none', filtername='none',  ba
     '''
     Cuts the images from the coadds.
     '''
+    #Original function is developed by Aku Venhola, modified by Teymoor Saifollahi
     hdu = fits.open(fitsfile)
     hdu2 = fits.open(fitsfile)
     w=WCS(fitsfile)
@@ -664,7 +666,8 @@ def make_radial_profile(data,ellipse,exptime=1,mask=None,sn_stop=1./3.,rad_stop=
     returns:
     rad, flux, errors, (skyval, skynoise)
     '''
-    #print (ellipse)
+    #Function is developed by Aku Venhola
+
     min_step   = 5
     n_sky_bins = 12
     dist_sky   = 4. #REFFS
