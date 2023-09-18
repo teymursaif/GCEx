@@ -89,8 +89,8 @@ def assess_GC_simulations(gal_id):
             param2 = det_art_gcs['MAG_AUTO_'+fn]
             param3 = sources['FWHM_IMAGE_'+fn]
             param4 = sources['MAG_AUTO_'+fn]
-            ax[2][n_filter].scatter(param4,param3,s=20,color='grey',alpha=0.5,marker='o',label='Detected Sources')
-            ax[2][n_filter].scatter(param2,param1,s=20,color=colors[n_filter],alpha=0.2,marker='o',label='Detected Artificial GCs')
+            ax[2][n_filter].scatter(param4,param3,s=20,color='grey',alpha=0.2,marker='o',label='Detected Sources')
+            ax[2][n_filter].scatter(param2,param1,s=50,color=colors[n_filter],alpha=0.2,marker='o',label='Detected Artificial GCs')
             #ax[2][n_filter].set_title(gal_name+', '+sfn)
             ax[2][n_filter].set_xlabel('$m_{'+sfn+', AUTO} \ [mag]$')
             ax[2][n_filter].set_ylabel('$FWHM_{'+sfn+', AUTO}\  [pixels]$')
@@ -111,8 +111,8 @@ def assess_GC_simulations(gal_id):
             param2 = det_art_gcs['MAG_AUTO_'+fn]
             param3 = sources['CI_4_6_'+fn] + sources['CI_6_8_'+fn] 
             param4 = sources['F_MAG_APER_CORR_'+fn]
-            ax[2][n_filter+1].scatter(param3,param4,s=20,color='grey',alpha=0.5,marker='o',label='Detected Sources')
-            ax[2][n_filter+1].scatter(param1,param2,s=50,color=colors[n_filter],alpha=0.2,marker='s',label='Detected Artificial GCs')
+            ax[2][n_filter+1].scatter(param3,param4,s=20,color='grey',alpha=0.2,marker='o',label='Detected Sources')
+            ax[2][n_filter+1].scatter(param1,param2,s=50,color=colors[n_filter],alpha=0.2,marker='o',label='Detected Artificial GCs')
             #ax[2][n_filter+1].set_title(gal_name+', '+sfn)
             ax[2][n_filter+1].set_ylabel('$m_{'+sfn+', AUTO} \ [mag]$')
             ax[2][n_filter+1].set_xlabel('$CI_{4-8, '+sfn+'} \ [mag]$')

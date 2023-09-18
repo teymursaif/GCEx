@@ -20,8 +20,8 @@ def initialize_params() :
 
 
     WORKING_DIR = './'
-    FRAME_SIZE_ARCSEC = 1660 #cut-out size from the original frame for the general anlaysis (arcsec)
-    GAL_FRAME_SIZE_ARCSEC  = 830 #cut-out size from the original frame for sersic fitting anlaysis (arcsec)
+    FRAME_SIZE_ARCSEC = 1101 #cut-out size from the original frame for the general anlaysis (arcsec)
+    GAL_FRAME_SIZE_ARCSEC  = 1101 #cut-out size from the original frame for sersic fitting anlaysis (arcsec)
     #FRAME_SIZE_ARCSEC = 720
 
     # List of targets as a string with:
@@ -45,12 +45,9 @@ def initialize_params() :
 
     #Euclid ERO
     #TARGETS = ['0 ERO-FORNAX 054.01542 -35.27031 20 VIS NA'] # too big to handle!
-    TARGETS = ['1 ERO-FORNAX-1 54.29734653840737 -35.49463984609042 20 VIS1 NA',\
-               '2 ERO-FORNAX-2 53.73781934462309 -35.4946397673397 20 VIS2 NA',\
-               '3 ERO-FORNAX-3 54.29577802781735 -35.03909208984263 20 VIS3 NA',\
-               '4 ERO-FORNAX-4 53.739388046497496 -35.03909201240899 20 VIS4 NA']
+    TARGETS = ['1 ERO-FORNAX-1 54.3930634041065 -35.5720177800022 20 VIS1 NA']
             
-    GC_REF_MAG = {'VIS1':-8,'VIS2':-8,'VIS3':-8,'VIS4':-8}
+    GC_REF_MAG = {'VIS1':-8}
 
     # defining the executables (what you type in the command-line that executes the program)
     #SE_executable = 'sex'
@@ -99,8 +96,8 @@ def initialize_params() :
     BACKGROUND_ANNULUS_TICKNESS = 20 # the thickness of the background annulus in pixels
     CROSS_MATCH_RADIUS_ARCSEC = 0.25
     MAG_LIMIT_CAT = 27
-    N_ART_GCS = 250
-    N_SIM_GCS = 2
+    N_ART_GCS = 200
+    N_SIM_GCS = 1
     COSMIC_CLEAN = False
     GC_SIZE_RANGE = [1,8] #lower value should be small enough to make some point-sources for performance check, in pc
     GC_MAG_RANGE = [-10,-4]

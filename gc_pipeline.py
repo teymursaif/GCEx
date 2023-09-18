@@ -22,12 +22,12 @@ for gal_id in gal_params.keys():
     #fit_galaxy_sersic_all_filters(gal_id)
 
     # step 2. detection, photometry and make the main source catalogue
-    make_source_cat_full(gal_id)
+    #make_source_cat_full(gal_id)
 
     # step 3. GC analysis: completeness, selection, measurments
     #simulate_GCs_all(gal_id)
     #make_source_cat_for_sim(gal_id)
-    #assess_GC_simulations(gal_id)
+    assess_GC_simulations(gal_id)
 
     # step 4. GC selection, assessment, GC catalogs and properties
     #select_GC_candidadates(gal_id)
