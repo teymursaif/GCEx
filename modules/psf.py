@@ -572,8 +572,7 @@ def makeKing2D(cc, rc, mag, zeropoint, exptime, pixel_size):
     psi = np.pi * (psi1 + psi2 + psi3)
     A = (totalflux / psi) * pixel_size ** 2
 
-    n = 10 #
-
+    n = 10 #this is a start...
     for i in range(0, Size):
         for j in range(0, Size):
             flux = 0
@@ -583,12 +582,7 @@ def makeKing2D(cc, rc, mag, zeropoint, exptime, pixel_size):
 
                     xi = (i+ii/n) * pixel_size + 0.5 * pixel_size
                     yi = (j+jj/n) * pixel_size + 0.5 * pixel_size
-
-                    '''
-                    if ((i == 124) and (j == 124)):
-                        print(i, j, xi, yi, xc, yc)
-                        # stop()
-                    '''
+     
                     r2 = (xi - xc) ** 2 + (yi - yc) ** 2
                     if r2 < trunc_radius ** 2:
                         f1 = 1 / np.sqrt(r2 + rc ** 2)
@@ -616,7 +610,7 @@ def makeKing2D(cc, rc, mag, zeropoint, exptime, pixel_size):
     elif final_flux_ratio < 0.99:
         print (f"{bcolors.WARNING}*** Warning: the simulated GCs are missing a fraction of the light between 1% to 2%."+ bcolors.ENDC)
     
-    print (final_flux_ratio)
+    #print (final_flux_ratio)
         
     return stamp
     
@@ -628,6 +622,11 @@ def make_psf_all_filters(gal_id):
     
     for fn in filters:
         print ('- Making PSF for filter', fn)
+
+        psf_file = psf_dir+'psf_'+fn+'.fits'
+        if os.path.exists(psf_file):
+            print ('- A psf model is found. skipping psf modeling ... ')
+            return 0
 
         zp = ZPS[fn]
         gain = GAIN[fn]
@@ -649,12 +648,12 @@ def make_psf_all_filters(gal_id):
 
         ###
         
-        make_psf_for_frame(main_frame,weight_frame,source_cat,fn,psf_frame)
+        make_psf_for_frame(main_frame,weight_frame,source_cat,fn,psf_frame,mode='auto')
 
 
 ############################################################
 
-def make_psf_for_frame(main_frame,weight_frame,source_cat,filtername,psf_frame,fwhm_cut='auto'):
+def make_psf_for_frame(main_frame,weight_frame,source_cat,filtername,psf_frame,mode='auto'):
 
     table_main = fits.open(source_cat)
     table_data = table_main[1].data
@@ -666,24 +665,18 @@ def make_psf_for_frame(main_frame,weight_frame,source_cat,filtername,psf_frame,f
 
     mask = ((sex_cat_data['FLAGS'] < 1) & \
     (sex_cat_data ['ELLIPTICITY'] < 0.1) & \
-    (sex_cat_data ['MAG_AUTO'] > 18) & \
-    (sex_cat_data ['MAG_AUTO'] < 23) & \
+    (sex_cat_data ['MAG_AUTO'] > 17.0) & \
+    (sex_cat_data ['MAG_AUTO'] < 19.0) & \
     (sex_cat_data ['FWHM_IMAGE'] > 0.5) & \
     (sex_cat_data ['FWHM_IMAGE'] < 10))
 
     sex_cat_data = sex_cat_data[mask]
     fwhm = sex_cat_data['FWHM_IMAGE']
-    if fwhm_cut == 'auto':
+    if mode == 'auto':
         fwhm = sigma_clip(fwhm,sigma=2, maxiters=5, masked=False)
         fwhm_max = np.nanmax(fwhm)
         fwhm_min = np.nanmin(fwhm)
-    elif fwhm_cut == 'iterative':
-        fwhm_pixel, fwhm_arcsec = estimate_fwhm_for_psf_fits(psf_frame)
-        fwhm = sigma_clip(fwhm,sigma=2, maxiters=5, masked=False)
-        fwhm_std = np.nanstd(fwhm)
-        print (fwhm_std)
-        fwhm_max = fwhm_arcsec/PIXEL_SCALES[fn] + fwhm_std
-        fwhm_min = fwhm_arcsec/PIXEL_SCALES[fn] - fwhm_std
+    
     print ('- the lower and upper limits for FWHM (for selecting stars) are:',fwhm_min,fwhm_max)
     mask = ((sex_cat_data ['FWHM_IMAGE'] >= fwhm_min) & \
     (sex_cat_data ['FWHM_IMAGE'] <= fwhm_max))

@@ -52,7 +52,7 @@ def intro(gal_id):
 ############################################################
 
 def copy_data(gal_id):
-    print ('- Copying data to the input-data directory: '+(main_data_dir))
+    print ('- Copying data to the input-data directory: '+(data_dir))
     gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
 
     for fn in filters:
@@ -308,13 +308,13 @@ def resample_swarp(fitsfile, fitsfile_weight, obj_name, radius_pix, filter_name,
         command = swarp_executable+' '+temp_dir+'temp.fits -c '+external_dir+'default.swarp -IMAGEOUT_NAME '+output+' -WEIGHTOUT_NAME '+output_weight+\
             ' -WEIGHT_TYPE MAP_WEIGHT '+'-WEIGHT_IMAGE '+fitsfile_weight+\
             ' -IMAGE_SIZE '+str(radius_pix)+','+str(radius_pix)+' -PIXEL_SCALE '+str(pixel_size)+\
-            ' -CENTER_TYPE MANUAL -CENTER '+str(ra)+','+str(dec)+' -SUBTRACT_BACK N -VERBOSE_TYPE QUIET'
+            ' -CENTER_TYPE MANUAL -CENTER '+str(ra)+','+str(dec)+' -SUBTRACT_BACK N'# -VERBOSE_TYPE QUIET'
 
     else :
         command = swarp_executable+' '+temp_dir+'temp.fits -c '+external_dir+'default.swarp -IMAGEOUT_NAME '+output+' -WEIGHTOUT_NAME '+output_weight+\
             ' -WEIGHT_TYPE MAP_WEIGHT '+'-WEIGHT_IMAGE '+fitsfile_weight+\
             ' -IMAGE_SIZE '+str(radius_pix)+','+str(radius_pix)+' -PIXELSCALE_TYPE MANUAL -PIXEL_SCALE '+str(pixel_size)+\
-            ' -RESAMPLE Y -CENTER_TYPE MANUAL -CENTER '+str(ra)+','+str(dec)+' -SUBTRACT_BACK N -VERBOSE_TYPE QUIET'
+            ' -RESAMPLE Y -CENTER_TYPE MANUAL -CENTER '+str(ra)+','+str(dec)+' -SUBTRACT_BACK N'# -VERBOSE_TYPE QUIET'
 
     #print (command)
     os.system(command)
@@ -404,9 +404,12 @@ def make_fancy_png(fitsfile,pngfile,text='',zoom=1) :
 
     #image = sigma_clip(image,sigma=3,maxiters=1)
     scale = ZScaleInterval() #LogStretch()
-    #min_ = np.nanmedian(image)-0.5*np.nanstd(image)
-    #max_ = np.nanmedian(image)+0.1*np.nanstd(image)
-    ax.imshow(scale(image0),cmap='gist_gray') #LogNorm #,vmin=min_, vmax=max_
+    min_ = np.nanmedian(image)-1*np.nanstd(image)
+    max_ = np.nanmedian(image)+2*np.nanstd(image)
+    try :
+        ax.imshow(scale(image0),cmap='gist_gray') #LogNorm #,vmin=min_, vmax=max_
+    except : 
+        ax.imshow(image0,cmap='gist_gray',vmin=min_, vmax=max_) #LogNorm #,vmin=min_, vmax=max_
     #ax.axis('off')
     ax.invert_yaxis()
     #fig.tight_layout()
@@ -589,4 +592,3 @@ def saveFitsBinTable(bintable, filename):
 
 ############################################################
 
-get_data_info(gal_id)
