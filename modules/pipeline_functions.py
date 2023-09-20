@@ -54,24 +54,33 @@ def intro(gal_id):
 def copy_data(gal_id):
     print ('- Copying data to the input-data directory: '+(data_dir))
     gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
+    data_name = gal_data_name[gal_id]
 
     for fn in filters:
-        main_data_path = main_data_dir+gal_name+'_'+fn+'.fits'
+
+        main_data_path = main_data_dir+data_name+'_'+fn+'.fits'
+
+        pixel_scale = get_pixel_scale(main_data_path)
+        PIXEL_SCALES[fn] = pixel_scale
+        PRIMARY_FRAME_SIZE[fn] = int(PRIMARY_FRAME_SIZE_ARCSEC/pixel_scale+0.5)
+        FRAME_SIZE[fn] = int(FRAME_SIZE_ARCSEC/pixel_scale+0.5)
+        GAL_FRAME_SIZE[fn] = int(GAL_FRAME_SIZE_ARCSEC/pixel_scale+0.5)
+
         data_path = data_dir+gal_name+'_'+fn+'.fits'
-        main_weight_path = main_data_dir+gal_name+'_'+fn+'.weight.fits'
-        weight_path = main_data_dir+gal_name+'_'+fn+'.weight.fits'
+        main_weight_path = main_data_dir+data_name+'_'+fn+'.weight.fits'
+        weight_path = main_data_dir+data_name+'_'+fn+'.weight.fits'
 
         if os.path.exists(main_data_path):
-            crop_frame(main_data_dir+gal_name+'_'+fn+'.fits',gal_name,PRIMARY_FRAME_SIZE[fn]/2,fn,ra,dec,format='.fits')
+            crop_frame(main_data_dir+data_name+'_'+fn+'.fits',gal_name,PRIMARY_FRAME_SIZE[fn]/2,fn,ra,dec,format='.fits')
         else:
             print ('*** File does no exists: '+str(data_path))
 
         if os.path.exists(main_weight_path):
-            crop_frame(main_data_dir+gal_name+'_'+fn+'.weight.fits',gal_name,PRIMARY_FRAME_SIZE[fn]/2,fn,ra,dec,format='.weight.fits')
+            crop_frame(main_data_dir+data_name+'_'+fn+'.weight.fits',gal_name,PRIMARY_FRAME_SIZE[fn]/2,fn,ra,dec,format='.weight.fits')
         else:
             print ('*** Weight does no exists: '+str(data_path)+', crating a weight-map with values of 1')
             make_weight_map(main_data_path,main_weight_path)
-            crop_frame(main_data_dir+gal_name+'_'+fn+'.weight.fits',gal_name,PRIMARY_FRAME_SIZE[fn]/2,fn,ra,dec,format='.weight.fits')
+            crop_frame(main_data_dir+data_name+'_'+fn+'.weight.fits',gal_name,PRIMARY_FRAME_SIZE[fn]/2,fn,ra,dec,format='.weight.fits')
 
 ############################################################
 
@@ -92,20 +101,52 @@ def median_filter_array(data,fsize = 3):
 ############################################################
 
 def get_data_info(gal_id):
-    print ('- Extracting pixel-size and zero-point values from the data')
     gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
+    
+    print ('- Check the input data for compatibility with pipeline')
     for fn in filters:
-        pixel_scale = get_pixel_scale(main_data_dir+gal_name+'_'+fn+'.fits')
+        try:
+            gain = get_gain(data_dir+gal_name+'_'+fn+'.fits')
+        except:
+            update_header(data_dir+gal_name+'_'+fn+'.fits', 'GAIN', INPUT_GAIN[fn])
+            print (f"{bcolors.WARNING}- No GAIN is found in the header of the fits file. The value is set to the value in the configuration file.."+ bcolors.ENDC)
+
+        try:
+            exptime = get_exptime(data_dir+gal_name+'_'+fn+'.fits')
+            if exptime <= 1e-9:
+                update_header(data_dir+gal_name+'_'+fn+'.fits', 'EXPTIME', INPUT_EXPTIME[fn])
+                print (f"{bcolors.WARNING}- The EXPTIME value found in the header of the fits file is not valid. The value is set to the value in the configuration file."+ bcolors.ENDC)
+        except:
+            update_header(data_dir+gal_name+'_'+fn+'.fits', 'EXPTIME', INPUT_EXPTIME[fn])
+            print (f"{bcolors.WARNING}- No EXPTIME is found in the header of the fits file. The value is set to the value in the configuration file."+ bcolors.ENDC)
+
+        try:
+            zp = get_zp_AB(data_dir+gal_name+'_'+fn+'.fits')
+        except:
+            update_header(data_dir+gal_name+'_'+fn+'.fits', 'MAGZERO', INPUT_ZP[fn])
+            print (f"{bcolors.WARNING}- No ZP is found in the header of the fits file. The value is set to the value in the configuration file."+ bcolors.ENDC)
+
+        try:
+            get_header(data_dir+gal_name+'_'+fn+'.fits','FILTER')
+        except:
+            update_header(data_dir+gal_name+'_'+fn+'.fits', 'FILTER', fn)
+            print (f"{bcolors.WARNING}- No FILTER is found in the header of the fits file. The value is set on the value in the given filter-name."+ bcolors.ENDC)
+
+    ################
+
+    print ('- Extracting pixel-size and zero-point values from the data')
+    for fn in filters:
+        pixel_scale = get_pixel_scale(data_dir+gal_name+'_'+fn+'.fits')
         PIXEL_SCALES[fn] = pixel_scale
-        gain = get_gain(main_data_dir+gal_name+'_'+fn+'.fits')
+        gain = get_gain(data_dir+gal_name+'_'+fn+'.fits')
         GAIN[fn] = gain
-        zp = get_zp_AB(main_data_dir+gal_name+'_'+fn+'.fits')
-        exptime = get_exptime(main_data_dir+gal_name+'_'+fn+'.fits')
+        zp = get_zp_AB(data_dir+gal_name+'_'+fn+'.fits')
         ZPS[fn] = zp
+        exptime = get_exptime(data_dir+gal_name+'_'+fn+'.fits')
+        EXPTIME[fn]=exptime
         PRIMARY_FRAME_SIZE[fn] = int(PRIMARY_FRAME_SIZE_ARCSEC/pixel_scale+0.5)
         FRAME_SIZE[fn] = int(FRAME_SIZE_ARCSEC/pixel_scale+0.5)
         GAL_FRAME_SIZE[fn] = int(GAL_FRAME_SIZE_ARCSEC/pixel_scale+0.5)
-        EXPTIME[fn]=exptime
     print ('- Frame exposure times are:'+str(EXPTIME))
     print ('- Pixel-sizes are: '+str(PIXEL_SCALES))
     print ('- Zero-points are: '+str(ZPS))

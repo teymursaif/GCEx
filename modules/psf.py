@@ -625,35 +625,50 @@ def make_psf_all_filters(gal_id):
 
         psf_file = psf_dir+'psf_'+fn+'.fits'
         if os.path.exists(psf_file):
-            print ('- A psf model is found. skipping psf modeling ... ')
-            return 0
+            print ('- A psf model is found, however the pipeline continues to make a new one.')
+            #return 0
 
         zp = ZPS[fn]
         gain = GAIN[fn]
         pix_size = PIXEL_SCALES[fn]
 
-        main_frame = data_dir+gal_name+'_'+fn+'_gal_cropped.fits'
-        weight_frame = data_dir+gal_name+'_'+fn+'_gal_cropped.weight.fits'
+        main_frame = data_dir+gal_name+'_'+fn+'_cropped.fits'
+        weight_frame = data_dir+gal_name+'_'+fn+'_cropped.weight.fits'
         source_cat = sex_dir+gal_name+'_'+fn+'_source_cat_for_psf_model.fits'
         psf_frame = psfs_dir+'psf_'+fn+'.fits'
+        psf_frame_inst = psfs_dir+'psf_'+fn+'.inst.fits'
 
         # run SE
         command = SE_executable+' '+main_frame+' -c '+external_dir+'default.sex -CATALOG_NAME '+source_cat+' '+ \
-        '-PARAMETERS_NAME '+external_dir+'default.param -DETECT_MINAREA 8 -DETECT_THRESH 3.0 -ANALYSIS_THRESH 3.0 ' + \
-        '-DEBLEND_NTHRESH 1 -DEBLEND_MINCONT 1 -MAG_ZEROPOINT ' +str(zp) + ' -BACKPHOTO_TYPE GLOBAL '+\
-        '-FILTER Y -FILTER_NAME  '+external_dir+'tophat_1.5_3x3.conv -STARNNW_NAME '+external_dir+'default.nnw -PIXEL_SCALE ' + \
+        '-PARAMETERS_NAME '+external_dir+'sex_default.param -DETECT_MINAREA 8 -DETECT_THRESH 3.0 -ANALYSIS_THRESH 3.0 ' + \
+        '-DEBLEND_NTHRESH 4 -DEBLEND_MINCONT 0.05 -MAG_ZEROPOINT ' +str(zp) + ' -BACKPHOTO_TYPE GLOBAL '+\
+        '-FILTER Y -FILTER_NAME  '+external_dir+'default.conv -STARNNW_NAME '+external_dir+'default.nnw -PIXEL_SCALE ' + \
         str(pix_size)+ ' -BACK_SIZE 128 -BACK_FILTERSIZE 3'
   
         os.system(command)
 
         ###
         
-        make_psf_for_frame(main_frame,weight_frame,source_cat,fn,psf_frame,mode='auto')
+        make_psf_for_frame(main_frame,weight_frame,source_cat,fn,psf_frame,mode='auto',oversample=True)
+        make_psf_for_frame(main_frame,weight_frame,source_cat,fn,psf_frame_inst,mode='auto',oversample=False)
+
+        shutil.copy(psf_frame,psf_dir+'psf_'+fn+'.fits')
+        shutil.copy(psf_frame_inst,psf_dir+'psf_'+fn+'.inst.fits')
 
 
 ############################################################
 
-def make_psf_for_frame(main_frame,weight_frame,source_cat,filtername,psf_frame,mode='auto'):
+def normalize_psf(psf_frame):
+    psf_fits_file = fits.open(psf_frame)
+    psf_data = psf_fits_file[0].data
+    sum_psf = np.sum(psf_data)
+    psf_data = psf_data/sum_psf
+    psf_fits_file[0].data = psf_data
+    psf_fits_file.writeto(psf_frame, overwrite=True)
+
+############################################################
+
+def make_psf_for_frame(main_frame,weight_frame,source_cat,filtername,psf_frame,mode='auto',oversample=True):
 
     table_main = fits.open(source_cat)
     table_data = table_main[1].data
@@ -665,8 +680,8 @@ def make_psf_for_frame(main_frame,weight_frame,source_cat,filtername,psf_frame,m
 
     mask = ((sex_cat_data['FLAGS'] < 1) & \
     (sex_cat_data ['ELLIPTICITY'] < 0.1) & \
-    (sex_cat_data ['MAG_AUTO'] > 17.0) & \
-    (sex_cat_data ['MAG_AUTO'] < 19.0) & \
+    (sex_cat_data ['MAG_AUTO'] > MAG_LIMIT_SAT) & \
+    (sex_cat_data ['MAG_AUTO'] < MAG_LIMIT_PSF) & \
     (sex_cat_data ['FWHM_IMAGE'] > 0.5) & \
     (sex_cat_data ['FWHM_IMAGE'] < 10))
 
@@ -704,41 +719,55 @@ def make_psf_for_frame(main_frame,weight_frame,source_cat,filtername,psf_frame,m
         star_fits_file = psfs_dir+gal_name+'_'+fn+'_star_'+str(i)+'.fits'
         star_weight_file = psfs_dir+gal_name+'_'+fn+'_star_'+str(i)+'.weight.fits'
 
-        crop_frame(main_frame, '', int(PSF_IMAGE_SIZE), filtername, ra, dec, \
+        crop_frame(main_frame, '', int(PSF_IMAGE_SIZE*10), filtername, ra, dec, \
             output=star_fits_file)
 
-        crop_frame(weight_frame, '', int(PSF_IMAGE_SIZE), filtername, ra, dec, \
+        crop_frame(weight_frame, '', int(PSF_IMAGE_SIZE*10), filtername, ra, dec, \
             output=star_weight_file)
 
         output = psfs_dir+gal_name+'_'+fn+'_star_'+str(i)+'.resampled.fits'
         output_weight = psfs_dir+gal_name+'_'+fn+'_star_'+str(i)+'.resampled.weight.fits'
 
-        radius_pix = int(PSF_IMAGE_SIZE)/2*RATIO_OVERSAMPLE_PSF
+        psf_size_pix = int(PSF_IMAGE_SIZE)*RATIO_OVERSAMPLE_PSF
         command = swarp_executable+' '+star_fits_file+' -c '+external_dir+'default.swarp -IMAGEOUT_NAME '+output+\
             ' -WEIGHTOUT_NAME '+output_weight+' -WEIGHT_TYPE MAP_WEIGHT '+'-WEIGHT_IMAGE '+star_weight_file+\
-            ' -IMAGE_SIZE '+str(radius_pix)+','+str(radius_pix)+' -PIXELSCALE_TYPE  MANUAL -CELESTIAL_TYPE EQUATORIAL'+\
+            ' -IMAGE_SIZE '+str(psf_size_pix)+','+str(psf_size_pix)+' -PIXELSCALE_TYPE  MANUAL -CELESTIAL_TYPE EQUATORIAL'+\
             ' -PIXEL_SCALE '+str(pix_size/RATIO_OVERSAMPLE_PSF)+' -CENTER_TYPE MANUAL -CENTER '+str(ra)+','+str(dec)+\
-            ' -SUBTRACT_BACK Y -VERBOSE_TYPE QUIET'
+            ' -RESAMPLE Y -RESAMPLING_TYPE LANCZOS4 -SUBTRACT_BACK Y -VERBOSE_TYPE QUIET'
         os.system(command)
         star_frames = star_frames+output+','
         star_weight_frames = star_weight_frames+output_weight+','
 
+        normalize_psf(output)
+
     ### stacking all stars
     psf_weight_frame = psf_frame+'.weight.fits'
-    command = swarp_executable+' '+star_frames+' -c '+external_dir+'default.swarp -IMAGEOUT_NAME '+psf_frame+\
-            ' -WEIGHTOUT_NAME '+psf_weight_frame+' -WEIGHT_TYPE MAP_WEIGHT -SUBTRACT_BACK N -CELESTIAL_TYPE PIXEL'+\
-            ' -RESAMPLE N -VERBOSE_TYPE QUIET'
-            #' -PIXELSCALE_TYPE  MANUAL -PIXEL_SCALE '+str(1)+' -VERBOSE_TYPE QUIET' 
-            #' -IMAGE_SIZE '+str(radius_pix)+','+str(radius_pix)+' -PIXEL_SCALE '+str(pix_size/RATIO_OVERSAMPLE_PSF)+\
-            #' -CENTER_TYPE MANUAL -CENTER '+str(ra)+','+str(dec)+' -SUBTRACT_BACK N -VERBOSE_TYPE QUIET'
-    #print (command)
-    os.system(command)
+    if oversample == True:
+        command = swarp_executable+' '+star_frames+' -c '+external_dir+'default.swarp -IMAGEOUT_NAME '+psf_frame+\
+                ' -WEIGHTOUT_NAME '+psf_weight_frame+' -WEIGHT_TYPE MAP_WEIGHT -SUBTRACT_BACK N -CELESTIAL_TYPE PIXEL'+\
+                ' -RESAMPLE N -VERBOSE_TYPE QUIET'
+                #' -PIXELSCALE_TYPE  MANUAL -PIXEL_SCALE '+str(1)+' -VERBOSE_TYPE QUIET' 
+                #' -IMAGE_SIZE '+str(radius_pix)+','+str(radius_pix)+' -PIXEL_SCALE '+str(pix_size/RATIO_OVERSAMPLE_PSF)+\
+                #' -CENTER_TYPE MANUAL -CENTER '+str(ra)+','+str(dec)+' -SUBTRACT_BACK N -VERBOSE_TYPE QUIET'
+    
+    elif oversample == False:
+        command = swarp_executable+' '+star_frames+' -c '+external_dir+'default.swarp -IMAGEOUT_NAME '+psf_frame+\
+                ' -WEIGHTOUT_NAME '+psf_weight_frame+' -WEIGHT_TYPE MAP_WEIGHT -SUBTRACT_BACK N -CELESTIAL_TYPE PIXEL'+\
+                ' -RESAMPLE N -PIXEL_SCALE '+str(pix_size)+' -RESAMPLING_TYPE LANCZOS4'#+'-VERBOSE_TYPE QUIET'
+                #' -PIXELSCALE_TYPE  MANUAL -PIXEL_SCALE '+str(1)+' -VERBOSE_TYPE QUIET' 
+                #' -IMAGE_SIZE '+str(radius_pix)+','+str(radius_pix)+' -PIXEL_SCALE '+str(pix_size/RATIO_OVERSAMPLE_PSF)+\
+                #' -CENTER_TYPE MANUAL -CENTER '+str(ra)+','+str(dec)+' -SUBTRACT_BACK N -VERBOSE_TYPE QUIET'
 
+    os.system(command)
     psf_data = fits.open(psf_frame)
     psf_data[0].header['PIXELSCL'] = pix_size/RATIO_OVERSAMPLE_PSF
+    X_psf = psf_data[0].header['NAXIS1']
+    Y_psf = psf_data[0].header['NAXIS2']
+    psf_data[0].header['CRPIX1'] = int(X_psf/2+0.5)
+    psf_data[0].header['CRVAL1'] = 0
+    psf_data[0].header['CRPIX2'] = int(Y_psf/2+0.5)
+    psf_data[0].header['CRVAL1'] = 0
     psf_data.writeto(psf_frame,overwrite=True)
-
-    shutil.copy(psf_frame,psf_dir+'psf_'+fn+'.fits')
 
 ############################################################
 
@@ -749,8 +778,6 @@ def rebin(a, shape):
 ############################################################
 
 def initial_psf(gal_id):
-    if MODEL_PSF == True:
-        make_psf_all_filters(gal_id)
     estimate_fwhm(gal_id)
     estimate_aper_corr(gal_id)
 

@@ -81,6 +81,8 @@ def fit_galaxy_sersic_all_filters(gal_id):
             r_cut=GAL_FRAME_SIZE[fn], r_cut_fit=GAL_FRAME_SIZE[fn], scale=scale, constraint=constraint)
             ra_ = float(ra_)
             dec_ = float(dec_)
+            #if USE_GAL_SUB_IMG == True:
+
         except Exception as error:
             # handle the exception
             print("An exception occurred:", error)
@@ -774,6 +776,37 @@ def fit_galaxy_sersic(main_data,weight_data,ra,dec,obj_name,filter_name,pix_size
     #print (cropped_frame)
     w=WCS(main_data)
     c = ((pix_size)**2)
+    fn = filter_name
+
+    ##########################
+
+    if os.path.exists(psf_dir+'psf_'+fn+'.fits'):
+        psf_frame = psf_dir+'psf_'+fn+'.inst.fits'
+        """
+        psf_fits_file = fits.open(psf_frame)
+        try :
+            psf_pixel_scale = psf_fits_file[0].header[PSF_PIXELSCL_KEY]
+        except :
+            psf_pixel_scale = PSF_PIXEL_SCALE
+
+        global RATIO_OVERSAMPLE_PSF 
+        RATIO_OVERSAMPLE_PSF = int(PIXEL_SCALES[fn]/psf_pixel_scale+0.5)
+
+        #psf_frame = 'None'
+        print (RATIO_OVERSAMPLE_PSF,psf_pixel_scale)
+        if abs(RATIO_OVERSAMPLE_PSF-1)>1e-3:
+            print (f"{bcolors.OKCYAN}- The existiign PSF is oversampled. Now resampling the PSF to the instrument's pixel-size."+ bcolors.ENDC)
+            psf_frame_resampled = psf_frame+'.resampled.fits'
+            command = swarp_executable+' '+psf_frame+' -c '+external_dir+'default.swarp -IMAGEOUT_NAME '+psf_frame_resampled+\
+                ' -PIXELSCALE_TYPE  MANUAL -PIXEL_SCALE '+str(PIXEL_SCALES[fn]/3600)+' -RESAMPLE Y -RESAMPLING_TYPE LANCZOS4 '+\
+                ' -SUBTRACT_BACK N'# -VERBOSE_TYPE QUIET'
+            os.system(command)
+            psf_frame = psf_frame_resampled
+            """
+    else:
+        psf_frame = 'None'
+
+    ##########################
     print ('- estimating sky flux')
     back_average, back_std = estimate_frame_back(cropped_frame, obj_name, filter_name)
 
@@ -782,6 +815,8 @@ def fit_galaxy_sersic(main_data,weight_data,ra,dec,obj_name,filter_name,pix_size
         fit_type = 'LSB'
     else:
         fit_type = 'Normal'
+        #fit_type = 'LSB'
+
     mask_frame, masked_frame, check_frame, sigma_frame = mask_stars(cropped_frame, weight_frame, ra, dec, obj_name, filter_name, zp, type=fit_type)
     #sigma_frame='None'
 
@@ -794,22 +829,26 @@ def fit_galaxy_sersic(main_data,weight_data,ra,dec,obj_name,filter_name,pix_size
     fit_x2 = r_cut_fit #int(x_gal_center+r_cut_fit/2.)
     fit_y2 = r_cut_fit #int(y_gal_center+r_cut_fit/2.)
 
-    fn = filter_name
-
-    if os.path.exists(psf_dir+'psf_'+fn+'.fits'):
-        psf_frame = psf_dir+'psf_'+fn+'.fits'
-    else:
-        psf_frame = 'None'
-
     if constraint == 'None':
-        ra_c = ra
-        dec_c = dec
-        re_c = 1.5/scale/pix_size
-        mag_c = 18
-        n_c = 1
-        pa_c = 0
-        q_c = 1
-        x_gal_center,y_gal_center = w.all_world2pix(ra, dec,0)
+        if ('LSB' in comments) or ('DWARF' in comments) :
+            ra_c = ra
+            dec_c = dec
+            re_c = 1.5/scale/pix_size
+            mag_c = -16 + 5*np.log10(distance*1e+5)
+            n_c = 1
+            pa_c = 0
+            q_c = 1
+            x_gal_center,y_gal_center = w.all_world2pix(ra, dec,0)
+
+        elif ('MASSIVE' in comments) :
+            ra_c = ra
+            dec_c = dec
+            re_c = 4.0/scale/pix_size
+            mag_c = -20 + 5*np.log10(distance*1e+5)
+            n_c = 1
+            pa_c = 0
+            q_c = 1
+            x_gal_center,y_gal_center = w.all_world2pix(ra, dec,0)
 
         make_galfit_feedme_file_sersic(cropped_frame,mask_frame,sigma_frame,psf_frame,\
         obj_name, ra_c, dec_c, re_c, filter_name, fit_x1, fit_x2, fit_y1, fit_y2, \
@@ -966,8 +1005,8 @@ def fit_galaxy_sersic(main_data,weight_data,ra,dec,obj_name,filter_name,pix_size
         #ax[0].set_xlim([-0.001,scale*r_cut_fit*pix_size+0.05])
         ax[0].set_xlim([-0.001,10.001])
         #plt.xlim([0,10])
-        ax[0].set_ylim(29.45,23.0)
-        #ax[0].set_ylim(22.70,22.55)
+        ##ax[0].set_ylim(29.45,23.0)
+        ax[0].set_ylim(np.nanmax(magbins)+0.25,np.nanmin(magbins)-0.25)
         ax[1].set_ylim(-0.55,0.55)
         ax[1].set_xlabel('R [kpc]')
         ax[0].set_ylabel('$\mu$ (mag/arcsec$^2$)')

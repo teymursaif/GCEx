@@ -55,7 +55,7 @@ def prepare_sex_cat(source_cat_name_input,source_cat_name_output,gal_name,filter
     #print (len(sex_cat_data))
     mask = ((sex_cat_data['FLAGS'] < 4) & \
     (sex_cat_data ['ELLIPTICITY'] < 1) & \
-    (sex_cat_data ['MAG_AUTO'] > 10) & \
+    (sex_cat_data ['MAG_AUTO'] > MAG_LIMIT_SAT) & \
     (sex_cat_data ['MAG_AUTO'] < MAG_LIMIT_CAT) & \
     (sex_cat_data ['FWHM_IMAGE'] < 999) & \
     (sex_cat_data ['FWHM_IMAGE'] > FWHM_limit) )
@@ -243,7 +243,7 @@ def make_detection_frame(gal_id, input_frame, weight_frame, fn, output_frame, ba
         # make segmentation map
         #if i == 0 :
         command = SE_executable+' '+temp_dir+'temp_det.fits'+' -c '+str(external_dir)+'default.sex -CATALOG_NAME '+temp_dir+'temp_sex_cat.fits'+str(i)+'.fits '+ \
-        '-PARAMETERS_NAME '+str(external_dir)+'default.param -DETECT_MINAREA 3 -DETECT_MAXAREA 200 -DETECT_THRESH 1.0 -ANALYSIS_THRESH 1.0 ' + \
+        '-PARAMETERS_NAME '+str(external_dir)+'sex_default.param -DETECT_MINAREA 3 -DETECT_MAXAREA 200 -DETECT_THRESH 1.0 -ANALYSIS_THRESH 1.0 ' + \
         '-DEBLEND_NTHRESH 4 -DEBLEND_MINCONT 0.1 ' + weight_command + \
         '-FILTER_NAME  '+str(external_dir)+'default.conv -STARNNW_NAME '+str(external_dir)+'default.nnw -PIXEL_SCALE ' + str(PIXEL_SCALES[filters[0]]) + ' ' \
         '-BACK_SIZE 256 -BACK_FILTERSIZE 3 -CHECKIMAGE_TYPE SEGMENTATION ' +  \
@@ -260,7 +260,7 @@ def make_detection_frame(gal_id, input_frame, weight_frame, fn, output_frame, ba
             img1.writeto(temp_dir+'temp_seg'+str(i)+'.fits',overwrite=True)
 
         command = SE_executable+' '+temp_dir+'temp_det.fits'+' -c '+str(external_dir)+'default.sex -CATALOG_NAME '+temp_dir+'temp_sex_cat.fits'+str(i)+'.fits '+ \
-        '-PARAMETERS_NAME '+str(external_dir)+'default.param -DETECT_MINAREA 4 -DETECT_MAXAREA 200 -DETECT_THRESH 2.0 -ANALYSIS_THRESH 2.0 ' + \
+        '-PARAMETERS_NAME '+str(external_dir)+'sex_default.param -DETECT_MINAREA 4 -DETECT_MAXAREA 200 -DETECT_THRESH 2.0 -ANALYSIS_THRESH 2.0 ' + \
         '-DEBLEND_NTHRESH 64 -DEBLEND_MINCONT 0.0001 ' + weight_command + \
         '-FILTER_NAME  '+str(external_dir)+'default.conv -STARNNW_NAME '+str(external_dir)+'default.nnw -PIXEL_SCALE ' + str(PIXEL_SCALES[filters[0]]) + ' ' \
         '-BACK_SIZE '+ str(backsize)+' -BACK_FILTERSIZE '+ str(backfiltersize)+' -CHECKIMAGE_TYPE BACKGROUND,-BACKGROUND,APERTURES ' +  \
@@ -297,7 +297,15 @@ def make_source_cat(gal_id):
         i=i+1
         os.system('cp '+external_dir+'sex_default.param '+external_dir+'default.param')
         detection_frame = detection_dir+gal_name+'_'+fn+'_'+'detection'+'_cropped.fits'
-        main_frame = data_dir+gal_name+'_'+fn+'_cropped.fits'
+
+        if USE_SUB_GAL == False:
+            main_frame = data_dir+gal_name+'_'+fn+'_cropped.fits'
+
+        elif USE_SUB_GAL == True:
+            shutil.copy(fit_dir+gal_name+'_'+fn+'_galfit_imgblock_res.fits',clean_data_dir+gal_name+'_'+fn+'.fits')
+            main_frame = clean_data_dir+gal_name+'_'+fn+'.fits'
+
+        #psf_frame = psf_dir+'psf_'+fn+'.inst.fits'
         weight_frame = data_dir+gal_name+'_'+fn+'_cropped.weight.fits'
         make_detection_frame(gal_id,main_frame, weight_frame,fn,output_frame=detection_frame)
         make_fancy_png(detection_frame,detection_frame+'.jpg',zoom=2)
@@ -319,6 +327,7 @@ def make_source_cat(gal_id):
         gain = GAIN[fn]
         pix_size = PIXEL_SCALES[fn] #automatic
 
+
         weight_command = '-WEIGHT_TYPE  MAP_WEIGHT -WEIGHT_IMAGE '+weight_map+' -WEIGHT_THRESH 0.001'
 
         try :
@@ -329,11 +338,19 @@ def make_source_cat(gal_id):
         psf_dia_ref_pixel = int(psf_dia_ref_pixel*100+0.4999)/100
         apertures = (str(psf_dia_ref_pixel)+','+PHOTOM_APERS).split(',')
         n = len(apertures)
+        shutil.copy(external_dir+'sex_default.param',external_dir+'default.param')
         params = open(external_dir+'default.param','a')
         params.write('MAG_APER('+str(n)+') #Fixed aperture magnitude vector [mag]\n')
         params.write('MAGERR_APER('+str(n)+') #RMS error vector for fixed aperture mag [mag]\n')
         params.write('FLUX_APER('+str(n)+') # Flux within a Kron-like elliptical aperture [count]\n')
         params.write('FLUXERR_APER('+str(n)+') #RMS error for AUTO flux [count]\n')
+        #params.write('XPSF_IMAGE #X coordinate from PSF-fitting [pixel]\n')
+        #params.write('YPSF_IMAGE #Y coordinate from PSF-fitting [pixel]\n')
+        #params.write('ALPHAPSF_SKY #Right ascension of the fitted PSF (native) [deg]\n')
+        #params.write('DELTAPSF_SKY #Declination of the fitted PSF (native) [deg]\n')
+        #params.write('MAG_PSF #Magnitude from PSF-fitting [mag]\n')
+        #params.write('MAGERR_PSF #RMS error vector for Magnitude from PSF-fitting [mag]\n')
+
         params.close()
 
         ####
@@ -344,7 +361,7 @@ def make_source_cat(gal_id):
         '-FILTER Y -FILTER_NAME  '+external_dir+'tophat_1.5_3x3.conv -STARNNW_NAME '+external_dir+'default.nnw -PIXEL_SCALE ' + str(pix_size) + ' ' \
         '-BACK_SIZE 32 -BACK_FILTERSIZE 1 -CHECKIMAGE_TYPE APERTURES,FILTERED,BACKGROUND,-BACKGROUND,SEGMENTATION,BACKGROUND_RMS ' +  \
         '-CHECKIMAGE_NAME '+check_image_aper+','+check_image_filtered+','+check_image_back+','+check_image_noback+','+check_image_segm+\
-        ','+check_image_back_rms
+        ','+check_image_back_rms#+' -PSF_NAME '+psf_frame
         #print (command)
         os.system(command)
 
