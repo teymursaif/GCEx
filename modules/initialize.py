@@ -21,7 +21,7 @@ def initialize_params() :
 
 
     WORKING_DIR = './'
-    FRAME_SIZE_ARCSEC = 600#600 #cut-out size from the original frame for the general anlaysis (arcsec)
+    FRAME_SIZE_ARCSEC = 200#600 #cut-out size from the original frame for the general anlaysis (arcsec)
     #FRAME_SIZE_ARCSEC = 720
 
     # List of targets as a string with:
@@ -46,7 +46,9 @@ def initialize_params() :
     #Euclid ERO
     TARGETS = []
     #TARGETS.append(['0 ERO-FORNAX ERO-FORNAX 054.01542 -35.27031 20 VIS MODEL_PSF ---']) # modelling the psf using a larger frame before analysing individual galaxies
-    TARGETS.append(['1 ERO-FORNAX NGC1387 54.2376406 -35.5065765 20 VIS MAKE_CAT MASSIVE'])
+    #TARGETS.append(['1 ERO-FORNAX NGC1387 54.2376406 -35.5065765 20 VIS MAKE_CAT MASSIVE'])
+    TARGETS.append(['2 ERO-FORNAX FCC188 054.26901 -35.59002 20 VIS MAKE_CAT DWARF,LSB'])
+    
             
     GC_REF_MAG = {'VIS':-8}
 
@@ -103,7 +105,7 @@ def initialize_params() :
     GC_MAG_RANGE = [-10,-4]
     PSF_PIXELSCL_KEY = 'PIXELSCL'
     PSF_PIXEL_SCALE = 0.0 #if 'PIXELSCL' is not in the header, specify it here.
-    USE_SUB_GAL = True
+    USE_SUB_GAL = False#True
     ### for making PSF
     MODEL_PSF = True
     RATIO_OVERSAMPLE_PSF = 5 #do not go beyond 10, this will have consequences for undersampling later
