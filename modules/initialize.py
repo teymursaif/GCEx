@@ -21,7 +21,7 @@ def initialize_params() :
 
 
     WORKING_DIR = './'
-    FRAME_SIZE_ARCSEC = 200#600 #cut-out size from the original frame for the general anlaysis (arcsec)
+    FRAME_SIZE_ARCSEC = 3300#600 #cut-out size from the original frame for the general anlaysis (arcsec)
     #FRAME_SIZE_ARCSEC = 720
 
     # List of targets as a string with:
@@ -45,9 +45,9 @@ def initialize_params() :
 
     #Euclid ERO
     TARGETS = []
-    #TARGETS.append(['0 ERO-FORNAX ERO-FORNAX 054.01542 -35.27031 20 VIS MODEL_PSF ---']) # modelling the psf using a larger frame before analysing individual galaxies
+    TARGETS.append(['0 ERO-FORNAX ERO-FORNAX 054.01542 -35.27031 20 VIS MAKE_CAT ---']) # modelling the psf using a larger frame before analysing individual galaxies
     #TARGETS.append(['1 ERO-FORNAX NGC1387 54.2376406 -35.5065765 20 VIS MAKE_CAT MASSIVE'])
-    TARGETS.append(['2 ERO-FORNAX FCC188 054.26901 -35.59002 20 VIS MAKE_CAT DWARF,LSB'])
+    #TARGETS.append(['2 ERO-FORNAX FCC188 054.26901 -35.59002 20 VIS MAKE_CAT DWARF,LSB'])
     
             
     GC_REF_MAG = {'VIS':-8}
