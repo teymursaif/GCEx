@@ -14,16 +14,15 @@ for gal_id in gal_params.keys():
 
     # step 0. inistialize pipleine and prepare data
     intro(gal_id)
-    #copy_data(gal_id)
+    copy_data(gal_id)
     get_data_info(gal_id)
 
-    #if RESAMPLE == True:
-    #    resample_data(gal_id)
-    #    make_galaxy_frames(gal_id, resampled=True)
-    #else:
-    #    make_galaxy_frames(gal_id, resampled=False)
+    if 'RESAMPLE'in methods:
+        resample_data(gal_id)
+    
+    make_galaxy_frames(gal_id)
 
-    if (MODEL_PSF == True) and ('MODEL_PSF' in methods):
+    if 'MODEL_PSF' in methods:
         make_psf_all_filters(gal_id)
     
     initial_psf(gal_id)

@@ -46,7 +46,7 @@ PHOT_PETROPARAMS 2.0, 3.5       # MAG_PETRO parameters: <Petrosian_fact>,
                                 # <min_radius>
 
 SATUR_LEVEL      50000.0        # level (in ADUs) at which arises saturation
-SATUR_KEY        SATURATE       # keyword for saturation level (in ADUs)
+SATUR_KEY        None #SATURATE       # keyword for saturation level (in ADUs)
 
 MAG_ZEROPOINT    0.0            # magnitude zero-point
 MAG_GAMMA        4.0            # gamma of emulsion (for photographic scans)
@@ -82,7 +82,7 @@ MEMORY_BUFSIZE   8192           # number of lines in buffer
 
 #----------------------------- Miscellaneous ---------------------------------
 
-VERBOSE_TYPE     NORMAL          # can be QUIET, NORMAL or FULL
+VERBOSE_TYPE     QUIET          # can be QUIET, NORMAL or FULL
 HEADER_SUFFIX    .head          # Filename extension for additional headers
 WRITE_XML        N              # Write XML file (Y/N)?
 XML_NAME         sex.xml        # Filename for XML output
