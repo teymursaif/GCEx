@@ -102,6 +102,7 @@ def median_filter_array(data,fsize = 3):
 
 def get_data_info(gal_id):
     gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
+    methods = gal_methods[gal_id]
     
     print ('- Check the input data for compatibility with pipeline')
     for fn in filters:
@@ -150,7 +151,10 @@ def get_data_info(gal_id):
     print ('- Frame exposure times are:'+str(EXPTIME))
     print ('- Pixel-sizes are: '+str(PIXEL_SCALES))
     print ('- Zero-points are: '+str(ZPS))
+    print ('- GAINs are : '+str(GAIN))
+
     print ('- Cut-out sizes are: '+str(FRAME_SIZE))
+
     #PIXEL_SCALE = PIXEL_SCALES[0]
     #print ('- The adopted pixel-size for this analysis is: '+str(PIXEL_SCALE))
 
@@ -465,17 +469,24 @@ def make_galaxy_frames(gal_id, resampled=False):
     print ('- Making cropped frames and weight maps')
     gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
 
-    if resampled == True: resampled='_resampled'
-    elif resampled == False: resampled=''
+    methods = gal_methods[gal_id]
+
+    if 'RESAMPLE'in methods: 
+        resampled='_resampled'
+    else: 
+        resampled=''
 
     for fn in filters:
         #initial crop for maiing life easier!
         crop_frame(data_dir+gal_name+'_'+fn+resampled+'.fits',gal_name,FRAME_SIZE[fn]/2,fn,ra,dec,format='_cropped.fits')
         crop_frame(data_dir+gal_name+'_'+fn+resampled+'.weight.fits',gal_name,FRAME_SIZE[fn]/2,fn,ra,dec,format='_cropped.weight.fits')
-        crop_frame(data_dir+gal_name+'_'+fn+resampled+'.fits',gal_name,GAL_FRAME_SIZE[fn]/2,fn,ra,dec,format='_gal_cropped.fits')
-        crop_frame(data_dir+gal_name+'_'+fn+resampled+'.weight.fits',gal_name,GAL_FRAME_SIZE[fn]/2,fn,ra,dec,format='_gal_cropped.weight.fits')
 
-        make_fancy_png(data_dir+gal_name+'_'+fn+'_gal_cropped.fits',img_dir+gal_name+'_'+fn+'_gal_cropped.jpg',text=gal_name+' '+fn)
+
+        if 'FIT_GAL' in methods:
+            crop_frame(data_dir+gal_name+'_'+fn+resampled+'.fits',gal_name,GAL_FRAME_SIZE[fn]/2,fn,ra,dec,format='_gal_cropped.fits')
+            crop_frame(data_dir+gal_name+'_'+fn+resampled+'.weight.fits',gal_name,GAL_FRAME_SIZE[fn]/2,fn,ra,dec,format='_gal_cropped.weight.fits')
+
+            make_fancy_png(data_dir+gal_name+'_'+fn+'_gal_cropped.fits',img_dir+gal_name+'_'+fn+'_gal_cropped.jpg',text=gal_name+' '+fn)
 
 ############################################################
 

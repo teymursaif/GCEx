@@ -13,6 +13,7 @@ from photutils.aperture import CircularAnnulus
 from modules.initialize import *
 from modules.pipeline_functions import *
 from modules.source_det import *
+from modules.fit_galaxy import *
 import random
 from scipy import signal
 from scipy.ndimage import gaussian_filter
@@ -157,14 +158,24 @@ def simulate_GCs_all(gal_id):
 
 def simualte_GCs(gal_id,n):
     gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
+    methods = gal_methods[gal_id]
+
     ra_gal = ra
     dec_gal = dec
     fn_det = filters[0]
     print ('- simulating GCs: frame ',n+1,'out of',N_SIM_GCS)
-    science_frame = data_dir+gal_name+'_'+fn_det+'_cropped.fits'
+    
+    if 'USE_SUB_GAL' in methods:
+        shutil.copy(fit_dir+gal_name+'_'+fn_det+'_galfit_imgblock_res.fits',sub_data_dir+gal_name+'_'+fn_det+'.fits')
+        science_frame = sub_data_dir+gal_name+'_'+fn_det+'.fits'
+    else :
+        science_frame = data_dir+gal_name+'_'+fn_det+'_cropped.fits'
+
+    #print ('GCSIM', science_frame)
+
+    weight_frame = data_dir+gal_name+'_'+fn_det+'_cropped.weight.fits'
     w=WCS(science_frame)
     y_gal, x_gal= w.all_world2pix(ra_gal,dec_gal,0)
-    weight_frame = data_dir+gal_name+'_'+fn_det+'_cropped.weight.fits'
     weight = fits.open(weight_frame)
     weight_data = weight[0].data
     weight_header = weight[0].header
@@ -218,8 +229,8 @@ def simualte_GCs(gal_id,n):
         Y1_random = y_gal + np.random.normal(0,Y/5,2000*N_ART_GCS)
         X2_random = x_gal + np.random.normal(0,X/10,2000*N_ART_GCS)
         Y2_random = y_gal + np.random.normal(0,Y/10,2000*N_ART_GCS)
-        X3_random = x_gal + np.random.normal(0,X/20,500*N_ART_GCS)
-        Y3_random = y_gal + np.random.normal(0,Y/20,500*N_ART_GCS)
+        X3_random = x_gal + np.random.normal(0,X/20,1000*N_ART_GCS)
+        Y3_random = y_gal + np.random.normal(0,Y/20,1000*N_ART_GCS)
         X1_random = np.append(X1_random,X2_random)
         X1_random = np.append(X1_random,X3_random)
         Y1_random = np.append(Y1_random,Y2_random)
@@ -290,14 +301,19 @@ def simualte_GCs(gal_id,n):
 
     for fn in filters:
 
-        science_frame = data_dir+gal_name+'_'+fn+'_cropped.fits'
-        w=WCS(science_frame)
+        if 'USE_SUB_GAL' in methods:
+            shutil.copy(fit_dir+gal_name+'_'+fn+'_galfit_imgblock_res.fits',sub_data_dir+gal_name+'_'+fn+'.fits')
+            science_frame = sub_data_dir+gal_name+'_'+fn+'.fits'
+        else :
+            science_frame = data_dir+gal_name+'_'+fn+'_cropped.fits'
 
         weight_frame = data_dir+gal_name+'_'+fn+'_cropped.weight.fits'
         weight = fits.open(weight_frame)
         weight_data = weight[0].data
         mask = weight_data
         mask[mask>0]=1
+
+        #print ('GCSIM2',science_frame)
 
         psf_file = psf_dir+'psf_'+fn+'.fits'
         print ('- Making artificial GCs for data in filter:', fn)
@@ -423,6 +439,7 @@ def simualte_GCs(gal_id,n):
         df['ART_GC_FLAG_'+fn] = ART_GC_FLAG
 
         img1[0].data = data1*mask
+
         img1.writeto(art_dir+gal_name+'_'+fn+'_ART_'+str(n)+'.fits',overwrite=True)
 
         add_fits_files(science_frame,art_dir+gal_name+'_'+fn+'_ART_'+str(n)+'.fits',art_dir+gal_name+'_'+fn+'_ART_'+str(n)+'.science.fits')
@@ -640,8 +657,8 @@ def make_psf_all_filters(gal_id):
 
         # run SE
         command = SE_executable+' '+main_frame+' -c '+external_dir+'default.sex -CATALOG_NAME '+source_cat+' '+ \
-        '-PARAMETERS_NAME '+external_dir+'sex_default.param -DETECT_MINAREA 8 -DETECT_THRESH 3.0 -ANALYSIS_THRESH 3.0 ' + \
-        '-DEBLEND_NTHRESH 4 -DEBLEND_MINCONT 0.05 -MAG_ZEROPOINT ' +str(zp) + ' -BACKPHOTO_TYPE GLOBAL '+\
+        '-PARAMETERS_NAME '+external_dir+'sex_default.param -DETECT_MINAREA 8 -DETECT_THRESH 5.0 -ANALYSIS_THRESH 5.0 ' + \
+        '-DEBLEND_NTHRESH 1 -DEBLEND_MINCONT 1 -MAG_ZEROPOINT ' +str(zp) + ' -BACKPHOTO_TYPE GLOBAL '+\
         '-FILTER Y -FILTER_NAME  '+external_dir+'default.conv -STARNNW_NAME '+external_dir+'default.nnw -PIXEL_SCALE ' + \
         str(pix_size)+ ' -BACK_SIZE 128 -BACK_FILTERSIZE 3'
   
@@ -650,10 +667,10 @@ def make_psf_all_filters(gal_id):
         ###
         
         make_psf_for_frame(main_frame,weight_frame,source_cat,fn,psf_frame,mode='auto',oversample=True)
-        make_psf_for_frame(main_frame,weight_frame,source_cat,fn,psf_frame_inst,mode='auto',oversample=False)
+        #make_psf_for_frame(main_frame,weight_frame,source_cat,fn,psf_frame_inst,mode='auto',oversample=False)
 
         shutil.copy(psf_frame,psf_dir+'psf_'+fn+'.fits')
-        shutil.copy(psf_frame_inst,psf_dir+'psf_'+fn+'.inst.fits')
+        #shutil.copy(psf_frame_inst,psf_dir+'psf_'+fn+'.inst.fits')
 
 
 ############################################################
@@ -740,34 +757,49 @@ def make_psf_for_frame(main_frame,weight_frame,source_cat,filtername,psf_frame,m
 
         normalize_psf(output)
 
+        psf_data = fits.open(output)
+        X_psf = psf_data[0].header['NAXIS1']
+        Y_psf = psf_data[0].header['NAXIS2']
+        psf_data[0].header['CRPIX1'] = int(X_psf/2+0.5)
+        psf_data[0].header['CRVAL1'] = 0
+        psf_data[0].header['CRPIX2'] = int(Y_psf/2+0.5)
+        psf_data[0].header['CRVAL2'] = 0
+        psf_data.writeto(output,overwrite=True)
+
     ### stacking all stars
     psf_weight_frame = psf_frame+'.weight.fits'
     if oversample == True:
         command = swarp_executable+' '+star_frames+' -c '+external_dir+'default.swarp -IMAGEOUT_NAME '+psf_frame+\
                 ' -WEIGHTOUT_NAME '+psf_weight_frame+' -WEIGHT_TYPE MAP_WEIGHT -SUBTRACT_BACK N -CELESTIAL_TYPE PIXEL'+\
-                ' -RESAMPLE N -VERBOSE_TYPE QUIET'
+                ' -RESAMPLE N -PIXEL_SCALE '+str(pix_size/RATIO_OVERSAMPLE_PSF)+' -RESAMPLING_TYPE LANCZOS4'# -VERBOSE_TYPE QUIET'
                 #' -PIXELSCALE_TYPE  MANUAL -PIXEL_SCALE '+str(1)+' -VERBOSE_TYPE QUIET' 
                 #' -IMAGE_SIZE '+str(radius_pix)+','+str(radius_pix)+' -PIXEL_SCALE '+str(pix_size/RATIO_OVERSAMPLE_PSF)+\
                 #' -CENTER_TYPE MANUAL -CENTER '+str(ra)+','+str(dec)+' -SUBTRACT_BACK N -VERBOSE_TYPE QUIET'
     
-    elif oversample == False:
-        command = swarp_executable+' '+star_frames+' -c '+external_dir+'default.swarp -IMAGEOUT_NAME '+psf_frame+\
-                ' -WEIGHTOUT_NAME '+psf_weight_frame+' -WEIGHT_TYPE MAP_WEIGHT -SUBTRACT_BACK N -CELESTIAL_TYPE PIXEL'+\
-                ' -RESAMPLE N -PIXEL_SCALE '+str(pix_size)+' -RESAMPLING_TYPE LANCZOS4'#+'-VERBOSE_TYPE QUIET'
-                #' -PIXELSCALE_TYPE  MANUAL -PIXEL_SCALE '+str(1)+' -VERBOSE_TYPE QUIET' 
-                #' -IMAGE_SIZE '+str(radius_pix)+','+str(radius_pix)+' -PIXEL_SCALE '+str(pix_size/RATIO_OVERSAMPLE_PSF)+\
-                #' -CENTER_TYPE MANUAL -CENTER '+str(ra)+','+str(dec)+' -SUBTRACT_BACK N -VERBOSE_TYPE QUIET'
+    #elif oversample == False:
+    #    command = swarp_executable+' '+star_frames+' -c '+external_dir+'default.swarp -IMAGEOUT_NAME '+psf_frame+\
+    #            ' -WEIGHTOUT_NAME '+psf_weight_frame+' -WEIGHT_TYPE MAP_WEIGHT -SUBTRACT_BACK N'+\
+    #            ' -RESAMPLE Y -PIXEL_SCALE '+str(pix_size)+' -RESAMPLING_TYPE LANCZOS4'#+'-VERBOSE_TYPE QUIET'
+    #            #' -PIXELSCALE_TYPE  MANUAL -PIXEL_SCALE '+str(1)+' -VERBOSE_TYPE QUIET' 
+    #            #' -IMAGE_SIZE '+str(radius_pix)+','+str(radius_pix)+' -PIXEL_SCALE '+str(pix_size/RATIO_OVERSAMPLE_PSF)+\
+    #            #' -CENTER_TYPE MANUAL -CENTER '+str(ra)+','+str(dec)+' -SUBTRACT_BACK N -VERBOSE_TYPE QUIET'
 
+    #print (command)
     os.system(command)
+
     psf_data = fits.open(psf_frame)
-    psf_data[0].header['PIXELSCL'] = pix_size/RATIO_OVERSAMPLE_PSF
+    if oversample == True:
+        psf_data[0].header['PIXELSCL'] = pix_size/RATIO_OVERSAMPLE_PSF
+    elif oversample == False:
+        psf_data[0].header['PIXELSCL'] = pix_size
     X_psf = psf_data[0].header['NAXIS1']
     Y_psf = psf_data[0].header['NAXIS2']
     psf_data[0].header['CRPIX1'] = int(X_psf/2+0.5)
     psf_data[0].header['CRVAL1'] = 0
     psf_data[0].header['CRPIX2'] = int(Y_psf/2+0.5)
-    psf_data[0].header['CRVAL1'] = 0
+    psf_data[0].header['CRVAL2'] = 0
     psf_data.writeto(psf_frame,overwrite=True)
+    normalize_psf(psf_frame)
 
 ############################################################
 

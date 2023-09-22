@@ -221,7 +221,7 @@ def mask_stars (frame, weight_frame, ra, dec, objname, filtername, zp, q=1, pa=0
     """
 
     os.system(SE_executable+' '+frame+' -c '+external_dir+'default.sex -PARAMETERS_NAME '+external_dir+'sex_default.param -CATALOG_NAME '+\
-    fit_dir+objname+'_'+filtername+'.sex_cat.fits -DETECT_MINAREA 8 -DETECT_THRESH 1.5 -ANALYSIS_THRESH 1.5 -MAG_ZEROPOINT '+str(zp)+' '+\
+    fit_dir+objname+'_'+filtername+'.sex_cat.fits -DETECT_MINAREA 8 -DETECT_MAXAREA 10000 -DETECT_THRESH 1.5 -ANALYSIS_THRESH 1.5 -MAG_ZEROPOINT '+str(zp)+' '+\
     '-DEBLEND_NTHRESH 16 -DEBLEND_MINCONT 0.005 -FILTER_NAME '+external_dir+'default.conv '+' -STARNNW_NAME '+external_dir+'default.nnw '+\
     '-BACK_SIZE 32 -CHECKIMAGE_TYPE APERTURES,SEGMENTATION -CHECKIMAGE_NAME '+\
     fit_dir+objname+'_'+filtername+'.check_aper_2.fits,'+fit_dir+objname+'_'+filtername+'_galfit_seg_map.fits')
@@ -781,7 +781,8 @@ def fit_galaxy_sersic(main_data,weight_data,ra,dec,obj_name,filter_name,pix_size
     ##########################
 
     if os.path.exists(psf_dir+'psf_'+fn+'.fits'):
-        psf_frame = psf_dir+'psf_'+fn+'.inst.fits'
+        #psf_frame = psf_dir+'psf_'+fn+'.fits'
+        psf_frame = 'None'
         """
         psf_fits_file = fits.open(psf_frame)
         try :

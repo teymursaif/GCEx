@@ -55,9 +55,9 @@ def prepare_sex_cat(source_cat_name_input,source_cat_name_output,gal_name,filter
     #print (len(sex_cat_data))
     mask = ((sex_cat_data['FLAGS'] < 4) & \
     (sex_cat_data ['ELLIPTICITY'] < 1) & \
-    (sex_cat_data ['MAG_AUTO'] > MAG_LIMIT_SAT) & \
+    (sex_cat_data ['MAG_AUTO'] > 0) & \
     (sex_cat_data ['MAG_AUTO'] < MAG_LIMIT_CAT) & \
-    (sex_cat_data ['FWHM_IMAGE'] < 999) & \
+    (sex_cat_data ['FWHM_IMAGE'] < 99999) & \
     (sex_cat_data ['FWHM_IMAGE'] > FWHM_limit) )
     sex_cat_data = sex_cat_data[mask]
     #print (len(sex_cat_data))
@@ -226,7 +226,7 @@ def make_mask(frame, sex_source_cat, weight_frame, seg_map, mask_out, mask_out2,
 
 ############################################################
 
-def make_detection_frame(gal_id, input_frame, weight_frame, fn, output_frame, backsize=16, backfiltersize=1, iteration=3):
+def make_detection_frame(gal_id, input_frame, weight_frame, fn, output_frame, backsize=16, backfiltersize=1, iteration=2):
     print ('- Making the detection frame for filter ', fn)
     gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
     os.system('cp '+input_frame+' '+temp_dir+'temp_det.fits')
@@ -234,20 +234,20 @@ def make_detection_frame(gal_id, input_frame, weight_frame, fn, output_frame, ba
         print ('+ iteration '+str(i))
         #os.system('mv temp.check.fits temp0.fits')
         if i == 0 :
-            weight_command = '-WEIGHT_TYPE MAP_WEIGHT -WEIGHT_IMAGE '+weight_frame+' -WEIGHT_THRESH 1 '
+            weight_command = '-WEIGHT_TYPE MAP_WEIGHT -WEIGHT_IMAGE '+weight_frame+' -WEIGHT_THRESH 0.001 '
         elif i > 0 :
-            weight_command = '-WEIGHT_TYPE MAP_WEIGHT -WEIGHT_IMAGE '+temp_dir+'temp_weight'+str(i)+'.fits -WEIGHT_THRESH 1 '
+            weight_command = '-WEIGHT_TYPE MAP_WEIGHT -WEIGHT_IMAGE '+temp_dir+'temp_weight'+str(i)+'.fits -WEIGHT_THRESH 0.001 '
 
         #print (weight_command)
 
         # make segmentation map
         #if i == 0 :
         command = SE_executable+' '+temp_dir+'temp_det.fits'+' -c '+str(external_dir)+'default.sex -CATALOG_NAME '+temp_dir+'temp_sex_cat.fits'+str(i)+'.fits '+ \
-        '-PARAMETERS_NAME '+str(external_dir)+'sex_default.param -DETECT_MINAREA 3 -DETECT_MAXAREA 200 -DETECT_THRESH 1.0 -ANALYSIS_THRESH 1.0 ' + \
+        '-PARAMETERS_NAME '+str(external_dir)+'sex_default.param -DETECT_MINAREA 4 -DETECT_MAXAREA 200 -DETECT_THRESH 1.5 -ANALYSIS_THRESH 1.5 ' + \
         '-DEBLEND_NTHRESH 4 -DEBLEND_MINCONT 0.1 ' + weight_command + \
         '-FILTER_NAME  '+str(external_dir)+'default.conv -STARNNW_NAME '+str(external_dir)+'default.nnw -PIXEL_SCALE ' + str(PIXEL_SCALES[filters[0]]) + ' ' \
         '-BACK_SIZE 256 -BACK_FILTERSIZE 3 -CHECKIMAGE_TYPE SEGMENTATION ' +  \
-        '-CHECKIMAGE_NAME '+temp_dir+'temp_seg'+str(i)+'.fits'
+        '-CHECKIMAGE_NAME '+temp_dir+'temp_seg'+str(i)+'.fits'+' -VERBOSE_TYPE NORMAL'
         os.system(command)
 
         if i>0:
@@ -260,11 +260,11 @@ def make_detection_frame(gal_id, input_frame, weight_frame, fn, output_frame, ba
             img1.writeto(temp_dir+'temp_seg'+str(i)+'.fits',overwrite=True)
 
         command = SE_executable+' '+temp_dir+'temp_det.fits'+' -c '+str(external_dir)+'default.sex -CATALOG_NAME '+temp_dir+'temp_sex_cat.fits'+str(i)+'.fits '+ \
-        '-PARAMETERS_NAME '+str(external_dir)+'sex_default.param -DETECT_MINAREA 4 -DETECT_MAXAREA 200 -DETECT_THRESH 2.0 -ANALYSIS_THRESH 2.0 ' + \
-        '-DEBLEND_NTHRESH 64 -DEBLEND_MINCONT 0.0001 ' + weight_command + \
+        '-PARAMETERS_NAME '+str(external_dir)+'sex_default.param -DETECT_MINAREA 4 -DETECT_MAXAREA 200 -DETECT_THRESH 1.5 -ANALYSIS_THRESH 1.5 ' + \
+        '-DEBLEND_NTHRESH 4 -DEBLEND_MINCONT 0.005 ' + weight_command + \
         '-FILTER_NAME  '+str(external_dir)+'default.conv -STARNNW_NAME '+str(external_dir)+'default.nnw -PIXEL_SCALE ' + str(PIXEL_SCALES[filters[0]]) + ' ' \
         '-BACK_SIZE '+ str(backsize)+' -BACK_FILTERSIZE '+ str(backfiltersize)+' -CHECKIMAGE_TYPE BACKGROUND,-BACKGROUND,APERTURES ' +  \
-        '-CHECKIMAGE_NAME '+temp_dir+'temp_back'+str(i)+'.fits,'+temp_dir+'temp_-back'+str(i)+'.fits,'+temp_dir+'temp_aper'+str(i)+'.fits'
+        '-CHECKIMAGE_NAME '+temp_dir+'temp_back'+str(i)+'.fits,'+temp_dir+'temp_-back'+str(i)+'.fits,'+temp_dir+'temp_aper'+str(i)+'.fits'+' -VERBOSE_TYPE NORMAL'
         #print (command)
         os.system(command)
 
@@ -291,6 +291,7 @@ def make_detection_frame(gal_id, input_frame, weight_frame, fn, output_frame, ba
 def make_source_cat(gal_id):
     print ('- Making Source Catalogues ... ')
     gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
+    methods = gal_methods[gal_id]
 
     i = -1
     for fn in filters:
@@ -298,22 +299,18 @@ def make_source_cat(gal_id):
         os.system('cp '+external_dir+'sex_default.param '+external_dir+'default.param')
         detection_frame = detection_dir+gal_name+'_'+fn+'_'+'detection'+'_cropped.fits'
 
-        if USE_SUB_GAL == False:
-            main_frame = data_dir+gal_name+'_'+fn+'_cropped.fits'
-
-        elif USE_SUB_GAL == True:
-            shutil.copy(fit_dir+gal_name+'_'+fn+'_galfit_imgblock_res.fits',clean_data_dir+gal_name+'_'+fn+'.fits')
-            main_frame = clean_data_dir+gal_name+'_'+fn+'.fits'
-
-        #psf_frame = psf_dir+'psf_'+fn+'.inst.fits'
+        main_frame = data_dir+gal_name+'_'+fn+'_cropped.fits'
         weight_frame = data_dir+gal_name+'_'+fn+'_cropped.weight.fits'
+
+        print ('DET', main_frame, weight_frame)
+        #psf_frame = psf_dir+'psf_'+fn+'.fits'
         make_detection_frame(gal_id,main_frame, weight_frame,fn,output_frame=detection_frame)
         make_fancy_png(detection_frame,detection_frame+'.jpg',zoom=2)
         if fn == filters[0]:
             detection_frame_main = detection_dir+gal_name+'_'+'detection'+'_cropped.fits'
             os.system('cp '+detection_frame+' '+detection_frame_main)
 
-        frame = data_dir+gal_name+'_'+fn+'_cropped.fits'
+        frame = main_frame
         weight_map = data_dir+gal_name+'_'+fn+'_cropped.weight.fits'
         source_cat_name = sex_dir+gal_name+'_'+fn+'_source_cat.fits'
         source_cat_name_proc = sex_dir+gal_name+'_'+fn+'_source_cat_proc.fits'
@@ -356,12 +353,12 @@ def make_source_cat(gal_id):
         ####
         command = SE_executable+' '+detection_frame+','+frame+' -c '+external_dir+'default.sex -CATALOG_NAME '+source_cat_name+' '+ \
         '-PARAMETERS_NAME '+external_dir+'default.param -DETECT_MINAREA 4 -DETECT_THRESH 1.5 -ANALYSIS_THRESH 1.5 ' + \
-        '-DEBLEND_NTHRESH 32 -DEBLEND_MINCONT 0.0001 ' + weight_command + ' -PHOT_APERTURES '+str(psf_dia_ref_pixel)+','+str(PHOTOM_APERS)+' -GAIN ' + str(gain) + ' ' \
+        '-DEBLEND_NTHRESH 32 -DEBLEND_MINCONT 0.0005 ' + weight_command + ' -PHOT_APERTURES '+str(psf_dia_ref_pixel)+','+str(PHOTOM_APERS)+' -GAIN ' + str(gain) + ' ' \
         '-MAG_ZEROPOINT ' +str(zp) + ' -BACKPHOTO_TYPE GLOBAL '+\
         '-FILTER Y -FILTER_NAME  '+external_dir+'tophat_1.5_3x3.conv -STARNNW_NAME '+external_dir+'default.nnw -PIXEL_SCALE ' + str(pix_size) + ' ' \
         '-BACK_SIZE 32 -BACK_FILTERSIZE 1 -CHECKIMAGE_TYPE APERTURES,FILTERED,BACKGROUND,-BACKGROUND,SEGMENTATION,BACKGROUND_RMS ' +  \
         '-CHECKIMAGE_NAME '+check_image_aper+','+check_image_filtered+','+check_image_back+','+check_image_noback+','+check_image_segm+\
-        ','+check_image_back_rms#+' -PSF_NAME '+psf_frame
+        ','+check_image_back_rms+' -VERBOSE_TYPE NORMAL'#' -PSF_NAME '+psf_frame
         #print (command)
         os.system(command)
 
@@ -627,6 +624,7 @@ def forced_photometry(det_cat, photom_frame, mask_frame, back_rms_frame, fn, out
 def copy_sims(gal_id):
 
     gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
+    methods = gal_methods[gal_id]
 
     for fn in filters:
         for n in range(N_SIM_GCS) :
@@ -635,10 +633,17 @@ def copy_sims(gal_id):
             gal_name = gal_name+'_SIM_'+str(n)
             (gal_params[gal_id])[0] = gal_name
 
-            shutil.copy(art_dir+gal_name_orig+'_'+fn+'_ART_'+str(n)+'.science.fits',\
-                art_dir+gal_name+'_'+fn+'_cropped.fits')
-            shutil.copy(data_dir+gal_name_orig+'_'+fn+'_cropped.weight.fits',\
-                art_dir+gal_name+'_'+fn+'_cropped.weight.fits')
+            if 'USE_SUB_GAL' in methods:
+                shutil.copy(art_dir+gal_name_orig+'_'+fn+'_ART_'+str(n)+'.science.fits',\
+                    art_dir+gal_name+'_'+fn+'_cropped.fits')
+                shutil.copy(data_dir+gal_name_orig+'_'+fn+'_cropped.weight.fits',\
+                    art_dir+gal_name+'_'+fn+'_cropped.weight.fits')
+                    
+            else :
+                shutil.copy(art_dir+gal_name_orig+'_'+fn+'_ART_'+str(n)+'.science.fits',\
+                    art_dir+gal_name+'_'+fn+'_cropped.fits')
+                shutil.copy(data_dir+gal_name_orig+'_'+fn+'_cropped.weight.fits',\
+                    art_dir+gal_name+'_'+fn+'_cropped.weight.fits')
 
             gal_name = gal_name_orig
             (gal_params[gal_id])[0] = gal_name
@@ -651,6 +656,7 @@ def make_source_cat_for_sim(gal_id):
 
     copy_sims(gal_id)
     gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
+    methods = gal_methods[gal_id]
     global data_dir
     data_dir = art_dir
     tables = []
