@@ -13,7 +13,8 @@ def initialize_params() :
     PHOTOM_APERS, FWHMS_ARCSEC, APERTURE_SIZE, PSF_REF_RAD_FRAC, BACKGROUND_ANNULUS_START, BACKGROUND_ANNULUS_TICKNESS, TARGETS, APERTURE_SIZE, \
     MAG_LIMIT_CAT, CROSS_MATCH_RADIUS_ARCSEC, GC_SIZE_RANGE, GC_MAG_RANGE, RATIO_OVERSAMPLE_PSF, PSF_PIXEL_SCALE, PSF_SIZE, MODEL_PSF, \
     PIXEL_SCALES, ZPS, PRIMARY_FRAME_SIZE, FRAME_SIZE, GAL_FRAME_SIZE, EXPTIME, GAIN, GC_REF_MAG, PSF_PIXELSCL_KEY, FWHM_LIMIT, INPUT_ZP, INPUT_EXPTIME, \
-    MAG_LIMIT_SAT, MAG_LIMIT_PSF, SE_executable,galfit_executable,swarp_executable
+    MAG_LIMIT_SAT, MAG_LIMIT_PSF, GC_SEL_PARAMS, ELL_LIMIT_PSF
+    global SE_executable,galfit_executable,swarp_executable
 
     FWHMS_ARCSEC = {}
     APERTURE_SIZE = {}
@@ -38,8 +39,8 @@ def initialize_params() :
     ### (if ZP, EXPTIME and GAIN are missing from the header, define them for a given filter)
 
     WORKING_DIR = './'
-    PRIMARY_FRAME_SIZE_ARCSEC = 300 #arcsec
-    FRAME_SIZE_ARCSEC = 300 #cut-out size from the original frame for the general anlaysis (arcsec)
+    PRIMARY_FRAME_SIZE_ARCSEC = 1000 #arcsec
+    FRAME_SIZE_ARCSEC = 1000 #cut-out size from the original frame for the general anlaysis (arcsec)
 
     # defining the executables (what you type in the command-line that executes the program)
     SE_executable = 'sex'
@@ -76,13 +77,22 @@ def initialize_params() :
 
     #Euclid ERO
     TARGETS = []
-    #TARGETS.append(['0 ERO-FORNAX ERO-FORNAX 054.01542 -35.27031 20 VIS MODEL_PSF ---']) # modelling the psf using a larger frame before analysing individual galaxies
-    TARGETS.append(['1 ERO-FORNAX NGC1387 54.2376406 -35.5065765 20 VIS USE_SUB_GAL,MAKE_GC_CAT MASSIVE']) #FIT_GAL,USE_SUB_GAL,MAKE_CAT
+    #TARGETS.append(['0 ERO-FORNAX-v3b ERO-FORNAX-v3b 054.01542 -35.27031 20 VIS MODEL_PSF ---'])
+    #TARGETS.append(['0 ERO-FORNAX-v3b ERO-FORNAX-v3b 054.01542 -35.27031 20 VIS MAKE_CAT ---']) # modelling the psf using a larger frame before analysing individual galaxies
+    #TARGETS.append(['1 ERO-FORNAX NGC1387 54.2376406 -35.5065765 20 VIS USE_SUB_GAL,MAKE_GC_CAT MASSIVE']) #FIT_GAL,USE_SUB_GAL,MAKE_CAT
     #TARGETS.append(['2 ERO-FORNAX FCC188 054.26901 -35.59002 20 VIS MAKE_CAT DWARF,LSB'])
-    TARGETS.append(['2 NGC1387-ANGELA NGC1387-ANGELA 54.2376406 -35.5065765 20 VIS MAKE_GC_CAT MASSIVE']) #MAKE_CAT
+    #TARGETS.append(['2 NGC1387-ANGELA NGC1387-ANGELA 54.2376406 -35.5065765 20 VIS MAKE_GC_CAT MASSIVE']) #MAKE_CAT
+
+    TARGETS.append(['0 EUC_LE1_VIS-65630-1-C_20230903T142511 EUC_LE1_VIS-65630-1-C_20230903T142511 054.01542 -35.27031 20 VIS MODEL_PSF ---'])
 
     # NOTE: possible methods -> RESAMPLE_DATA, MODEL_PSF, FIT_GAL, USE_SUB_GAL, MAKE_CAT, MAKE_CAT, MAKE_GC_CAT 
     # NOTE: possible comments -> MASSIVE,DWARF,LSB
+
+    global TABLES
+    TABLES = {}
+    TABLES['acsfcs']='/data/users/saifollahi/Euclid/ERO/archival_tables/ACS-FCS-GCs.fits'
+    TABLES['fornax-spec-gcs']='/data/users/saifollahi/Euclid/ERO/archival_tables/Fornax_spec_UCDs_and_GCs.fits'
+    TABLES['fornax-spec-stars']='/data/users/saifollahi/Euclid/ERO/archival_tables/Fornax_spec_foreground_stars.fits'
 
     # ------------------------------  GALAXY FITTING ------------------------------ 
 
@@ -107,6 +117,10 @@ def initialize_params() :
     RATIO_OVERSAMPLE_PSF = 5 #do not go beyond 10, this will have consequences for undersampling later
     PSF_IMAGE_SIZE = 20 #PSF size in the instruments pixel-scale
     MAG_LIMIT_PSF = 20
+    ELL_LIMIT_PSF = 0.1
+    #FWHM_UPPER_LIMIT_PSF = 
+    #FWHM_LOWER_LIMIT_PSF = 
+    
     
     #------------------------------ GC SIMULATION ------------------------------ 
     N_ART_GCS = 200
@@ -115,6 +129,10 @@ def initialize_params() :
     GC_SIZE_RANGE = [1,8] #lower value should be small enough to make some point-sources for performance check, in pc
     GC_MAG_RANGE = [-10,-4]
     GC_REF_MAG = {'VIS':-8} #magnitude of a typical GC in the given filters should be defined here.
+
+    #------------------------------ GC SELECTION ------------------------------- 
+
+    GC_SEL_PARAMS = ['CI_1_2','CI_2_4','CI_4_6','CI_6_8','CI_8_10','CI_10_12']
 
 
     ####################################################################################################

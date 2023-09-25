@@ -696,7 +696,7 @@ def make_psf_for_frame(main_frame,weight_frame,source_cat,filtername,psf_frame,m
     pix_size = PIXEL_SCALES[fn]
 
     mask = ((sex_cat_data['FLAGS'] < 1) & \
-    (sex_cat_data ['ELLIPTICITY'] < 0.1) & \
+    (sex_cat_data ['ELLIPTICITY'] < ELL_LIMIT_PSF) & \
     (sex_cat_data ['MAG_AUTO'] > MAG_LIMIT_SAT) & \
     (sex_cat_data ['MAG_AUTO'] < MAG_LIMIT_PSF) & \
     (sex_cat_data ['FWHM_IMAGE'] > 0.5) & \
