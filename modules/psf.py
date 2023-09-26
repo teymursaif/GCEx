@@ -14,6 +14,7 @@ from modules.initialize import *
 from modules.pipeline_functions import *
 from modules.source_det import *
 from modules.fit_galaxy import *
+from modules.plots_functions import *
 import random
 from scipy import signal
 from scipy.ndimage import gaussian_filter
@@ -695,15 +696,21 @@ def make_psf_for_frame(main_frame,weight_frame,source_cat,filtername,psf_frame,m
     gain = GAIN[fn]
     pix_size = PIXEL_SCALES[fn]
 
+    mag = sex_cat_data ['MAG_AUTO']
+    fwhm = sex_cat_data['FWHM_IMAGE']
+    fig, ax = plt.subplots(figsize=(8,6), constrained_layout=True)
+    ax.plot(mag,fwhm,'k.',alpha=0.1,label='Detected sources')
+
     mask = ((sex_cat_data['FLAGS'] < 1) & \
     (sex_cat_data ['ELLIPTICITY'] < ELL_LIMIT_PSF) & \
     (sex_cat_data ['MAG_AUTO'] > MAG_LIMIT_SAT) & \
     (sex_cat_data ['MAG_AUTO'] < MAG_LIMIT_PSF) & \
     (sex_cat_data ['FWHM_IMAGE'] > 0.5) & \
     (sex_cat_data ['FWHM_IMAGE'] < 10))
-
     sex_cat_data = sex_cat_data[mask]
+
     fwhm = sex_cat_data['FWHM_IMAGE']
+
     if mode == 'auto':
         fwhm = sigma_clip(fwhm,sigma=2, maxiters=5, masked=False)
         fwhm_max = np.nanmax(fwhm)
@@ -713,8 +720,22 @@ def make_psf_for_frame(main_frame,weight_frame,source_cat,filtername,psf_frame,m
     mask = ((sex_cat_data ['FWHM_IMAGE'] >= fwhm_min) & \
     (sex_cat_data ['FWHM_IMAGE'] <= fwhm_max))
     #print (np.min(fwhm),np.max(fwhm))
-
     sex_cat_data = sex_cat_data[mask]
+
+    mag = sex_cat_data ['MAG_AUTO']
+    fwhm = sex_cat_data['FWHM_IMAGE']
+    ax.plot(mag,fwhm,'ro',alpha=0.05,label='Selected for PSF modeling')
+
+    ax.set_xlim([MAG_LIMIT_SAT-2,MAG_LIMIT_PSF+4])
+    ax.set_ylim([1,8])
+    ax.legend(loc='upper left')
+    ax.tick_params(which='both',direction='in')
+    ax.set_xlabel('$m_{'+fn+'} \ [mag]$')
+    ax.set_ylabel('$FWHM_{'+fn+'} \ [pixel]$')
+    plt.savefig(plots_dir+'psf_'+fn+'_selected_for_psf.png')
+    plt.close()
+
+    ###############
     
     N = len(sex_cat_data)
 
@@ -750,7 +771,7 @@ def make_psf_for_frame(main_frame,weight_frame,source_cat,filtername,psf_frame,m
             ' -WEIGHTOUT_NAME '+output_weight+' -WEIGHT_TYPE MAP_WEIGHT '+'-WEIGHT_IMAGE '+star_weight_file+\
             ' -IMAGE_SIZE '+str(psf_size_pix)+','+str(psf_size_pix)+' -PIXELSCALE_TYPE  MANUAL -CELESTIAL_TYPE EQUATORIAL'+\
             ' -PIXEL_SCALE '+str(pix_size/RATIO_OVERSAMPLE_PSF)+' -CENTER_TYPE MANUAL -CENTER '+str(ra)+','+str(dec)+\
-            ' -RESAMPLE Y -RESAMPLING_TYPE LANCZOS4 -SUBTRACT_BACK Y -VERBOSE_TYPE QUIET'
+            ' -RESAMPLE Y -RESAMPLING_TYPE LANCZOS4 -SUBTRACT_BACK Y -VERBOSE_TYPE NORMAL'
         os.system(command)
         star_frames = star_frames+output+','
         star_weight_frames = star_weight_frames+output_weight+','
@@ -758,6 +779,10 @@ def make_psf_for_frame(main_frame,weight_frame,source_cat,filtername,psf_frame,m
         normalize_psf(output)
 
         psf_data = fits.open(output)
+        if oversample == True:
+            psf_data[0].header['PIXELSCL'] = pix_size/RATIO_OVERSAMPLE_PSF
+        elif oversample == False:
+            psf_data[0].header['PIXELSCL'] = pix_size
         X_psf = psf_data[0].header['NAXIS1']
         Y_psf = psf_data[0].header['NAXIS2']
         psf_data[0].header['CRPIX1'] = int(X_psf/2+0.5)
@@ -766,12 +791,16 @@ def make_psf_for_frame(main_frame,weight_frame,source_cat,filtername,psf_frame,m
         psf_data[0].header['CRVAL2'] = 0
         psf_data.writeto(output,overwrite=True)
 
+        #estimate_fwhm_for_psf_fits(output)
+
     ### stacking all stars
     psf_weight_frame = psf_frame+'.weight.fits'
+    psf_size_pix = int(PSF_IMAGE_SIZE)*RATIO_OVERSAMPLE_PSF
     if oversample == True:
         command = swarp_executable+' '+star_frames+' -c '+external_dir+'default.swarp -IMAGEOUT_NAME '+psf_frame+\
                 ' -WEIGHTOUT_NAME '+psf_weight_frame+' -WEIGHT_TYPE MAP_WEIGHT -SUBTRACT_BACK N -CELESTIAL_TYPE PIXEL'+\
-                ' -RESAMPLE N -PIXEL_SCALE '+str(pix_size/RATIO_OVERSAMPLE_PSF)+' -RESAMPLING_TYPE LANCZOS4'# -VERBOSE_TYPE QUIET'
+                ' -RESAMPLE Y -PIXEL_SCALE '+str(pix_size/RATIO_OVERSAMPLE_PSF)+' -RESAMPLING_TYPE LANCZOS4'+\
+                ' -IMAGE_SIZE '+str(psf_size_pix)+','+str(psf_size_pix)+' -CENTER_TYPE ALL'# -VERBOSE_TYPE QUIET'
                 #' -PIXELSCALE_TYPE  MANUAL -PIXEL_SCALE '+str(1)+' -VERBOSE_TYPE QUIET' 
                 #' -IMAGE_SIZE '+str(radius_pix)+','+str(radius_pix)+' -PIXEL_SCALE '+str(pix_size/RATIO_OVERSAMPLE_PSF)+\
                 #' -CENTER_TYPE MANUAL -CENTER '+str(ra)+','+str(dec)+' -SUBTRACT_BACK N -VERBOSE_TYPE QUIET'

@@ -7,6 +7,7 @@ from modules.plots_functions import *
 from modules.source_det import *
 from modules.fit_galaxy import *
 from modules.psf import *
+from modules.gc_det import *
 
 for gal_id in gal_params.keys():
     
@@ -42,8 +43,9 @@ for gal_id in gal_params.keys():
         assess_GC_simulations(gal_id)
 
     # step 4. GC selection, assessment, GC catalogs and properties
-    #select_GC_candidadates(gal_id)
-    #measure_GC_properties(gald_id)
+    if 'MAKE_GC_CAT' in methods:
+        select_GC_candidadates(gal_id)
+        #measure_GC_properties(gald_id)
 
     finalize(gal_id)
     # step FINALE

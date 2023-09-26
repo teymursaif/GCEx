@@ -39,8 +39,8 @@ def initialize_params() :
     ### (if ZP, EXPTIME and GAIN are missing from the header, define them for a given filter)
 
     WORKING_DIR = './'
-    PRIMARY_FRAME_SIZE_ARCSEC = 1000 #arcsec
-    FRAME_SIZE_ARCSEC = 1000 #cut-out size from the original frame for the general anlaysis (arcsec)
+    PRIMARY_FRAME_SIZE_ARCSEC = 600 #arcsec
+    FRAME_SIZE_ARCSEC = 600 #cut-out size from the original frame for the general anlaysis (arcsec)
 
     # defining the executables (what you type in the command-line that executes the program)
     SE_executable = 'sex'
@@ -77,15 +77,15 @@ def initialize_params() :
 
     #Euclid ERO
     TARGETS = []
-    #TARGETS.append(['0 ERO-FORNAX-v3b ERO-FORNAX-v3b 054.01542 -35.27031 20 VIS MODEL_PSF ---'])
+    #TARGETS.append(['0 ERO-FORNAX-2EXP-AL ERO-FORNAX-2EXP-AL 053.96397 -35.26515 20 VIS MODEL_PSF ---'])
+    TARGETS.append(['2 ERO-FORNAX-2EXP-AL FCC188 054.26901 -35.59002 20 VIS FIT_GAL,USE_SUB_GAL,MAKE_CAT,MAKE_GC_CAT DWARF,LSB'])
+
     #TARGETS.append(['0 ERO-FORNAX-v3b ERO-FORNAX-v3b 054.01542 -35.27031 20 VIS MAKE_CAT ---']) # modelling the psf using a larger frame before analysing individual galaxies
-    #TARGETS.append(['1 ERO-FORNAX NGC1387 54.2376406 -35.5065765 20 VIS USE_SUB_GAL,MAKE_GC_CAT MASSIVE']) #FIT_GAL,USE_SUB_GAL,MAKE_CAT
-    #TARGETS.append(['2 ERO-FORNAX FCC188 054.26901 -35.59002 20 VIS MAKE_CAT DWARF,LSB'])
+    #TARGETS.append(['1 ERO-FORNAX-2EXP-AL NGC1387 54.2376406 -35.5065765 20 VIS MAKE_GC_CAT MASSIVE']) #FIT_GAL,USE_SUB_GAL,MAKE_CAT
+    #TARGETS.append(['2 ERO-FORNAX-2EXP-AL FCC188 054.26901 -35.59002 20 VIS MAKE_CAT DWARF,LSB'])
     #TARGETS.append(['2 NGC1387-ANGELA NGC1387-ANGELA 54.2376406 -35.5065765 20 VIS MAKE_GC_CAT MASSIVE']) #MAKE_CAT
 
-    TARGETS.append(['0 EUC_LE1_VIS-65630-1-C_20230903T142511 EUC_LE1_VIS-65630-1-C_20230903T142511 054.01542 -35.27031 20 VIS MODEL_PSF ---'])
-
-    # NOTE: possible methods -> RESAMPLE_DATA, MODEL_PSF, FIT_GAL, USE_SUB_GAL, MAKE_CAT, MAKE_CAT, MAKE_GC_CAT 
+    # NOTE: possible methods -> RESAMPLE_DATA, MODEL_PSF, FIT_GAL, USE_SUB_GAL, MAKE_CAT, MAKE_GC_CAT 
     # NOTE: possible comments -> MASSIVE,DWARF,LSB
 
     global TABLES
@@ -105,7 +105,7 @@ def initialize_params() :
     BACKGROUND_ANNULUS_TICKNESS = 20 # the thickness of the background annulus in pixels
     CROSS_MATCH_RADIUS_ARCSEC = 0.25
     MAG_LIMIT_CAT = 27
-    MAG_LIMIT_SAT = 18.5 #saturation limit
+    MAG_LIMIT_SAT = 19 #saturation limit
 
     # -------------------------------- PSF MODELING ------------------------------- 
 
@@ -115,7 +115,7 @@ def initialize_params() :
     ### for making PSF (method=MODEL_PSF)
     MODEL_PSF = True
     RATIO_OVERSAMPLE_PSF = 5 #do not go beyond 10, this will have consequences for undersampling later
-    PSF_IMAGE_SIZE = 20 #PSF size in the instruments pixel-scale
+    PSF_IMAGE_SIZE = 40 #PSF size in the instruments pixel-scale
     MAG_LIMIT_PSF = 20
     ELL_LIMIT_PSF = 0.1
     #FWHM_UPPER_LIMIT_PSF = 
@@ -127,12 +127,12 @@ def initialize_params() :
     N_SIM_GCS = 1
     COSMIC_CLEAN = False #does not work at the moment anyways...
     GC_SIZE_RANGE = [1,8] #lower value should be small enough to make some point-sources for performance check, in pc
-    GC_MAG_RANGE = [-10,-4]
+    GC_MAG_RANGE = [-10,-5]
     GC_REF_MAG = {'VIS':-8} #magnitude of a typical GC in the given filters should be defined here.
 
     #------------------------------ GC SELECTION ------------------------------- 
 
-    GC_SEL_PARAMS = ['CI_1_2','CI_2_4','CI_4_6','CI_6_8','CI_8_10','CI_10_12']
+    GC_SEL_PARAMS = ['CI_1_2','CI_2_4','CI_4_6','CI_6_8','CI_8_10','CI_10_12','ELLIPTICITY']
 
 
     ####################################################################################################

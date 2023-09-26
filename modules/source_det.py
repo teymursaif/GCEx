@@ -244,7 +244,7 @@ def make_detection_frame(gal_id, input_frame, weight_frame, fn, output_frame, ba
         #if i == 0 :
         command = SE_executable+' '+temp_dir+'temp_det.fits'+' -c '+str(external_dir)+'default.sex -CATALOG_NAME '+temp_dir+'temp_sex_cat.fits'+str(i)+'.fits '+ \
         '-PARAMETERS_NAME '+str(external_dir)+'sex_default.param -DETECT_MINAREA 4 -DETECT_MAXAREA 200 -DETECT_THRESH 1.5 -ANALYSIS_THRESH 1.5 ' + \
-        '-DEBLEND_NTHRESH 4 -DEBLEND_MINCONT 0.1 ' + weight_command + \
+        '-DEBLEND_NTHRESH 64 -DEBLEND_MINCONT 0.0001 ' + weight_command + \
         '-FILTER_NAME  '+str(external_dir)+'default.conv -STARNNW_NAME '+str(external_dir)+'default.nnw -PIXEL_SCALE ' + str(PIXEL_SCALES[filters[0]]) + ' ' \
         '-BACK_SIZE 256 -BACK_FILTERSIZE 3 -CHECKIMAGE_TYPE SEGMENTATION ' +  \
         '-CHECKIMAGE_NAME '+temp_dir+'temp_seg'+str(i)+'.fits'+' -VERBOSE_TYPE NORMAL'
@@ -261,7 +261,7 @@ def make_detection_frame(gal_id, input_frame, weight_frame, fn, output_frame, ba
 
         command = SE_executable+' '+temp_dir+'temp_det.fits'+' -c '+str(external_dir)+'default.sex -CATALOG_NAME '+temp_dir+'temp_sex_cat.fits'+str(i)+'.fits '+ \
         '-PARAMETERS_NAME '+str(external_dir)+'sex_default.param -DETECT_MINAREA 4 -DETECT_MAXAREA 200 -DETECT_THRESH 1.5 -ANALYSIS_THRESH 1.5 ' + \
-        '-DEBLEND_NTHRESH 4 -DEBLEND_MINCONT 0.005 ' + weight_command + \
+        '-DEBLEND_NTHRESH 64 -DEBLEND_MINCONT 0.0001 ' + weight_command + \
         '-FILTER_NAME  '+str(external_dir)+'default.conv -STARNNW_NAME '+str(external_dir)+'default.nnw -PIXEL_SCALE ' + str(PIXEL_SCALES[filters[0]]) + ' ' \
         '-BACK_SIZE '+ str(backsize)+' -BACK_FILTERSIZE '+ str(backfiltersize)+' -CHECKIMAGE_TYPE BACKGROUND,-BACKGROUND,APERTURES ' +  \
         '-CHECKIMAGE_NAME '+temp_dir+'temp_back'+str(i)+'.fits,'+temp_dir+'temp_-back'+str(i)+'.fits,'+temp_dir+'temp_aper'+str(i)+'.fits'+' -VERBOSE_TYPE NORMAL'
@@ -302,7 +302,7 @@ def make_source_cat(gal_id):
         main_frame = data_dir+gal_name+'_'+fn+'_cropped.fits'
         weight_frame = data_dir+gal_name+'_'+fn+'_cropped.weight.fits'
 
-        print ('DET', main_frame, weight_frame)
+        #print ('DET', main_frame, weight_frame)
         #psf_frame = psf_dir+'psf_'+fn+'.fits'
         make_detection_frame(gal_id,main_frame, weight_frame,fn,output_frame=detection_frame)
         make_fancy_png(detection_frame,detection_frame+'.jpg',zoom=2)
@@ -638,7 +638,7 @@ def copy_sims(gal_id):
                     art_dir+gal_name+'_'+fn+'_cropped.fits')
                 shutil.copy(data_dir+gal_name_orig+'_'+fn+'_cropped.weight.fits',\
                     art_dir+gal_name+'_'+fn+'_cropped.weight.fits')
-                    
+
             else :
                 shutil.copy(art_dir+gal_name_orig+'_'+fn+'_ART_'+str(n)+'.science.fits',\
                     art_dir+gal_name+'_'+fn+'_cropped.fits')
