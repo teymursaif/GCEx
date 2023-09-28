@@ -13,7 +13,7 @@ def initialize_params() :
     PHOTOM_APERS, FWHMS_ARCSEC, APERTURE_SIZE, PSF_REF_RAD_FRAC, BACKGROUND_ANNULUS_START, BACKGROUND_ANNULUS_TICKNESS, TARGETS, APERTURE_SIZE, \
     MAG_LIMIT_CAT, CROSS_MATCH_RADIUS_ARCSEC, GC_SIZE_RANGE, GC_MAG_RANGE, RATIO_OVERSAMPLE_PSF, PSF_PIXEL_SCALE, PSF_SIZE, MODEL_PSF, \
     PIXEL_SCALES, ZPS, PRIMARY_FRAME_SIZE, FRAME_SIZE, GAL_FRAME_SIZE, EXPTIME, GAIN, GC_REF_MAG, PSF_PIXELSCL_KEY, FWHM_LIMIT, INPUT_ZP, INPUT_EXPTIME, \
-    MAG_LIMIT_SAT, MAG_LIMIT_PSF, GC_SEL_PARAMS, ELL_LIMIT_PSF
+    MAG_LIMIT_SAT, MAG_LIMIT_PSF, GC_SEL_PARAMS, ELL_LIMIT_PSF, GC_SIM_MODE
     global SE_executable,galfit_executable,swarp_executable
 
     FWHMS_ARCSEC = {}
@@ -39,8 +39,8 @@ def initialize_params() :
     ### (if ZP, EXPTIME and GAIN are missing from the header, define them for a given filter)
 
     WORKING_DIR = './'
-    PRIMARY_FRAME_SIZE_ARCSEC = 600 #arcsec
-    FRAME_SIZE_ARCSEC = 600 #cut-out size from the original frame for the general anlaysis (arcsec)
+    PRIMARY_FRAME_SIZE_ARCSEC = 3000 #arcsec
+    FRAME_SIZE_ARCSEC = 3000 #cut-out size from the original frame for the general anlaysis (arcsec)
 
     # defining the executables (what you type in the command-line that executes the program)
     SE_executable = 'sex'
@@ -78,7 +78,10 @@ def initialize_params() :
     #Euclid ERO
     TARGETS = []
     #TARGETS.append(['0 ERO-FORNAX-2EXP-AL ERO-FORNAX-2EXP-AL 053.96397 -35.26515 20 VIS MODEL_PSF ---'])
-    TARGETS.append(['2 ERO-FORNAX-2EXP-AL FCC188 054.26901 -35.59002 20 VIS FIT_GAL,USE_SUB_GAL,MAKE_CAT,MAKE_GC_CAT DWARF,LSB'])
+    TARGETS.append(['0 ERO-FORNAX-2EXP-AL ERO-FORNAX-2EXP-AL 053.96397 -35.26515 20 VIS MAKE_CAT,MAKE_GC_CAT ---'])
+
+    #TARGETS.append(['1 ERO-FORNAX-2EXP-AL NGC1387 54.2376406 -35.5065765 20 VIS MAKE_CAT,MAKE_GC_CAT MASSIVE']) #FIT_GAL,USE_SUB_GAL,MAKE_CAT
+    #TARGETS.append(['2 ERO-FORNAX-2EXP-AL FCC188 054.26901 -35.59002 20 VIS FIT_GAL,USE_SUB_GAL,MAKE_CAT,MAKE_GC_CAT DWARF,LSB'])
 
     #TARGETS.append(['0 ERO-FORNAX-v3b ERO-FORNAX-v3b 054.01542 -35.27031 20 VIS MAKE_CAT ---']) # modelling the psf using a larger frame before analysing individual galaxies
     #TARGETS.append(['1 ERO-FORNAX-2EXP-AL NGC1387 54.2376406 -35.5065765 20 VIS MAKE_GC_CAT MASSIVE']) #FIT_GAL,USE_SUB_GAL,MAKE_CAT
@@ -100,11 +103,11 @@ def initialize_params() :
 
     # ---------------------- SOURCE DETECTION AND PHOTOMETRY ----------------------
 
-    PHOTOM_APERS = '1,2,4,6,8,10,12,16,20,24,32,40' #aperture-sizes (diameters) in pixels for aperture photometry with Sextractor
+    PHOTOM_APERS = '1,2,4,8,12,16,20,30,40' #aperture-sizes (diameters) in pixels for aperture photometry with Sextractor
     BACKGROUND_ANNULUS_START = 3 #The size of background annulus for forced photoemtry as a factor of FWHM
     BACKGROUND_ANNULUS_TICKNESS = 20 # the thickness of the background annulus in pixels
     CROSS_MATCH_RADIUS_ARCSEC = 0.25
-    MAG_LIMIT_CAT = 27
+    MAG_LIMIT_CAT = 26
     MAG_LIMIT_SAT = 19 #saturation limit
 
     # -------------------------------- PSF MODELING ------------------------------- 
@@ -116,7 +119,7 @@ def initialize_params() :
     MODEL_PSF = True
     RATIO_OVERSAMPLE_PSF = 5 #do not go beyond 10, this will have consequences for undersampling later
     PSF_IMAGE_SIZE = 40 #PSF size in the instruments pixel-scale
-    MAG_LIMIT_PSF = 20
+    MAG_LIMIT_PSF = 21
     ELL_LIMIT_PSF = 0.1
     #FWHM_UPPER_LIMIT_PSF = 
     #FWHM_LOWER_LIMIT_PSF = 
@@ -127,12 +130,13 @@ def initialize_params() :
     N_SIM_GCS = 1
     COSMIC_CLEAN = False #does not work at the moment anyways...
     GC_SIZE_RANGE = [1,8] #lower value should be small enough to make some point-sources for performance check, in pc
-    GC_MAG_RANGE = [-10,-5]
+    GC_MAG_RANGE = [-10,-6]
     GC_REF_MAG = {'VIS':-8} #magnitude of a typical GC in the given filters should be defined here.
+    GC_SIM_MODE = 'UNIFORM' # 'UNIFORM' or 'CONCENTRATED'
 
     #------------------------------ GC SELECTION ------------------------------- 
 
-    GC_SEL_PARAMS = ['CI_1_2','CI_2_4','CI_4_6','CI_6_8','CI_8_10','CI_10_12','ELLIPTICITY']
+    GC_SEL_PARAMS = ['CI_4_8']#,'CI_2_4','CI_4_6','CI_6_8','CI_8_10','CI_10_12','ELLIPTICITY']
 
 
     ####################################################################################################

@@ -226,7 +226,7 @@ def make_mask(frame, sex_source_cat, weight_frame, seg_map, mask_out, mask_out2,
 
 ############################################################
 
-def make_detection_frame(gal_id, input_frame, weight_frame, fn, output_frame, backsize=16, backfiltersize=1, iteration=2):
+def make_detection_frame(gal_id, input_frame, weight_frame, fn, output_frame, backsize=32, backfiltersize=1, iteration=3):
     print ('- Making the detection frame for filter ', fn)
     gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
     os.system('cp '+input_frame+' '+temp_dir+'temp_det.fits')
@@ -243,8 +243,8 @@ def make_detection_frame(gal_id, input_frame, weight_frame, fn, output_frame, ba
         # make segmentation map
         #if i == 0 :
         command = SE_executable+' '+temp_dir+'temp_det.fits'+' -c '+str(external_dir)+'default.sex -CATALOG_NAME '+temp_dir+'temp_sex_cat.fits'+str(i)+'.fits '+ \
-        '-PARAMETERS_NAME '+str(external_dir)+'sex_default.param -DETECT_MINAREA 4 -DETECT_MAXAREA 200 -DETECT_THRESH 1.5 -ANALYSIS_THRESH 1.5 ' + \
-        '-DEBLEND_NTHRESH 64 -DEBLEND_MINCONT 0.0001 ' + weight_command + \
+        '-PARAMETERS_NAME '+str(external_dir)+'sex_default.param -DETECT_MINAREA 5 -DETECT_MAXAREA 200 -DETECT_THRESH 1.5 -ANALYSIS_THRESH 1.5 ' + \
+        '-DEBLEND_NTHRESH 16 -DEBLEND_MINCONT 0.005 ' + weight_command + \
         '-FILTER_NAME  '+str(external_dir)+'default.conv -STARNNW_NAME '+str(external_dir)+'default.nnw -PIXEL_SCALE ' + str(PIXEL_SCALES[filters[0]]) + ' ' \
         '-BACK_SIZE 256 -BACK_FILTERSIZE 3 -CHECKIMAGE_TYPE SEGMENTATION ' +  \
         '-CHECKIMAGE_NAME '+temp_dir+'temp_seg'+str(i)+'.fits'+' -VERBOSE_TYPE NORMAL'
@@ -260,8 +260,8 @@ def make_detection_frame(gal_id, input_frame, weight_frame, fn, output_frame, ba
             img1.writeto(temp_dir+'temp_seg'+str(i)+'.fits',overwrite=True)
 
         command = SE_executable+' '+temp_dir+'temp_det.fits'+' -c '+str(external_dir)+'default.sex -CATALOG_NAME '+temp_dir+'temp_sex_cat.fits'+str(i)+'.fits '+ \
-        '-PARAMETERS_NAME '+str(external_dir)+'sex_default.param -DETECT_MINAREA 4 -DETECT_MAXAREA 200 -DETECT_THRESH 1.5 -ANALYSIS_THRESH 1.5 ' + \
-        '-DEBLEND_NTHRESH 64 -DEBLEND_MINCONT 0.0001 ' + weight_command + \
+        '-PARAMETERS_NAME '+str(external_dir)+'sex_default.param -DETECT_MINAREA 5 -DETECT_MAXAREA 200 -DETECT_THRESH 1.5 -ANALYSIS_THRESH 1.5 ' + \
+        '-DEBLEND_NTHRESH 16 -DEBLEND_MINCONT 0.005 ' + weight_command + \
         '-FILTER_NAME  '+str(external_dir)+'default.conv -STARNNW_NAME '+str(external_dir)+'default.nnw -PIXEL_SCALE ' + str(PIXEL_SCALES[filters[0]]) + ' ' \
         '-BACK_SIZE '+ str(backsize)+' -BACK_FILTERSIZE '+ str(backfiltersize)+' -CHECKIMAGE_TYPE BACKGROUND,-BACKGROUND,APERTURES ' +  \
         '-CHECKIMAGE_NAME '+temp_dir+'temp_back'+str(i)+'.fits,'+temp_dir+'temp_-back'+str(i)+'.fits,'+temp_dir+'temp_aper'+str(i)+'.fits'+' -VERBOSE_TYPE NORMAL'
@@ -352,7 +352,7 @@ def make_source_cat(gal_id):
 
         ####
         command = SE_executable+' '+detection_frame+','+frame+' -c '+external_dir+'default.sex -CATALOG_NAME '+source_cat_name+' '+ \
-        '-PARAMETERS_NAME '+external_dir+'default.param -DETECT_MINAREA 4 -DETECT_THRESH 1.5 -ANALYSIS_THRESH 1.5 ' + \
+        '-PARAMETERS_NAME '+external_dir+'default.param -DETECT_MINAREA 5 -DETECT_THRESH 1.5 -ANALYSIS_THRESH 1.5 ' + \
         '-DEBLEND_NTHRESH 32 -DEBLEND_MINCONT 0.0005 ' + weight_command + ' -PHOT_APERTURES '+str(psf_dia_ref_pixel)+','+str(PHOTOM_APERS)+' -GAIN ' + str(gain) + ' ' \
         '-MAG_ZEROPOINT ' +str(zp) + ' -BACKPHOTO_TYPE GLOBAL '+\
         '-FILTER Y -FILTER_NAME  '+external_dir+'tophat_1.5_3x3.conv -STARNNW_NAME '+external_dir+'default.nnw -PIXEL_SCALE ' + str(pix_size) + ' ' \
@@ -551,19 +551,19 @@ def forced_photometry(det_cat, photom_frame, mask_frame, back_rms_frame, fn, out
 
         #print (np.shape(fits_data_cropped))
 
-        N_check = 0
-        if (mag_det) < 22 and (mag_det > 18) :
-            N_check = N_check + 1
-            if N_check <= 10 :
-                fig, ax = plt.subplots(1, 3, figsize=(10,3))
-                ax[0].imshow(fits_data_cropped)
-                ax[1].imshow(error_data_cropped)
-                mask_data_bool_cropped_int = mask_data_bool_cropped
-                mask_data_bool_cropped_int[mask_data_bool_cropped_int==True]=1
-                mask_data_bool_cropped_int[mask_data_bool_cropped_int==False]=0
-                ax[2].imshow(mask_data_bool_cropped_int)
-                plt.savefig(check_plots_dir+'object_'+str(i)+'_'+fn+'.png')
-                plt.close()
+        #N_check = 0
+        #if (mag_det) < 22 and (mag_det > 18) :
+        #    N_check = N_check + 1
+        #    if N_check <= 10 :
+        #        fig, ax = plt.subplots(1, 3, figsize=(10,3))
+        #        ax[0].imshow(fits_data_cropped)
+        #        ax[1].imshow(error_data_cropped)
+        #        mask_data_bool_cropped_int = mask_data_bool_cropped
+        #        mask_data_bool_cropped_int[mask_data_bool_cropped_int==True]=1
+        #        mask_data_bool_cropped_int[mask_data_bool_cropped_int==False]=0
+        #        ax[2].imshow(mask_data_bool_cropped_int)
+        #        plt.savefig(check_plots_dir+'object_'+str(i)+'_'+fn+'.png')
+        #        plt.close()
 
         aper = CircularAperture((x, y), aper_size)
         sky_aper = CircularAnnulus((x, y), sky_aper_size_1, sky_aper_size_2)

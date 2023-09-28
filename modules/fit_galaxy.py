@@ -698,8 +698,8 @@ def make_radial_profile(data,ellipse,exptime=1,mask=None,sn_stop=1./3.,rad_stop=
         lowlim = edist >= r1
         ind = uplim*lowlim
         bin_pix = data[ind]
-        #if mask != None:
-        bin_pix = bin_pix[ mask[ind] == 0  ]
+        if mask != None:
+            bin_pix = bin_pix[ mask[ind] == 0  ]
         error = np.std(bin_pix)/np.sqrt(float(len(bin_pix)))
         if len(bin_pix)>5:
             bin_pix = sigma_clip(bin_pix,3,maxiters=3)

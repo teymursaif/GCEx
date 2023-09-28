@@ -82,7 +82,7 @@ def select_GC_candidadates(gal_id):
     selected_gcs_mask = np.ones(len(sources))
 
     for param in GC_SEL_PARAMS:
-        print (param)
+        #print (param)
         param = param + '_' + fn_det
         #param_art_gcs = art_gcs[param]
         param_det_art_gcs = det_art_gcs[param]

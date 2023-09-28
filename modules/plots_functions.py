@@ -127,15 +127,15 @@ def assess_GC_simulations_general(gal_id):
 
 
         if fn == fn_det:
-            param1 = det_art_gcs['CI_4_6_'+fn] + det_art_gcs['CI_6_8_'+fn]
+            param1 = det_art_gcs[GC_SEL_PARAMS[0]+'_'+fn]
             param2 = det_art_gcs['MAG_AUTO_'+fn]
-            param3 = sources['CI_4_6_'+fn] + sources['CI_6_8_'+fn] 
+            param3 = sources[GC_SEL_PARAMS[0]+'_'+fn]
             param4 = sources['F_MAG_APER_CORR_'+fn]
             ax[2][n_filter+1].scatter(param3,param4,s=20,color='grey',alpha=0.2,marker='o',label='Detected Sources')
             ax[2][n_filter+1].scatter(param1,param2,s=50,color=colors[n_filter],alpha=0.2,marker='o',label='Detected Artificial GCs')
             #ax[2][n_filter+1].set_title(gal_name+', '+sfn)
             ax[2][n_filter+1].set_ylabel('$m_{'+sfn+', AUTO} \ [mag]$')
-            ax[2][n_filter+1].set_xlabel('$CI_{4-8, '+sfn+'} \ [mag]$')
+            ax[2][n_filter+1].set_xlabel('$'+(GC_SEL_PARAMS[0]).replace("_", "-")+'_{'+sfn+'} \ [mag]$')
             mag1 = GC_MAG_RANGE[0]+5*np.log10(distance*1e+5)-0.25+color(fn,fn_det)
             #mag2 = GC_MAG_RANGE[1]+5*np.log10(distance*1e+5)+0.25+color(fn,fn_det)
             mag2 = np.nanmax(param2)
