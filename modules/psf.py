@@ -676,7 +676,7 @@ def make_psf_all_filters(gal_id):
         params.write('FLUXERR_APER('+str(1)+') #RMS error for AUTO flux [count]\n')
         params.close()
 
-        #os.system(command)
+        os.system(command)
 
         ###
         
