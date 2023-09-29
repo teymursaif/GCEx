@@ -77,7 +77,7 @@ def prepare_sex_cat(source_cat_name_input,source_cat_name_output,gal_name,filter
     expand_fits_table(source_cat_name_output,'FLUX_APER_REF',flux_apers[:,0])
     expand_fits_table(source_cat_name_output,'FLUXERR_APER_REF',fluxerr_apers[:,0])
 
-    expand_fits_table(source_cat_name_output,'APER_RAD_REF_PIXEL',mag_apers[:,0]*0+float(apertures[0]))
+    expand_fits_table(source_cat_name_output,'APER_DIA_REF_PIXEL',mag_apers[:,0]*0+float(apertures[0]))
 
     fraction_corr = 2.512*np.log10(1./(PSF_REF_RAD_FRAC[fn]))
     flux_fraction_corr = 1./(PSF_REF_RAD_FRAC[fn])
@@ -327,10 +327,7 @@ def make_source_cat(gal_id):
 
         weight_command = '-WEIGHT_TYPE  MAP_WEIGHT -WEIGHT_IMAGE '+weight_map+' -WEIGHT_THRESH 0.001'
 
-        try :
-            psf_dia_ref_pixel = 2*(APERTURE_SIZE[fn])/PIXEL_SCALES[fn]
-        except:
-            psf_dia_ref_pixel = 1
+        psf_dia_ref_pixel = 2*(APERTURE_SIZE[fn])/PIXEL_SCALES[fn]
 
         psf_dia_ref_pixel = int(psf_dia_ref_pixel*100+0.4999)/100
         apertures = (str(psf_dia_ref_pixel)+','+PHOTOM_APERS).split(',')
@@ -685,7 +682,7 @@ def make_source_cat_for_sim(gal_id):
 
         (gal_params[gal_id])[0] = gal_name_orig
         gal_name = gal_name_orig
-    
+
 
     attach_sex_tables(tables,art_dir+gal_name+'_'+fn_det+'_ALL_DET_ART_GCs.fits')
     attach_sex_tables(tables2,art_dir+gal_name+'_'+fn_det+'_ALL_ART_GCs.fits')

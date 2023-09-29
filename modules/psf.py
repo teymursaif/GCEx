@@ -51,11 +51,18 @@ def estimate_aper_corr(gal_id):
             Y = float(psf_fits_file[0].header['NAXIS2'])
             aper_size_pixel = aper_size_arcsec/psf_pixel_scale
 
-            total_flux = np.nansum(psf_data)
+            back = np.nanmedian(sigma_clip(psf_data,3))
+            #print (back)
+            #total_flux = np.nansum(psf_data-back)
+            psf_data = psf_data-back
 
             aper = CircularAperture((X/2., Y/2.), aper_size_pixel)
             aper_area = aper.area_overlap(data=psf_data,method='exact')
             flux, flux_err = aper.do_photometry(data=psf_data,method='exact')
+
+            aper_large = CircularAperture((X/2., Y/2.), X/2.)#*FWHMS_ARCSEC[fn]/psf_pixel_scale)
+            aper_area_large = aper.area_overlap(data=psf_data,method='exact')
+            total_flux, total_flux_err = aper_large.do_photometry(data=psf_data,method='exact')
 
             flux_ratio = float(flux[0]) / total_flux
             PSF_REF_RAD_FRAC[fn] = flux_ratio
@@ -150,7 +157,7 @@ def getFWHM_GaussianFitScaledAmp(img):
 
 
 ############################################################
-    
+
 def simulate_GCs_all(gal_id):
     print (f"{bcolors.OKCYAN}- making artificial globular clusters"+ bcolors.ENDC)
     gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
@@ -167,7 +174,7 @@ def simualte_GCs(gal_id,n):
     dec_gal = dec
     fn_det = filters[0]
     print ('- simulating GCs: frame ',n+1,'out of',N_SIM_GCS)
-    
+
     if 'USE_SUB_GAL' in methods:
         shutil.copy(fit_dir+gal_name+'_'+fn_det+'_galfit_imgblock_res.fits',sub_data_dir+gal_name+'_'+fn_det+'.fits')
         science_frame = sub_data_dir+gal_name+'_'+fn_det+'.fits'
@@ -346,7 +353,7 @@ def simualte_GCs(gal_id,n):
         X_psf = float(psf_fits_file[0].header['NAXIS1'])
         Y_psf = float(psf_fits_file[0].header['NAXIS2'])
 
-        global RATIO_OVERSAMPLE_PSF 
+        global RATIO_OVERSAMPLE_PSF
         RATIO_OVERSAMPLE_PSF = int(PIXEL_SCALES[fn]/psf_pixel_scale+0.5)
         #print (RATIO_OVERSAMPLE_PSF)
 
@@ -561,8 +568,8 @@ def makeKing2D(cc, rc, mag, zeropoint, exptime, pixel_size):
 
     # get stamp size: we require that the galaxy is in the exact center of the matrix. Therefore we set even size always.
 
-    # Size: 1 time of truncation radius + 2 pixel as a border 
-    Size = (int(1 * round(trunc_radius / float(pixel_size))) + 2) 
+    # Size: 1 time of truncation radius + 2 pixel as a border
+    Size = (int(1 * round(trunc_radius / float(pixel_size))) + 2)
     #print (Size)
 
     # make even
@@ -605,7 +612,7 @@ def makeKing2D(cc, rc, mag, zeropoint, exptime, pixel_size):
 
                     xi = (i+ii/n) * pixel_size + 0.5 * pixel_size
                     yi = (j+jj/n) * pixel_size + 0.5 * pixel_size
-     
+
                     r2 = (xi - xc) ** 2 + (yi - yc) ** 2
                     if r2 < trunc_radius ** 2:
                         f1 = 1 / np.sqrt(r2 + rc ** 2)
@@ -632,17 +639,17 @@ def makeKing2D(cc, rc, mag, zeropoint, exptime, pixel_size):
         print (f"{bcolors.WARNING}*** Warning: the simulated GCs are missing a fraction of the light between 2% to 5%."+ bcolors.ENDC)
     elif final_flux_ratio < 0.99:
         print (f"{bcolors.WARNING}*** Warning: the simulated GCs are missing a fraction of the light between 1% to 2%."+ bcolors.ENDC)
-    
+
     #print (final_flux_ratio)
-        
+
     return stamp
-    
+
 ############################################################
 
 def make_psf_all_filters(gal_id):
     print (f"{bcolors.OKCYAN}- Making PSF models for all the filters"+ bcolors.ENDC)
     gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
-    
+
     for fn in filters:
         print ('- Making PSF for filter', fn)
 
@@ -676,15 +683,24 @@ def make_psf_all_filters(gal_id):
         params.write('FLUXERR_APER('+str(1)+') #RMS error for AUTO flux [count]\n')
         params.close()
 
-        os.system(command)
+        if os.path.exists(source_cat):
+            donothing=1
+        else:
+            os.system(command)
 
         ###
-        
-        make_psf_for_frame(main_frame,weight_frame,source_cat,fn,psf_frame,mode='auto',oversample=True)
-        #make_psf_for_frame(main_frame,weight_frame,source_cat,fn,psf_frame_inst,mode='auto',oversample=False)
 
-        shutil.copy(psf_frame,psf_dir+'psf_'+fn+'.fits')
-        #shutil.copy(psf_frame_inst,psf_dir+'psf_'+fn+'.inst.fits')
+        #make_psf_for_frame(main_frame,weight_frame,source_cat,fn,psf_frame,mode='auto')
+        #shutil.copy(psf_frame,psf_dir+'psf_'+fn+'.fits')
+
+        psf_frame_soren = '/data/users/saifollahi/Euclid/ERO/ERO-data/PSF/psf_VIS_v3c_Soren.fits'
+        normalize_psf(psf_frame_soren)
+        psf_frames = [psf_frame, psf_frame_soren]
+        zp = ZPS[fn]
+        gain = GAIN[fn]
+        pix_size = PIXEL_SCALES[fn]
+        psf_pixel_size  = pix_size/RATIO_OVERSAMPLE_PSF
+        make_radial_profile_for_psf(psf_frames,psf_pixel_size,zp,output_png=check_plots_dir+gal_name+'_'+fn+'_psf_radial_profiles.png')
 
 
 ############################################################
@@ -699,7 +715,7 @@ def normalize_psf(psf_frame):
 
 ############################################################
 
-def make_psf_for_frame(main_frame,weight_frame,source_cat,filtername,psf_frame,mode='auto',oversample=True):
+def make_psf_for_frame(main_frame,weight_frame,source_cat,filtername,psf_frame,mode='auto'):
 
     table_main = fits.open(source_cat)
     table_data = table_main[1].data
@@ -728,7 +744,7 @@ def make_psf_for_frame(main_frame,weight_frame,source_cat,filtername,psf_frame,m
         fwhm = sigma_clip(fwhm,sigma=2, maxiters=5, masked=False)
         fwhm_max = np.nanmax(fwhm)
         fwhm_min = np.nanmin(fwhm)
-    
+
     print ('- the lower and upper limits for FWHM (for selecting stars) are:',fwhm_min,fwhm_max)
     mask = ((sex_cat_data ['FWHM_IMAGE'] >= fwhm_min) & \
     (sex_cat_data ['FWHM_IMAGE'] <= fwhm_max))
@@ -749,7 +765,7 @@ def make_psf_for_frame(main_frame,weight_frame,source_cat,filtername,psf_frame,m
     plt.close()
 
     ###############
-    
+
     N = len(sex_cat_data)
     #N_converged = 0
     N_used = 0
@@ -763,14 +779,10 @@ def make_psf_for_frame(main_frame,weight_frame,source_cat,filtername,psf_frame,m
 
     star_frames = ''
     star_weight_frames = ''
-    #os.system('rm ' + psfs_dir +'*'+'psf*')
     print ('- Number of selected stars: '+str(N))
 
     psfs = list()
-    #N = 20
     for i in range(N) :
-
-        #print ('------------------------------------------')
 
         XC = list()
         YC = list()
@@ -784,26 +796,18 @@ def make_psf_for_frame(main_frame,weight_frame,source_cat,filtername,psf_frame,m
         star_fits_file = psfs_dir+gal_name+'_'+fn+'_star_'+str(i)+'.fits'
         star_weight_file = psfs_dir+gal_name+'_'+fn+'_star_'+str(i)+'.weight.fits'
 
-        crop_frame(main_frame, '', int(PSF_IMAGE_SIZE*5), filtername, ra, dec, \
+        crop_frame(main_frame, '', int(PSF_IMAGE_SIZE), filtername, ra, dec, \
             output=star_fits_file)
 
-        crop_frame(weight_frame, '', int(PSF_IMAGE_SIZE*5), filtername, ra, dec, \
+        crop_frame(weight_frame, '', int(PSF_IMAGE_SIZE), filtername, ra, dec, \
             output=star_weight_file)
-
-        #psf_data = fits.open(star_fits_file)
-        #X_psf = psf_data[0].header['NAXIS1']
-        #Y_psf = psf_data[0].header['NAXIS2']
-        #ellipse = [int(X_psf/2),int(Y_psf/2),1,1,0]
-        #rs,fluxbins,errors,sky_level,sky_noise,sky_bin, sky_bins_values, area = \
-        #    make_radial_profile(psf_data[0].data,ellipse,exptime=1,mask=None,sn_stop=1./3.,rad_stop=10,binsize=0.1,sky=False)
-        #plt.scatter(rs,fluxbins,s=5,alpha=0.1,marker='o',color='k')
 
         output = psfs_dir+gal_name+'_'+fn+'_star_'+str(i)+'.resampled.fits'
         output_weight = psfs_dir+gal_name+'_'+fn+'_star_'+str(i)+'.resampled.weight.fits'
 
         N_iter = 1
         for iter in range(N_iter) :
-            psf_frame_size_pix = int(PSF_IMAGE_SIZE*2)#*RATIO_OVERSAMPLE_PSF
+            psf_frame_size_pix = int(PSF_IMAGE_SIZE)#*RATIO_OVERSAMPLE_PSF
             psf_pixel_size = pix_size#/RATIO_OVERSAMPLE_PSF
             if iter==0:
                 command = swarp_executable+' '+star_fits_file+' -c '+external_dir+'default.swarp -IMAGEOUT_NAME '+output+\
@@ -832,8 +836,11 @@ def make_psf_for_frame(main_frame,weight_frame,source_cat,filtername,psf_frame,m
                 '-PARAMETERS_NAME '+external_dir+'default.param -DETECT_MINAREA 8 -DETECT_THRESH 3.0 -ANALYSIS_THRESH 3.0 ' + \
                 '-DEBLEND_NTHRESH 1 -DEBLEND_MINCONT 1 -MAG_ZEROPOINT ' +str(zp) + ' -BACKPHOTO_TYPE GLOBAL '+\
                 '-FILTER Y -FILTER_NAME  '+external_dir+'default.conv -STARNNW_NAME '+external_dir+'default.nnw '+\
-                '-BACK_SIZE 256 -BACK_FILTERSIZE 3 -PHOT_APERTURES 10'
+                '-BACK_SIZE ' + str(psf_frame_size_pix) + ' -BACK_FILTERSIZE 1 -PHOT_APERTURES 10 -CHECKIMAGE_TYPE -BACKGROUND '+\
+                '-CHECKIMAGE_NAME '+temp_dir+'temp_psf_back_sub.fits'
             os.system(command)
+
+            shutil.copy(temp_dir+'temp_psf_back_sub.fits',output)
 
             table_main = fits.open(source_cat)
             sex_cat_data = table_main[1].data
@@ -861,35 +868,7 @@ def make_psf_for_frame(main_frame,weight_frame,source_cat,filtername,psf_frame,m
                     y_c = y0
                     det_flag = 1
 
-            #print (abs(ra-ra_c)*3600,abs(dec-dec_c)*3600)
-            #XC.append(ra)
-            #YC.append(dec)
-
-        #XC_std = np.nanstd(XC[int(N_iter*0.75):])
-        #YC_std = np.nanstd(YC[int(N_iter*0.75):])
-        
-        #converge_lim = psf_pixel_size*0.01/3600
-        #if (XC_std < converge_lim) and (YC_std < converge_lim) and (det_flag == 1):
-        #    centroid_converge_flag = True
-        #else :
-        #    centroid_converge_flag = False
-
-
-        #if i < 0 :
-        #    plt.plot(np.arange(0,len(XC),1),XC,'k-',alpha=0.5)
-        #    #plt.plot(np.arange(0,len(YC),1),YC,'r-',alpha=0.5)
-        #    if centroid_converge_flag == True:
-        #        plt.title('centroid finding converged')
-        #    elif centroid_converge_flag == False:
-        #        plt.title('centroid finding ***DID NOT*** converged')
-        #    plt.savefig(check_plots_dir+gal_name+'_'+fn+'_XC_'+str(i)+'.png',dpi=200)
-        #    plt.close()
-        #    make_fancy_png(output,output+'.jpg',zoom=1)
-            
         psf_data = fits.open(output)
-        #if oversample == True:
-        #    psf_data[0].header['PIXELSCL'] = pix_size_resampled
-        #elif oversample == False:
         psf_data[0].header['PIXELSCL'] = psf_pixel_size
         psf_data[0].header['CRPIX1'] = x0
         psf_data[0].header['CRVAL1'] = 0
@@ -904,45 +883,23 @@ def make_psf_for_frame(main_frame,weight_frame,source_cat,filtername,psf_frame,m
             star_weight_frames = star_weight_frames+output_weight+','
             N_used = N_used+1
 
-        #psf_data = fits.open(output)
-        #X_psf = psf_data[0].header['NAXIS1']
-        #Y_psf = psf_data[0].header['NAXIS2']
-        #ellipse = [int(X_psf/2),int(Y_psf/2),1,1,0]
-        #rs,fluxbins,errors,sky_level,sky_noise,sky_bin, sky_bins_values, area = \
-        #    make_radial_profile(psf_data[0].data,ellipse,exptime=1,mask=None,sn_stop=1./3.,rad_stop=10,binsize=0.1,sky=False)
-        #plt.scatter(rs,fluxbins,s=30,alpha=0.01,marker='o',color='r')
-
-        #estimate_fwhm_for_psf_fits(output, 0.1)
-
     ### stacking all stars
     psf_weight_frame = psf_frame+'.weight.fits'
     psf_frame_size_pix = int(PSF_IMAGE_SIZE)*RATIO_OVERSAMPLE_PSF
     psf_pixel_size  = pix_size/RATIO_OVERSAMPLE_PSF
     command = swarp_executable+' '+star_frames+' -c '+external_dir+'default.swarp -IMAGEOUT_NAME '+psf_frame+\
             ' -WEIGHTOUT_NAME '+psf_weight_frame+' -WEIGHT_TYPE MAP_WEIGHT -SUBTRACT_BACK N -CELESTIAL_TYPE NATIVE'+\
-            ' -RESAMPLE Y -PIXELSCALE_TYPE  MANUAL -PIXEL_SCALE '+str(psf_pixel_size)+' -RESAMPLING_TYPE LANCZOS4 -CELESTIAL_TYPE EQUATORIAL'+\
+            ' -RESAMPLE Y -PIXELSCALE_TYPE  MANUAL -PIXEL_SCALE '+str(psf_pixel_size)+' -RESAMPLING_TYPE LANCZOS4 '+\
             ' -IMAGE_SIZE '+str(psf_frame_size_pix)+','+str(psf_frame_size_pix)+' -CENTER_TYPE MANUAL -CENTER '+str(0)+','+str(0)
             # -VERBOSE_TYPE QUIET'
-            #' -PIXELSCALE_TYPE  MANUAL -PIXEL_SCALE '+str(1)+' -VERBOSE_TYPE QUIET' 
+            #' -PIXELSCALE_TYPE  MANUAL -PIXEL_SCALE '+str(1)+' -VERBOSE_TYPE QUIET'
             #' -IMAGE_SIZE '+str(radius_pix)+','+str(radius_pix)+' -PIXEL_SCALE '+str(pix_size/RATIO_OVERSAMPLE_PSF)+\
             #' -CENTER_TYPE MANUAL -CENTER '+str(ra)+','+str(dec)+' -SUBTRACT_BACK N -VERBOSE_TYPE QUIET'
-    
-    #elif oversample == False:
-    #    command = swarp_executable+' '+star_frames+' -c '+external_dir+'default.swarp -IMAGEOUT_NAME '+psf_frame+\
-    #            ' -WEIGHTOUT_NAME '+psf_weight_frame+' -WEIGHT_TYPE MAP_WEIGHT -SUBTRACT_BACK N'+\
-    #            ' -RESAMPLE Y -PIXEL_SCALE '+str(pix_size)+' -RESAMPLING_TYPE LANCZOS4'#+'-VERBOSE_TYPE QUIET'
-    #            #' -PIXELSCALE_TYPE  MANUAL -PIXEL_SCALE '+str(1)+' -VERBOSE_TYPE QUIET' 
-    #            #' -IMAGE_SIZE '+str(radius_pix)+','+str(radius_pix)+' -PIXEL_SCALE '+str(pix_size/RATIO_OVERSAMPLE_PSF)+\
-    #            #' -CENTER_TYPE MANUAL -CENTER '+str(ra)+','+str(dec)+' -SUBTRACT_BACK N -VERBOSE_TYPE QUIET'
 
-    #print (command)
     os.system(command)
 
     psf_data = fits.open(psf_frame)
-    if oversample == True:
-        psf_data[0].header['PIXELSCL'] = psf_pixel_size
-    elif oversample == False:
-        psf_data[0].header['PIXELSCL'] = pix_size
+    psf_data[0].header['PIXELSCL'] = psf_pixel_size
     X_psf = psf_data[0].header['NAXIS1']
     Y_psf = psf_data[0].header['NAXIS2']
     psf_data[0].header['CRPIX1'] = int(X_psf/2+0.5)
@@ -953,75 +910,95 @@ def make_psf_for_frame(main_frame,weight_frame,source_cat,filtername,psf_frame,m
     normalize_psf(psf_frame)
     print ('- Number of used stars for PSF modeling is: '+str(N_used))
 
-    radial_profile_apers = '2,4,6,8,10,12,14,16,18,20,25,30,35,40,45,50'
+############################################################
 
-    radial_profile_apers_values = np.array([2,4,6,8,10,12,14,16,18,20,25,30,35,40,45,50])
+def make_radial_profile_for_psf(psf_frames,psf_pixel_size,zp,output_png):
 
+    colors = ['black','red','cyan','green','blue']
+    i = -1
+    for psf_frame in psf_frames:
+        d_flux_apers = []
+        radi_arcsec = []
+        i = i + 1
 
-    shutil.copy(external_dir+'sex_default.param',external_dir+'default.param')
-    params = open(external_dir+'default.param','a')
-    params.write('MAG_APER('+str(len(radial_profile_apers_values))+') #Fixed aperture magnitude vector [mag]\n')
-    params.write('MAGERR_APER('+str(len(radial_profile_apers_values))+') #RMS error vector for fixed aperture mag [mag]\n')
-    params.write('FLUX_APER('+str(len(radial_profile_apers_values))+') # Flux within a Kron-like elliptical aperture [count]\n')
-    params.write('FLUXERR_APER('+str(len(radial_profile_apers_values))+') #RMS error for AUTO flux [count]\n')
-    params.close()
+        radial_profile_apers = '2,4,6,8,10,12,14,16,18,20,25,30,35,40,45,50,60,60,70,80,90,100,120,140,160,180,200,250,300'
+        radial_profile_apers_values = np.array([2,4,6,8,10,12,14,16,18,20,25,30,35,40,45,50,60,70,80,90,100,120,140,160,180,200,250,300])
 
-    source_cat = temp_dir+'temp.fits'
-    command = SE_executable+' '+psf_frame+' -c '+external_dir+'default.sex -CATALOG_NAME '+source_cat+' '+ \
-        '-PARAMETERS_NAME '+external_dir+'default.param -DETECT_MINAREA 8 -DETECT_THRESH 3.0 -ANALYSIS_THRESH 3.0 ' + \
-        '-DEBLEND_NTHRESH 1 -DEBLEND_MINCONT 1 -MAG_ZEROPOINT ' +str(zp) + ' -BACKPHOTO_TYPE GLOBAL '+\
-        '-FILTER Y -FILTER_NAME  '+external_dir+'default.conv -STARNNW_NAME '+external_dir+'default.nnw '+\
-        '-BACK_SIZE '+str(psf_frame_size_pix)+' -BACK_FILTERSIZE 1 -PHOT_APERTURES '+radial_profile_apers
+        shutil.copy(external_dir+'sex_default.param',external_dir+'default.param')
+        params = open(external_dir+'default.param','a')
+        params.write('MAG_APER('+str(len(radial_profile_apers_values))+') #Fixed aperture magnitude vector [mag]\n')
+        params.write('MAGERR_APER('+str(len(radial_profile_apers_values))+') #RMS error vector for fixed aperture mag [mag]\n')
+        params.write('FLUX_APER('+str(len(radial_profile_apers_values))+') # Flux within a Kron-like elliptical aperture [count]\n')
+        params.write('FLUXERR_APER('+str(len(radial_profile_apers_values))+') #RMS error for AUTO flux [count]\n')
+        params.close()
 
-    os.system(command)
-    #print (command)
+        psf_data = fits.open(psf_frame)
+        X_psf = psf_data[0].header['NAXIS1']
+        Y_psf = psf_data[0].header['NAXIS2']
+        psf_frame_size_pix = X_psf
+        source_cat = temp_dir+'temp.fits'
 
-    table_main = fits.open(source_cat)
-    sex_cat_data = table_main[1].data
-    RA = sex_cat_data['ALPHA_SKY']
-    DEC = sex_cat_data['DELTA_SKY']
-    X = sex_cat_data['X_IMAGE']
-    Y = sex_cat_data['Y_IMAGE']
-    FWHM = sex_cat_data['FWHM_IMAGE']
-    MAG_APER = sex_cat_data['MAG_APER']
-    FLUX_APER = sex_cat_data['FLUX_APER']
-    M = len(RA)
-    det_flag = 0
-    for j in range(M):
-        ra = RA[j]
-        dec = DEC[j]
-        x = X[j]
-        y = Y[j]
-        fwhm = FWHM[j]
-        crossmatch_radius = RATIO_OVERSAMPLE_PSF/2
-        #print (crossmatch_radius)
-        if (abs(x-X_psf/2)<crossmatch_radius) and (abs(y-Y_psf/2)<crossmatch_radius):
-            print ('*** FWHM for the resampled PSF model is (arcsec):',fwhm*psf_pixel_size)
-            mag_apers = MAG_APER[j]
-            flux_apers = FLUX_APER[j]
+        command = SE_executable+' '+psf_frame+' -c '+external_dir+'default.sex -CATALOG_NAME '+source_cat+' '+ \
+            '-PARAMETERS_NAME '+external_dir+'default.param -DETECT_MINAREA 8 -DETECT_THRESH 3.0 -ANALYSIS_THRESH 3.0 ' + \
+            '-DEBLEND_NTHRESH 1 -DEBLEND_MINCONT 1 -MAG_ZEROPOINT ' +str(zp) + ' -BACKPHOTO_TYPE GLOBAL '+\
+            '-FILTER Y -FILTER_NAME  '+external_dir+'default.conv -STARNNW_NAME '+external_dir+'default.nnw '+\
+            '-BACK_SIZE '+str(psf_frame_size_pix)+' -BACK_FILTERSIZE 1 -PHOT_APERTURES '+radial_profile_apers
 
-    #print (flux_apers)
-    d_flux_apers = []
-    radi_arcsec = []
-    for i in range(len(radial_profile_apers_values)):
-        if i == 0:
-            df = flux_apers[i] - 0
-            A = 3.141592 * (radial_profile_apers_values[i]**2) / 4.
-        elif i > 0 :    
-            df = flux_apers[i] - flux_apers[i-1]
-            A = 3.141592 * ( (radial_profile_apers_values[i]**2) - (radial_profile_apers_values[i-1]**2) ) / 4.
+        os.system(command)
 
-        d_flux_apers.append(df/A)
-        radi_arcsec.append((radial_profile_apers_values[i]/2)*psf_pixel_size)
+        table_main = fits.open(source_cat)
+        sex_cat_data = table_main[1].data
+        RA = sex_cat_data['ALPHA_SKY']
+        DEC = sex_cat_data['DELTA_SKY']
+        X = sex_cat_data['X_IMAGE']
+        Y = sex_cat_data['Y_IMAGE']
+        FWHM = sex_cat_data['FWHM_IMAGE']
+        MAG_APER = sex_cat_data['MAG_APER']
+        FLUX_APER = sex_cat_data['FLUX_APER']
+        M = len(RA)
+        det_flag = 0
+        crossmatch_radius = 1
 
-    plt.plot(radi_arcsec,d_flux_apers,'k.',label='FWHM = '+str(fwhm*psf_pixel_size)[:5]+' arcsec')
+        while det_flag == 0 :
+            crossmatch_radius = crossmatch_radius + 1
+            for j in range(M):
+                ra = RA[j]
+                dec = DEC[j]
+                x = X[j]
+                y = Y[j]
+                fwhm = FWHM[j]
+                #print (crossmatch_radius)
+                if (abs(x-X_psf/2)<crossmatch_radius) and (abs(y-Y_psf/2)<crossmatch_radius):
+                    print ('*** FWHM for the resampled PSF model is (arcsec):',fwhm*psf_pixel_size)
+                    mag_apers = MAG_APER[j]
+                    flux_apers = FLUX_APER[j]
+                    det_flag = 1
+                    print (x,y)
+                    break
+
+        #print (flux_apers)
+        for j in range(len(radial_profile_apers_values)):
+            if j == 0:
+                df = flux_apers[j] - 0
+                A = 3.141592 * (radial_profile_apers_values[j]**2) / 4.
+            elif j > 0 :
+                df = flux_apers[j] - flux_apers[j-1]
+                A = 3.141592 * ( (radial_profile_apers_values[j]**2) - (radial_profile_apers_values[j-1]**2) ) / 4.
+
+            d_flux_apers.append(df/A)
+            radi_arcsec.append((radial_profile_apers_values[j]/2)*psf_pixel_size)
+
+        plt.scatter(radi_arcsec,d_flux_apers,s=20,marker='o',color=colors[i],label='FWHM = '+str(fwhm*psf_pixel_size)[:5]+' arcsec',alpha=0.5)
+
     plt.xlabel('R [arcsec]')
+    plt.xscale('log')
+    plt.yscale('log')
     plt.ylabel('Normalized Flux (within Annulus) [?]')
     plt.legend(loc='upper right')
     plt.tick_params(which='both',direction='in')
 
-    plt.savefig(check_plots_dir+gal_name+'_'+fn+'_psf_radial_profiles.png',dpi=100)
-
+    plt.savefig(output_png,dpi=100)
+    plt.close()
 
 ############################################################
 

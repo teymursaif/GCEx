@@ -34,7 +34,7 @@ def initialize_params() :
     ####################################################################################################
     ##### PARAMETERS THAT USER NEEDS TO CONFIGURE
 
-    #-------------------------- SETUP AND DATA PREPRATION -------------------------- 
+    #-------------------------- SETUP AND DATA PREPRATION --------------------------
 
     ### (if ZP, EXPTIME and GAIN are missing from the header, define them for a given filter)
 
@@ -53,7 +53,7 @@ def initialize_params() :
     INPUT_EXPTIME = {'VIS':560}
     INPUT_GAIN = {'VIS':2}
 
-    # ------------------------------ GALAXIES/TARGETS ------------------------------ 
+    # ------------------------------ GALAXIES/TARGETS ------------------------------
 
     # List of targets as a string with:
     # Object-ID Object name RA Dec Distance-in-Mpc List-of-filters comment
@@ -61,7 +61,7 @@ def initialize_params() :
     # comments: LSB,N,etc
     # (lines with # in the beginning will be skipped)
     # example: '1 DF44 195.2416667 +26.9763889 100 F814W,F475W,F606W'
-    
+
     # HST
     #TARGETS = ['1 MATLAS2019 226.33460 +01.81282 25 HST-ACS-F606W,HST-ACS-F814W LSB,nN']
     #GC_REF_MAG = {'HST-ACS-F606W':-7.5,'HST-ACS-F814W':-8.0}
@@ -78,7 +78,7 @@ def initialize_params() :
     #Euclid ERO
     TARGETS = []
     #TARGETS.append(['0 ERO-FORNAX-2EXP-AL ERO-FORNAX-2EXP-AL 053.96397 -35.26515 20 VIS MODEL_PSF ---'])
-    TARGETS.append(['0 ERO-FORNAX-2EXP-AL NGC1387 54.2376406 -35.5065765 20 VIS FIT_GAL,USE_SUB_GAL,MAKE_CAT,MAKE_GC_CAT ---'])
+    TARGETS.append(['0 ERO-FORNAX-2EXP-AL NGC1387 54.2376406 -35.5065765 20 VIS USE_SUB_GAL,MAKE_CAT,MAKE_GC_CAT MASSIVE'])
 
     #TARGETS.append(['1 ERO-FORNAX-2EXP-AL NGC1387 54.2376406 -35.5065765 20 VIS MAKE_CAT,MAKE_GC_CAT MASSIVE']) #FIT_GAL,USE_SUB_GAL,MAKE_CAT
     #TARGETS.append(['2 ERO-FORNAX-2EXP-AL FCC188 054.26901 -35.59002 20 VIS FIT_GAL,USE_SUB_GAL,MAKE_CAT,MAKE_GC_CAT DWARF,LSB'])
@@ -88,7 +88,7 @@ def initialize_params() :
     #TARGETS.append(['2 ERO-FORNAX-2EXP-AL FCC188 054.26901 -35.59002 20 VIS MAKE_CAT DWARF,LSB'])
     #TARGETS.append(['2 NGC1387-ANGELA NGC1387-ANGELA 54.2376406 -35.5065765 20 VIS MAKE_GC_CAT MASSIVE']) #MAKE_CAT
 
-    # NOTE: possible methods -> RESAMPLE_DATA, MODEL_PSF, FIT_GAL, USE_SUB_GAL, MAKE_CAT, MAKE_GC_CAT 
+    # NOTE: possible methods -> RESAMPLE_DATA, MODEL_PSF, FIT_GAL, USE_SUB_GAL, MAKE_CAT, MAKE_GC_CAT
     # NOTE: possible comments -> MASSIVE,DWARF,LSB
 
     global TABLES
@@ -97,7 +97,7 @@ def initialize_params() :
     TABLES['fornax-spec-gcs']='/data/users/saifollahi/Euclid/ERO/archival_tables/Fornax_spec_UCDs_and_GCs.fits'
     TABLES['fornax-spec-stars']='/data/users/saifollahi/Euclid/ERO/archival_tables/Fornax_spec_foreground_stars.fits'
 
-    # ------------------------------  GALAXY FITTING ------------------------------ 
+    # ------------------------------  GALAXY FITTING ------------------------------
 
     GAL_FRAME_SIZE_ARCSEC  = 1*FRAME_SIZE_ARCSEC  #cut-out size from the original frame for sersic fitting anlaysis (arcsec)
 
@@ -110,31 +110,31 @@ def initialize_params() :
     MAG_LIMIT_CAT = 26
     MAG_LIMIT_SAT = 19 #saturation limit
 
-    # -------------------------------- PSF MODELING ------------------------------- 
+    # -------------------------------- PSF MODELING -------------------------------
 
     ### if PSF is given by the user (in the "psf_dir" directory)
     PSF_PIXELSCL_KEY = 'PIXELSCL'
     PSF_PIXEL_SCALE = 0.0 #if 'PIXELSCL' is not in the header, specify it here.
     ### for making PSF (method=MODEL_PSF)
     MODEL_PSF = True
-    RATIO_OVERSAMPLE_PSF = 5 #do not go beyond 10, this will have consequences for undersampling later
+    RATIO_OVERSAMPLE_PSF = 10 #do not go beyond 10, this will have consequences for undersampling later
     PSF_IMAGE_SIZE = 40 #PSF size in the instruments pixel-scale
     MAG_LIMIT_PSF = 21
     ELL_LIMIT_PSF = 0.1
-    #FWHM_UPPER_LIMIT_PSF = 
-    #FWHM_LOWER_LIMIT_PSF = 
-    
-    
-    #------------------------------ GC SIMULATION ------------------------------ 
+    #FWHM_UPPER_LIMIT_PSF =
+    #FWHM_LOWER_LIMIT_PSF =
+
+
+    #------------------------------ GC SIMULATION ------------------------------
     N_ART_GCS = 200
-    N_SIM_GCS = 5
+    N_SIM_GCS = 1
     COSMIC_CLEAN = False #does not work at the moment anyways...
     GC_SIZE_RANGE = [1,8] #lower value should be small enough to make some point-sources for performance check, in pc
     GC_MAG_RANGE = [-10,-6]
     GC_REF_MAG = {'VIS':-8} #magnitude of a typical GC in the given filters should be defined here.
-    GC_SIM_MODE = 'UNIFORM' # 'UNIFORM' or 'CONCENTRATED'
+    GC_SIM_MODE = 'CONCENTRATED' # 'UNIFORM' or 'CONCENTRATED'
 
-    #------------------------------ GC SELECTION ------------------------------- 
+    #------------------------------ GC SELECTION -------------------------------
 
     GC_SEL_PARAMS = ['CI_4_8']#,'CI_2_4','CI_4_6','CI_6_8','CI_8_10','CI_10_12','ELLIPTICITY']
 
@@ -144,9 +144,9 @@ def initialize_params() :
     ####################################################################################################
 
     # Don't mind this part! (!!! DO NOT CHANGE UNLESS YOU KNOW WHATYOU ARE DOING)
-    
+
     working_directory = WORKING_DIR
-    
+
     input_dir = working_directory+'inputs/'
     output_dir = working_directory+'outputs/'
     main_data_dir = input_dir+'main_data/'

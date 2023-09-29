@@ -26,7 +26,7 @@ class bcolors:
     ENDC = '\033[0m'
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
-    
+
 ############################################################
 
 def assess_GC_simulations(gal_id):
@@ -43,7 +43,7 @@ def shorten_filter_name(filtername):
     short_filternames = ['F606W','F814W','VIS','F475W']
     for short_filtername in short_filternames:
         if short_filtername in filtername :
-            return short_filtername 
+            return short_filtername
 
 ############################################################
 
@@ -118,7 +118,7 @@ def assess_GC_simulations_general(gal_id):
             #mag2 = GC_MAG_RANGE[1]+5*np.log10(distance*1e+5)+0.25+color(fn,fn_det)
             mag2 = np.nanmax(param2)
             ax[2][n_filter].set_xlim([mag1,mag2])
-            fwhm1 = FWHMS_ARCSEC[fn]/PIXEL_SCALES[fn]*0.5 
+            fwhm1 = FWHMS_ARCSEC[fn]/PIXEL_SCALES[fn]*0.5
             fwhm2 = FWHMS_ARCSEC[fn]/PIXEL_SCALES[fn]*2.5
             ax[2][n_filter].set_ylim([fwhm1,fwhm2])
             #ax[2][n_filter].set_ylim([0,10])
@@ -146,7 +146,7 @@ def assess_GC_simulations_general(gal_id):
 
             ### add data from some tables
 
-        #5. completness of detection in mag in DET filter 
+        #5. completness of detection in mag in DET filter
         if fn == fn_det:
             mag_source_sim = art_gcs['GC_MAG_'+fn]
             mag_source_obs = det_art_gcs['GC_MAG_'+fn]
@@ -183,7 +183,7 @@ def assess_GC_simulations_general(gal_id):
     fig.tight_layout()
     plt.savefig(plots_dir+gal_name+'_'+fn+'_check_plot.png',dpi=100)
     plt.close()
-        
+
 ############################################################
 
 def assess_GC_simulations_compactness(gal_id):
@@ -246,4 +246,3 @@ def assess_GC_simulations_compactness(gal_id):
         plt.legend()
         plt.savefig(plots_dir+gal_name+'_'+fn_det+'_compactness-index-'+str(aper1)+'-'+str(aper2)+'.png',dpi=150)
         plt.close()
-    

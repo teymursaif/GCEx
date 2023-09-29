@@ -851,6 +851,17 @@ def fit_galaxy_sersic(main_data,weight_data,ra,dec,obj_name,filter_name,pix_size
             q_c = 1
             x_gal_center,y_gal_center = w.all_world2pix(ra, dec,0)
 
+        else:
+            print ('*** galaxy type is not specified in the comments. Assuming a dwarf galaxy ... ')
+            ra_c = ra
+            dec_c = dec
+            re_c = 1.5/scale/pix_size
+            mag_c = -16 + 5*np.log10(distance*1e+5)
+            n_c = 1
+            pa_c = 0
+            q_c = 1
+            x_gal_center,y_gal_center = w.all_world2pix(ra, dec,0)
+
         make_galfit_feedme_file_sersic(cropped_frame,mask_frame,sigma_frame,psf_frame,\
         obj_name, ra_c, dec_c, re_c, filter_name, fit_x1, fit_x2, fit_y1, fit_y2, \
         mag_c, n_c, pa_c, q_c, -1, back_average, zp, pix_size, x_gal_center, y_gal_center)
