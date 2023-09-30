@@ -50,7 +50,7 @@ def estimate_aper_corr(gal_id):
             Y = float(psf_fits_file[0].header['NAXIS2'])
             aper_size_pixel = aper_size_arcsec/psf_pixel_scale
 
-            back = np.nanmedian(sigma_clip(psf_data,2))
+            back = np.nanmedian(sigma_clip(psf_data,2, masked=False))
             print (back)
             #total_flux = np.nansum(psf_data-back)
             psf_data = psf_data-back
@@ -531,7 +531,7 @@ def simulate_GC(mag,size_arcsec,zp,pix_size,exptime,psf_file,gc_file):
     #print (x1, x2, y1, y2, x2-x1, y2-y1)
     #print (resampled_image_size)
     stamp_noisy_resampled = stamp_noisy[x1:x2,y1:y2]
-    stamp_noisy_resampled = psf_median = rebin(stamp_noisy_resampled, (int(resampled_image_size), int(resampled_image_size)))
+    stamp_noisy_resampled = rebin(stamp_noisy_resampled, (int(resampled_image_size), int(resampled_image_size)))
     n = np.arange(100.0)
     hdu = fits.PrimaryHDU(n)
     hdul = fits.HDUList([hdu])

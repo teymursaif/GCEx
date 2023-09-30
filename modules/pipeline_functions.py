@@ -21,6 +21,7 @@ from photutils.aperture import CircularAnnulus
 import scipy.optimize as opt
 from fitsio import FITS
 from modules.initialize import *
+from modules.psf import *
 #from lacosmic import lacosmic
 
 class bcolors:
@@ -433,11 +434,12 @@ def copy_header(fitsfile1,fitsfile2):
 
 ############################################################
 
-def make_fancy_png(fitsfile,pngfile,text='',zoom=1) :
+def make_fancy_png(fitsfile,pngfile,text='',zoom=1, mode='lsb') :
     main = fits.open(fitsfile)
     header = get_fits_header(fitsfile)
     X = header['NAXIS1']
     Y = header['NAXIS2']
+    #print (X,Y)
     image = main[0].data
     fig, ax = plt.subplots(1, 1, figsize=(10, 10), frameon=False)
     ax = plt.Axes(fig, [0., 0., 1., 1.])
@@ -447,30 +449,80 @@ def make_fancy_png(fitsfile,pngfile,text='',zoom=1) :
     x2 = int(X/2 + X/2/zoom)
     y1 = int(Y/2 - Y/2/zoom)
     y2 = int(Y/2 + Y/2/zoom)
-    image0 = image[x1:x2,y1:y2]
+    dx = x2-x1
+    dy = y2-y1
+    image = image[y1:y2,x1:x2]
 
+    if dx > 10000 and dy > 10000:
+        print ('* frame is too large. Rebining the frame 5 times.')
+        x1, x2, y1, y2 = 0, int(dx-(dx%5)), 0, int(dy-(dy%5))
+        dx = int(x2-x1)
+        dy = int(y2-y1)
+        #print (dx,dy)
+        image = image[y1:y2,x1:x2]
+        #print (np.shape)
+        #print (int(dx/5),int(dy/5))
+        image = rebin(image,(int(dy/5),int(dx/5)))
+
+    
     scale = ZScaleInterval() #LogStretch()
-    ax.imshow(scale(image0),cmap='gist_gray') #LogNorm #,vmin=min_, vmax=max_
+    ax.imshow(scale(image),cmap='gist_gray') #LogNorm #,vmin=min_, vmax=max_
     #ax.axis('off')
     ax.invert_yaxis()
     #fig.tight_layout()
     #[0., 0., 1., 1.]
-    ax.text(int(X*0.05),int(Y*0.95),text,color='red',fontsize=30)
+    ax.text(int(X*0.05),int(Y*0.90),text,color='red',fontsize=50)
     fig.savefig(pngfile+'.zscale.png',dpi=150)
 
-    scale = LogStretch()
-    ax.imshow(scale(image0),cmap='gist_gray') #LogNorm #,vmin=min_, vmax=max_
-    ax.invert_yaxis()
-    ax.text(int(X*0.05),int(Y*0.95),text,color='red',fontsize=30)
-    fig.savefig(pngfile+'.ĺogscale.png',dpi=150)
+    image0 = sigma_clip(image,3, masked=False)
+    min_g = np.nanmedian(image0)-0.1*np.nanstd(image0)
+    max_g = np.nanmedian(image0)+5*np.nanstd(image)
+    image0 = image - min_g 
+    image0 = image0 / (max_g - min_g)
+    image0[image0>1]=1
+    image0[image0<0]=0
+    image0 = image0*255
+    image0 = np.log(image0**0.5+10)
 
-    image0 = sigma_clip(image0,sigma=8,maxiters=3)
-    min_ = np.nanmedian(image0)-0.5*np.nanstd(image0)
-    max_ = np.nanmedian(image0)+5*np.nanstd(image0)
+    #print (min_g,max_g)
     ax.imshow((image0),cmap='gist_gray') 
     ax.invert_yaxis()
-    ax.text(int(X*0.05),int(Y*0.95),text,color='red',fontsize=30)
-    fig.savefig(pngfile+'.linear.png',dpi=150)
+    ax.text(int(X*0.05),int(Y*0.90),text,color='red',fontsize=50)
+    fig.savefig(pngfile+'.log.png',dpi=150)
+
+    ###
+
+    image0 = sigma_clip(image,3, masked=False)
+    image0 = gaussian_filter(image0,sigma=0.25)
+
+    min_g = np.nanmedian(image0)-0.1*np.nanstd(image0)
+    max_g = np.nanmedian(image0)+5*np.nanstd(image)
+
+    min_b = np.nanmedian(image0)-0.1*np.nanstd(image0)
+    max_b = np.nanmedian(image0)+0.1*np.nanstd(image0)
+
+    image0 = image
+    image0 = gaussian_filter(image0,sigma=0.25)
+
+    image = image - min_g 
+    image = image / (max_g - min_g)
+    image[image>1]=1
+    image[image<0]=0
+    image = image*255
+    image = np.log(image**0.5+100)
+    image = (image-np.nanmin(image)) / (np.nanmax(image)-np.nanmin(image))
+    image = image*255
+
+    image0 = image0 - min_b
+    image0 = image0 / (max_b - min_b)
+    image0[image0>1]=1
+    image0[image0<0]=0
+    image0 = (1-image0)*255
+    image0[image0==0] = image[image0==0]
+    ax.imshow((image0),cmap='gist_gray',vmin=0, vmax=255) 
+    ax.invert_yaxis()
+    #ax.text(int(X*0.05),int(Y*0.95),text,color='red',fontsize=30)
+    fig.savefig(pngfile+'.lsb.png',dpi=150)
 
     plt.close()
 
@@ -491,10 +543,10 @@ def make_galaxy_frames(gal_id, resampled=False):
         #initial crop for maiing life easier!
         crop_frame(data_dir+gal_name+'_'+fn+resampled+'.fits',gal_name,FRAME_SIZE[fn]/2,fn,ra,dec,format='_cropped.fits')
         crop_frame(data_dir+gal_name+'_'+fn+resampled+'.weight.fits',gal_name,FRAME_SIZE[fn]/2,fn,ra,dec,format='_cropped.weight.fits')
-        try:
-            make_fancy_png(data_dir+gal_name+'_'+fn+'_cropped.fits',img_dir+gal_name+'_'+fn+'_cropped.jpg',text=gal_name+' '+fn)
-        except:
-            print ('*** something happened (not enough memory?) and the fancy JPG frame could not be made.')
+        #try:
+        make_fancy_png(data_dir+gal_name+'_'+fn+'_cropped.fits',img_dir+gal_name+'_'+fn+'_cropped.jpg',text=gal_name+' '+fn)
+        #except:
+        #print ('*** something happened (not enough memory?) and the fancy JPG frame could not be made.')
 
         if 'FIT_GAL' in methods:
             crop_frame(data_dir+gal_name+'_'+fn+resampled+'.fits',gal_name,GAL_FRAME_SIZE[fn]/2,fn,ra,dec,format='_gal_cropped.fits')
