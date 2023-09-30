@@ -31,6 +31,16 @@ class bcolors:
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
 
+#plotting parameters
+plt.style.use('tableau-colorblind10')
+plt.rc('axes', labelsize=18)
+plt.rc('xtick', labelsize=15)
+plt.rc('ytick', labelsize=15)
+plt.rc('axes', linewidth=1.7)
+plt.rc('font',**{'family':'serif','serif':['Times']})
+plt.rcParams['hatch.linewidth'] = 2.0
+plt.rc('text', usetex=True)
+
 ############################################################
 
 def estimate_aper_corr(gal_id):
@@ -51,7 +61,7 @@ def estimate_aper_corr(gal_id):
             aper_size_pixel = aper_size_arcsec/psf_pixel_scale
 
             back = np.nanmedian(sigma_clip(psf_data,2, masked=False))
-            print (back)
+            #print (back)
             #total_flux = np.nansum(psf_data-back)
             psf_data = psf_data-back
 
@@ -689,20 +699,20 @@ def make_psf_all_filters(gal_id):
 
         ###
 
-        make_psf_for_frame(main_frame,weight_frame,source_cat,fn,psf_frame,mode='auto')
-        shutil.copy(psf_frame,psf_dir+'psf_'+fn+'.fits')
-
         make_psf_for_frame(main_frame,weight_frame,source_cat,fn,psf_frame_inst,mode='auto',resample=False)
         shutil.copy(psf_frame_inst,psf_dir+'psf_'+fn+'.inst.fits')
+
+        make_psf_for_frame(main_frame,weight_frame,source_cat,fn,psf_frame,mode='auto')
+        shutil.copy(psf_frame,psf_dir+'psf_'+fn+'.fits')
 
         #psf_frame_soren = '/data/users/saifollahi/Euclid/ERO/ERO-data/PSF/psf_VIS_v3c_Soren.fits'
         #normalize_psf(psf_frame_soren)
         #psf_frames = [psf_frame, psf_frame_soren]
         zp = ZPS[fn]
         make_radial_profile_for_psf([psf_frame],0,zp,\
-            output_png=check_plots_dir+gal_name+'_'+fn+'_psf_radial_profiles.png')
-        make_radial_profile_for_psf([psf_frame_inst],0,zp,\
-            output_png=check_plots_dir+gal_name+'_'+fn+'_psf_inst_radial_profiles.png')
+            output_png=plots_dir+gal_name+'_'+fn+'_psf_radial_profiles.png')
+        #make_radial_profile_for_psf([psf_frame_inst],0,zp,\
+        #    output_png=check_plots_dir+gal_name+'_'+fn+'_psf_inst_radial_profiles.png')
 
 
 ############################################################
@@ -755,14 +765,14 @@ def make_psf_for_frame(main_frame,weight_frame,source_cat,filtername,psf_frame,m
 
     mag = sex_cat_data ['MAG_AUTO']
     fwhm = sex_cat_data['FWHM_IMAGE']
-    ax.plot(mag,fwhm,'ro',alpha=0.05,label='Selected for PSF modeling')
+    ax.plot(mag,fwhm,'ro',alpha=0.2,label='Selected for PSF modeling')
 
-    ax.set_xlim([MAG_LIMIT_SAT-2,MAG_LIMIT_PSF+4])
-    ax.set_ylim([1,8])
-    ax.legend(loc='upper left')
+    ax.set_xlim([MAG_LIMIT_SAT-1,MAG_LIMIT_PSF+2])
+    ax.set_ylim([1,6])
+    ax.legend(loc='upper left',fontsize=20)
     ax.tick_params(which='both',direction='in')
-    ax.set_xlabel('$m_{'+fn+'} \ [mag]$')
-    ax.set_ylabel('$FWHM_{'+fn+'} \ [pixel]$')
+    ax.set_xlabel('m$_{'+fn+'}$ \ [mag]')
+    ax.set_ylabel('FWHM$_{'+fn+'}$ \ [pixel]')
     plt.savefig(plots_dir+'psf_'+fn+'_selected_for_psf.png')
     plt.close()
 
@@ -807,6 +817,7 @@ def make_psf_for_frame(main_frame,weight_frame,source_cat,filtername,psf_frame,m
         output = psfs_dir+gal_name+'_'+fn+'_star_'+str(i)+'.cropped.fits'
         output_back_sub = psfs_dir+gal_name+'_'+fn+'_star_'+str(i)+'.cropped-back.fits'
         output_weight = psfs_dir+gal_name+'_'+fn+'_star_'+str(i)+'.cropped.weight.fits'
+        output_back_sub_weight = psfs_dir+gal_name+'_'+fn+'_star_'+str(i)+'.cropped-back.weight.fits'
 
         N_iter = 1
         for iter in range(N_iter) :
@@ -844,6 +855,7 @@ def make_psf_for_frame(main_frame,weight_frame,source_cat,filtername,psf_frame,m
             os.system(command)
 
             #shutil.copy(temp_dir+'temp_psf_back_sub.fits',output)
+            shutil.copy(output_weight,output_back_sub_weight)
 
             table_main = fits.open(source_cat)
             sex_cat_data = table_main[1].data
@@ -883,7 +895,7 @@ def make_psf_for_frame(main_frame,weight_frame,source_cat,filtername,psf_frame,m
 
         if det_flag == True:
             star_frames = star_frames+output_back_sub+','
-            star_weight_frames = star_weight_frames+output_weight+','
+            star_weight_frames = star_weight_frames+output_back_sub_weight+','
             N_used = N_used+1
 
     ### stacking all stars
@@ -897,7 +909,7 @@ def make_psf_for_frame(main_frame,weight_frame,source_cat,filtername,psf_frame,m
         psf_pixel_size  = pix_size
 
     command = swarp_executable+' '+star_frames+' -c '+external_dir+'default.swarp -IMAGEOUT_NAME '+psf_frame+\
-            ' -WEIGHTOUT_NAME '+psf_weight_frame+' -WEIGHT_TYPE MAP_WEIGHT -SUBTRACT_BACK N -CELESTIAL_TYPE NATIVE'+\
+            ' -WEIGHTOUT_NAME '+psf_weight_frame+' -WEIGHT_TYPE MAP_WEIGHT -SUBTRACT_BACK Y -CELESTIAL_TYPE NATIVE'+\
             ' -RESAMPLE Y -PIXELSCALE_TYPE  MANUAL -PIXEL_SCALE '+str(psf_pixel_size)+' -RESAMPLING_TYPE LANCZOS4 '+\
             ' -IMAGE_SIZE '+str(psf_frame_size_pix)+','+str(psf_frame_size_pix)+' -CENTER_TYPE MANUAL -CENTER '+str(0)+','+str(0)
             # -VERBOSE_TYPE QUIET'
@@ -905,6 +917,7 @@ def make_psf_for_frame(main_frame,weight_frame,source_cat,filtername,psf_frame,m
             #' -IMAGE_SIZE '+str(radius_pix)+','+str(radius_pix)+' -PIXEL_SCALE '+str(pix_size/RATIO_OVERSAMPLE_PSF)+\
             #' -CENTER_TYPE MANUAL -CENTER '+str(ra)+','+str(dec)+' -SUBTRACT_BACK N -VERBOSE_TYPE QUIET'
 
+    print (command)
     os.system(command)
 
     psf_data = fits.open(psf_frame)
@@ -916,9 +929,15 @@ def make_psf_for_frame(main_frame,weight_frame,source_cat,filtername,psf_frame,m
     psf_data[0].header['CRVAL1'] = 0
     psf_data[0].header['CRPIX2'] = int(Y_psf/2+0.5)
     psf_data[0].header['CRVAL2'] = 0
+
+    back = np.nanmedian(sigma_clip(psf_data[0].data,2, masked=False))
+    psf_data[0].data = psf_data[0].data - back
+    #print (back)
+
     psf_data.writeto(psf_frame,overwrite=True)
     normalize_psf(psf_frame)
     print ('- Number of used stars for PSF modeling is: '+str(N_used))
+
 
 ############################################################
 
@@ -945,7 +964,7 @@ def make_radial_profile_for_psf(psf_frames,pixelsize,zp,output_png):
         elif pixelsize > 0 :
             psf_pixel_size = pixelsize
 
-        radial_profile_apers_array = np.arange(1,X_psf/2,0.1/psf_pixel_size)
+        radial_profile_apers_array = np.arange(2,X_psf/2,0.1/psf_pixel_size/2)
         radial_profile_apers_values = radial_profile_apers_array
         radial_profile_apers = ''
         for rad in radial_profile_apers_array:
@@ -1012,26 +1031,22 @@ def make_radial_profile_for_psf(psf_frames,pixelsize,zp,output_png):
                 df = flux_apers[j] - flux_apers[j-1]
                 A = 3.141592 * ( (radial_profile_apers_values[j]**2) - (radial_profile_apers_values[j-1]**2) ) / 4.
 
-            d_flux_apers.append(df/A)
+            d_flux_apers.append(df/A/(psf_pixel_size**2))
             radi_arcsec.append((radial_profile_apers_values[j]/2)*psf_pixel_size)
 
-        plt.scatter(radi_arcsec,d_flux_apers,s=20,marker='o',color=colors[i],label='FWHM = '+str(fwhm*psf_pixel_size)[:5]+' arcsec',alpha=0.5)
+        plt.scatter(radi_arcsec,d_flux_apers,s=40,marker='o',color=colors[i],label='PSF MODEL\n(FWHM = '+\
+            str(fwhm*psf_pixel_size)[:5]+' arcsec)',alpha=1)
 
-    plt.xlabel('R [arcsec]')
+    plt.xlabel('Radius [arcsec]')
     #plt.xscale('log')
     #plt.yscale('log')
-    plt.ylabel('Normalized Flux (within Annulus)')
-    plt.legend(loc='upper right')
+    plt.xlim([0,3*fwhm*psf_pixel_size])
+    plt.ylabel('Normalized flux')
+    #plt.legend(loc='upper right',fontsize=20)
     plt.tick_params(which='both',direction='in')
-
+    plt.tight_layout()
     plt.savefig(output_png,dpi=100)
     plt.close()
-
-############################################################
-
-def rebin(a, shape):
-    sh = shape[0],a.shape[0]//shape[0],shape[1],a.shape[1]//shape[1]
-    return a.reshape(sh).sum(-1).sum(1)
 
 ############################################################
 

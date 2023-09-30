@@ -246,3 +246,9 @@ def assess_GC_simulations_compactness(gal_id):
         plt.legend()
         plt.savefig(plots_dir+gal_name+'_'+fn_det+'_compactness-index-'+str(aper1)+'-'+str(aper2)+'.png',dpi=150)
         plt.close()
+
+############################################################
+
+def rebin(a, shape):
+    sh = shape[0],a.shape[0]//shape[0],shape[1],a.shape[1]//shape[1]
+    return a.reshape(sh).sum(-1).sum(1)

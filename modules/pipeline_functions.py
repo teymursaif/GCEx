@@ -21,7 +21,7 @@ from photutils.aperture import CircularAnnulus
 import scipy.optimize as opt
 from fitsio import FITS
 from modules.initialize import *
-from modules.psf import *
+#from modules.psf import *
 #from lacosmic import lacosmic
 
 class bcolors:
