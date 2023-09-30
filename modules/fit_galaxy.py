@@ -698,8 +698,8 @@ def make_radial_profile(data,ellipse,exptime=1,mask=None,sn_stop=1./3.,rad_stop=
         lowlim = edist >= r1
         ind = uplim*lowlim
         bin_pix = data[ind]
-        if mask != None:
-            bin_pix = bin_pix[ mask[ind] == 0  ]
+        #if mask != None:
+        bin_pix = bin_pix[ mask[ind] == 0  ]
         error = np.std(bin_pix)/np.sqrt(float(len(bin_pix)))
         if len(bin_pix)>5:
             bin_pix = sigma_clip(bin_pix,3,maxiters=3)
@@ -780,30 +780,8 @@ def fit_galaxy_sersic(main_data,weight_data,ra,dec,obj_name,filter_name,pix_size
 
     ##########################
 
-    if os.path.exists(psf_dir+'psf_'+fn+'.fits'):
-        #psf_frame = psf_dir+'psf_'+fn+'.fits'
-        psf_frame = 'None'
-        """
-        psf_fits_file = fits.open(psf_frame)
-        try :
-            psf_pixel_scale = psf_fits_file[0].header[PSF_PIXELSCL_KEY]
-        except :
-            psf_pixel_scale = PSF_PIXEL_SCALE
-
-        global RATIO_OVERSAMPLE_PSF 
-        RATIO_OVERSAMPLE_PSF = int(PIXEL_SCALES[fn]/psf_pixel_scale+0.5)
-
-        #psf_frame = 'None'
-        print (RATIO_OVERSAMPLE_PSF,psf_pixel_scale)
-        if abs(RATIO_OVERSAMPLE_PSF-1)>1e-3:
-            print (f"{bcolors.OKCYAN}- The existiign PSF is oversampled. Now resampling the PSF to the instrument's pixel-size."+ bcolors.ENDC)
-            psf_frame_resampled = psf_frame+'.resampled.fits'
-            command = swarp_executable+' '+psf_frame+' -c '+external_dir+'default.swarp -IMAGEOUT_NAME '+psf_frame_resampled+\
-                ' -PIXELSCALE_TYPE  MANUAL -PIXEL_SCALE '+str(PIXEL_SCALES[fn]/3600)+' -RESAMPLE Y -RESAMPLING_TYPE LANCZOS4 '+\
-                ' -SUBTRACT_BACK N'# -VERBOSE_TYPE QUIET'
-            os.system(command)
-            psf_frame = psf_frame_resampled
-            """
+    if os.path.exists(psf_dir+'psf_'+fn+'.inst.fits'):
+        psf_frame = psf_dir+'psf_'+fn+'.inst.fits'
     else:
         psf_frame = 'None'
 

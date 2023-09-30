@@ -39,14 +39,14 @@ def initialize_params() :
     ### (if ZP, EXPTIME and GAIN are missing from the header, define them for a given filter)
 
     WORKING_DIR = './'
-    PRIMARY_FRAME_SIZE_ARCSEC = 750 #arcsec
-    FRAME_SIZE_ARCSEC = 750 #cut-out size from the original frame for the general anlaysis (arcsec)
+    PRIMARY_FRAME_SIZE_ARCSEC = 300 #arcsec
+    FRAME_SIZE_ARCSEC = 300 #cut-out size from the original frame for the general anlaysis (arcsec)
 
     # defining the executables (what you type in the command-line that executes the program)
-    SE_executable = 'sex'
-    swarp_executable = 'swarp'
-    #SE_executable = 'sextractor'
-    #swarp_executable = 'SWarp'
+    #SE_executable = 'sex'
+    #swarp_executable = 'swarp'
+    SE_executable = 'sextractor'
+    swarp_executable = 'SWarp'
 
     ### (if ZP, EXPTIME and GAIN are missing from the header, define them for a given filter)
     INPUT_ZP = {'VIS':30}
@@ -78,7 +78,7 @@ def initialize_params() :
     #Euclid ERO
     TARGETS = []
     #TARGETS.append(['0 ERO-FORNAX-2EXP-AL ERO-FORNAX-2EXP-AL 053.96397 -35.26515 20 VIS MODEL_PSF ---'])
-    TARGETS.append(['0 ERO-FORNAX-2EXP-AL NGC1387 54.2376406 -35.5065765 20 VIS USE_SUB_GAL,MAKE_CAT,MAKE_GC_CAT MASSIVE'])
+    TARGETS.append(['0 ERO-FORNAX-2EXP-AL NGC1387 54.2376406 -35.5065765 20 VIS USE_SUB_GAL,MAKE_CAT MASSIVE'])
 
     #TARGETS.append(['1 ERO-FORNAX-2EXP-AL NGC1387 54.2376406 -35.5065765 20 VIS MAKE_CAT,MAKE_GC_CAT MASSIVE']) #FIT_GAL,USE_SUB_GAL,MAKE_CAT
     #TARGETS.append(['2 ERO-FORNAX-2EXP-AL FCC188 054.26901 -35.59002 20 VIS FIT_GAL,USE_SUB_GAL,MAKE_CAT,MAKE_GC_CAT DWARF,LSB'])

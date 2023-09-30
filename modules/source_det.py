@@ -303,7 +303,7 @@ def make_source_cat(gal_id):
         weight_frame = data_dir+gal_name+'_'+fn+'_cropped.weight.fits'
 
         #print ('DET', main_frame, weight_frame)
-        #psf_frame = psf_dir+'psf_'+fn+'.fits'
+        psf_frame = psf_dir+'psf_'+fn+'.inst.fits'
         make_detection_frame(gal_id,main_frame, weight_frame,fn,output_frame=detection_frame)
         make_fancy_png(detection_frame,detection_frame+'.jpg',zoom=2)
         if fn == filters[0]:
@@ -355,7 +355,7 @@ def make_source_cat(gal_id):
         '-FILTER Y -FILTER_NAME  '+external_dir+'tophat_1.5_3x3.conv -STARNNW_NAME '+external_dir+'default.nnw -PIXEL_SCALE ' + str(pix_size) + ' ' \
         '-BACK_SIZE 32 -BACK_FILTERSIZE 1 -CHECKIMAGE_TYPE APERTURES,FILTERED,BACKGROUND,-BACKGROUND,SEGMENTATION,BACKGROUND_RMS ' +  \
         '-CHECKIMAGE_NAME '+check_image_aper+','+check_image_filtered+','+check_image_back+','+check_image_noback+','+check_image_segm+\
-        ','+check_image_back_rms+' -VERBOSE_TYPE NORMAL'#' -PSF_NAME '+psf_frame
+        ','+check_image_back_rms+' -VERBOSE_TYPE NORMAL'+' -PSF_NAME '+psf_frame
         #print (command)
         os.system(command)
 
@@ -578,9 +578,10 @@ def forced_photometry(det_cat, photom_frame, mask_frame, back_rms_frame, fn, out
         sky_flux = sky_flux[0]
         sky_flux_err = sky_flux_err[0]
         flux_sky_sub = float(flux)-float(sky_flux)/(sky_area/aper_area)
-        flux_total = (flux_sky_sub) / (PSF_REF_RAD_FRAC[fn])
+        flux_total = ((flux_sky_sub) / (PSF_REF_RAD_FRAC[fn]))[0]
         #flux_err = (np.sqrt((flux_err**2)*exptime+(flux_sky_sub*exptime / GAIN[fn] / (PSF_REF_RAD_FRAC[fn]))))/exptime
         #print (flux, sky_flux)
+        #print (flux_total)
         if flux_total <= 0 :
             FLUX.append(-99)
             FLUX_ERR.append(-99)

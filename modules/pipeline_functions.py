@@ -480,7 +480,10 @@ def make_galaxy_frames(gal_id, resampled=False):
         #initial crop for maiing life easier!
         crop_frame(data_dir+gal_name+'_'+fn+resampled+'.fits',gal_name,FRAME_SIZE[fn]/2,fn,ra,dec,format='_cropped.fits')
         crop_frame(data_dir+gal_name+'_'+fn+resampled+'.weight.fits',gal_name,FRAME_SIZE[fn]/2,fn,ra,dec,format='_cropped.weight.fits')
-
+        try:
+            make_fancy_png(data_dir+gal_name+'_'+fn+'_cropped.fits',img_dir+gal_name+'_'+fn+'_cropped.jpg',text=gal_name+' '+fn)
+        except:
+            print ('*** something happened (not enough memory?) and the fancy JPG frame could not be made.')
 
         if 'FIT_GAL' in methods:
             crop_frame(data_dir+gal_name+'_'+fn+resampled+'.fits',gal_name,GAL_FRAME_SIZE[fn]/2,fn,ra,dec,format='_gal_cropped.fits')
