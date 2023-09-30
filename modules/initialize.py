@@ -39,8 +39,8 @@ def initialize_params() :
     ### (if ZP, EXPTIME and GAIN are missing from the header, define them for a given filter)
 
     WORKING_DIR = './'
-    PRIMARY_FRAME_SIZE_ARCSEC = 300 #arcsec
-    FRAME_SIZE_ARCSEC = 300 #cut-out size from the original frame for the general anlaysis (arcsec)
+    PRIMARY_FRAME_SIZE_ARCSEC = 3300 #arcsec
+    FRAME_SIZE_ARCSEC = 3300 #cut-out size from the original frame for the general anlaysis (arcsec)
 
     # defining the executables (what you type in the command-line that executes the program)
     #SE_executable = 'sex'
@@ -49,9 +49,9 @@ def initialize_params() :
     swarp_executable = 'SWarp'
 
     ### (if ZP, EXPTIME and GAIN are missing from the header, define them for a given filter)
-    INPUT_ZP = {'VIS':30}
-    INPUT_EXPTIME = {'VIS':560}
-    INPUT_GAIN = {'VIS':2}
+    INPUT_ZP = {'VIS':30,'FDS-r':0}
+    INPUT_EXPTIME = {'VIS':560,'FDS-r':1}
+    INPUT_GAIN = {'VIS':2,'FDS-r':1}
 
     # ------------------------------ GALAXIES/TARGETS ------------------------------
 
@@ -78,12 +78,25 @@ def initialize_params() :
     #Euclid ERO
     TARGETS = []
     #TARGETS.append(['0 ERO-FORNAX-2EXP-AL ERO-FORNAX-2EXP-AL 053.96397 -35.26515 20 VIS MODEL_PSF ---'])
-    TARGETS.append(['0 ERO-FORNAX-2EXP-AL NGC1387 54.2376406 -35.5065765 20 VIS USE_SUB_GAL,MAKE_CAT MASSIVE'])
+    #TARGETS.append(['0 ERO-FORNAX-2EXP-AL NGC1387 54.2376406 -35.5065765 20 VIS FIT_GAL,USE_SUB_GAL,MAKE_CAT,MAKE_GC_CAT MASSIVE'])
 
     #TARGETS.append(['1 ERO-FORNAX-2EXP-AL NGC1387 54.2376406 -35.5065765 20 VIS MAKE_CAT,MAKE_GC_CAT MASSIVE']) #FIT_GAL,USE_SUB_GAL,MAKE_CAT
-    #TARGETS.append(['2 ERO-FORNAX-2EXP-AL FCC188 054.26901 -35.59002 20 VIS FIT_GAL,USE_SUB_GAL,MAKE_CAT,MAKE_GC_CAT DWARF,LSB'])
+    #TARGETS.append(['2 ERO-FORNAX FCC188 054.26901 -35.59002 20 VIS,FDS-r --- DWARF,LSB'])
+    #TARGETS.append(['3 ERO-FORNAX FCC156 053.92795 -35.33825 20 VIS,FDS-r --- DWARF,LSB'])
+    #TARGETS.append(['4 ERO-FORNAX FCC195 054.34752 -34.89999 20 VIS,FDS-r --- DWARF,LSB'])
+    #TARGETS.append(['5 ERO-FORNAX FCC160 054.01694 -35.38885 20 VIS,FDS-r --- DWARF,LSB'])
+    #TARGETS.append(['6 ERO-FORNAX FCC181 054.22195 -34.93843 20 VIS,FDS-r --- DWARF,LSB'])
 
-    #TARGETS.append(['0 ERO-FORNAX-v3b ERO-FORNAX-v3b 054.01542 -35.27031 20 VIS MAKE_CAT ---']) # modelling the psf using a larger frame before analysing individual galaxies
+    #TARGETS.append(['3 ERO-FORNAX FCC171 054.15530 -35.38588 20 VIS,FDS-r --- DWARF,LSB'])
+    #TARGETS.append(['4 ERO-FORNAX FCC157 053.92910 -35.51372 20 VIS,FDS-r --- DWARF,LSB'])
+    #TARGETS.append(['5 ERO-FORNAX FCC146 053.79801 -35.32300 20 VIS,FDS-r --- DWARF,LSB'])
+    #TARGETS.append(['6 ERO-FORNAX FCC144 053.75087 -35.32226 20 VIS,FDS-r --- DWARF,LSB'])
+    #TARGETS.append(['7 ERO-FORNAX FCC145 053.77289 -35.21845 20 VIS,FDS-r --- DWARF,LSB'])
+    #TARGETS.append(['8 ERO-FORNAX FCC142 053.74258 -35.04281 20 VIS,FDS-r --- DWARF,LSB'])
+    #TARGETS.append(['9 ERO-FORNAX FCC140 053.73535 -35.19085 20 VIS,FDS-r --- DWARF,LSB'])
+    #TARGETS.append(['10 ERO-FORNAX FCC197 054.42155 -35.29612 20 VIS,FDS-r --- DWARF,LSB'])
+
+    TARGETS.append(['0 ERO-FORNAX ERO-FORNAX 054.01542 -35.27031 20 VIS --- ---']) # modelling the psf using a larger frame before analysing individual galaxies
     #TARGETS.append(['1 ERO-FORNAX-2EXP-AL NGC1387 54.2376406 -35.5065765 20 VIS MAKE_GC_CAT MASSIVE']) #FIT_GAL,USE_SUB_GAL,MAKE_CAT
     #TARGETS.append(['2 ERO-FORNAX-2EXP-AL FCC188 054.26901 -35.59002 20 VIS MAKE_CAT DWARF,LSB'])
     #TARGETS.append(['2 NGC1387-ANGELA NGC1387-ANGELA 54.2376406 -35.5065765 20 VIS MAKE_GC_CAT MASSIVE']) #MAKE_CAT

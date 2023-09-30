@@ -250,6 +250,8 @@ def get_zp_AB(fitsfile):
     except:
         if header['FILTER'] == 'VIS' :
             zp = float(header['MAGZERO'])
+        else:
+            zp = float(header['MAGZERO'])
 
 
 
@@ -447,20 +449,29 @@ def make_fancy_png(fitsfile,pngfile,text='',zoom=1) :
     y2 = int(Y/2 + Y/2/zoom)
     image0 = image[x1:x2,y1:y2]
 
-    #image = sigma_clip(image,sigma=3,maxiters=1)
     scale = ZScaleInterval() #LogStretch()
-    min_ = np.nanmedian(image)-1*np.nanstd(image)
-    max_ = np.nanmedian(image)+2*np.nanstd(image)
-    try :
-        ax.imshow(scale(image0),cmap='gist_gray') #LogNorm #,vmin=min_, vmax=max_
-    except : 
-        ax.imshow(image0,cmap='gist_gray',vmin=min_, vmax=max_) #LogNorm #,vmin=min_, vmax=max_
+    ax.imshow(scale(image0),cmap='gist_gray') #LogNorm #,vmin=min_, vmax=max_
     #ax.axis('off')
     ax.invert_yaxis()
     #fig.tight_layout()
     #[0., 0., 1., 1.]
     ax.text(int(X*0.05),int(Y*0.95),text,color='red',fontsize=30)
-    fig.savefig(pngfile,dpi=150)
+    fig.savefig(pngfile+'.zscale.png',dpi=150)
+
+    scale = LogStretch()
+    ax.imshow(scale(image0),cmap='gist_gray') #LogNorm #,vmin=min_, vmax=max_
+    ax.invert_yaxis()
+    ax.text(int(X*0.05),int(Y*0.95),text,color='red',fontsize=30)
+    fig.savefig(pngfile+'.ĺogscale.png',dpi=150)
+
+    image0 = sigma_clip(image0,sigma=8,maxiters=3)
+    min_ = np.nanmedian(image0)-0.5*np.nanstd(image0)
+    max_ = np.nanmedian(image0)+5*np.nanstd(image0)
+    ax.imshow((image0),cmap='gist_gray') 
+    ax.invert_yaxis()
+    ax.text(int(X*0.05),int(Y*0.95),text,color='red',fontsize=30)
+    fig.savefig(pngfile+'.linear.png',dpi=150)
+
     plt.close()
 
 ############################################################
