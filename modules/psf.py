@@ -63,7 +63,7 @@ def estimate_aper_corr(gal_id):
             back = np.nanmedian(sigma_clip(psf_data,2, masked=False))
             #print (back)
             #total_flux = np.nansum(psf_data-back)
-            psf_data = psf_data-back
+            psf_data = psf_data#-back
 
             aper = CircularAperture((X/2., Y/2.), aper_size_pixel)
             aper_area = aper.area_overlap(data=psf_data,method='exact')
@@ -615,6 +615,11 @@ def makeKing2D(cc, rc, mag, zeropoint, exptime, pixel_size):
     for i in range(0, Size):
         for j in range(0, Size):
             flux = 0
+
+            n = 10
+            #if (abs(i-Size/2) < 5) and (abs(j-Size/2) < 5):
+            #    n = 50
+
             # Secondo Cambio aggiunto 0.5
             for ii in range(n):
                 for jj in range(n):
@@ -821,7 +826,7 @@ def make_psf_for_frame(main_frame,weight_frame,source_cat,filtername,psf_frame,m
 
         N_iter = 1
         for iter in range(N_iter) :
-            psf_frame_size_pix = int(PSF_IMAGE_SIZE)#*RATIO_OVERSAMPLE_PSF
+            psf_frame_size_pix = int(PSF_IMAGE_SIZE)*2#*RATIO_OVERSAMPLE_PSF
             psf_pixel_size = pix_size#/RATIO_OVERSAMPLE_PSF
             if iter==0:
                 command = swarp_executable+' '+star_fits_file+' -c '+external_dir+'default.swarp -IMAGEOUT_NAME '+output+\

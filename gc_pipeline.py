@@ -15,13 +15,13 @@ for gal_id in gal_params.keys():
 
     # step 0. inistialize pipleine and prepare data
     intro(gal_id)
-    copy_data(gal_id)
+    #copy_data(gal_id)
     get_data_info(gal_id)
 
     if 'RESAMPLE'in methods:
         resample_data(gal_id)
     
-    make_galaxy_frames(gal_id)
+    #make_galaxy_frames(gal_id)
 
     if 'MODEL_PSF' in methods:
         make_psf_all_filters(gal_id)
@@ -37,7 +37,7 @@ for gal_id in gal_params.keys():
         make_source_cat_full(gal_id)
 
     # step 3. GC analysis: completeness, selection, measurments
-    if 'MAKE_GC_CAT' in methods:
+    if 'SIM_GC' in methods:
         simulate_GCs_all(gal_id)
         make_source_cat_for_sim(gal_id)
         assess_GC_simulations(gal_id)

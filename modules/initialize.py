@@ -78,7 +78,7 @@ def initialize_params() :
     #Euclid ERO
     TARGETS = []
     #TARGETS.append(['0 ERO-FORNAX-2EXP-AL ERO-FORNAX-2EXP-AL 053.96397 -35.26515 20 VIS MODEL_PSF ---'])
-    TARGETS.append(['0 ERO-FORNAX-2EXP-AL NGC1387 54.2376406 -35.5065765 20 VIS USE_SUB_GAL,MAKE_CAT,MAKE_GC_CAT MASSIVE'])
+    TARGETS.append(['0 ERO-FORNAX-2EXP-AL NGC1387 54.2376406 -35.5065765 20 VIS SIM_GC,MAKE_GC_CAT MASSIVE'])
     #TARGETS.append(['1 ERO-FORNAX-2EXP-AL NGC1387 54.2376406 -35.5065765 20 VIS MAKE_CAT,MAKE_GC_CAT MASSIVE']) #FIT_GAL,USE_SUB_GAL,MAKE_CAT
     
     #TARGETS.append(['2 ERO-FORNAX FCC188 054.26901 -35.59002 20 VIS,FDS-r --- DWARF,LSB'])
@@ -105,9 +105,9 @@ def initialize_params() :
 
     global TABLES
     TABLES = {}
-    TABLES['acsfcs']='/data/users/saifollahi/Euclid/ERO/archival_tables/ACS-FCS-GCs.fits'
-    TABLES['fornax-spec-gcs']='/data/users/saifollahi/Euclid/ERO/archival_tables/Fornax_spec_UCDs_and_GCs.fits'
-    TABLES['fornax-spec-stars']='/data/users/saifollahi/Euclid/ERO/archival_tables/Fornax_spec_foreground_stars.fits'
+    TABLES['acsfcs']='./archival_tables/ACS-FCS-GCs.fits'
+    TABLES['fornax-spec-gcs']='./archival_tables/Fornax_spec_UCDs_and_GCs.fits'
+    TABLES['fornax-spec-stars']='./archival_tables/Fornax_spec_foreground_stars.fits'
 
     # ------------------------------  GALAXY FITTING ------------------------------
 
@@ -139,16 +139,16 @@ def initialize_params() :
 
     #------------------------------ GC SIMULATION ------------------------------
     N_ART_GCS = 200
-    N_SIM_GCS = 1
+    N_SIM_GCS = 5
     COSMIC_CLEAN = False #does not work at the moment anyways...
-    GC_SIZE_RANGE = [1,8] #lower value should be small enough to make some point-sources for performance check, in pc
-    GC_MAG_RANGE = [-10,-6]
+    GC_SIZE_RANGE = [1,5] #lower value should be small enough to make some point-sources for performance check, in pc
+    GC_MAG_RANGE = [-10,-5]
     GC_REF_MAG = {'VIS':-8} #magnitude of a typical GC in the given filters should be defined here.
     GC_SIM_MODE = 'CONCENTRATED' # 'UNIFORM' or 'CONCENTRATED'
 
     #------------------------------ GC SELECTION -------------------------------
 
-    GC_SEL_PARAMS = ['CI_4_8']#,'CI_2_4','CI_4_6','CI_6_8','CI_8_10','CI_10_12','ELLIPTICITY']
+    GC_SEL_PARAMS = ['CI_2_4','CI_4_8','CI_8_12']#,'CI_2_4','CI_4_6','CI_6_8','CI_8_10','CI_10_12','ELLIPTICITY']
 
 
     ####################################################################################################
