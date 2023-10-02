@@ -229,6 +229,8 @@ def make_mask(frame, sex_source_cat, weight_frame, seg_map, mask_out, mask_out2,
 def make_detection_frame(gal_id, input_frame, weight_frame, fn, output_frame, backsize=32, backfiltersize=1, iteration=3):
     print ('- Making the detection frame for filter ', fn)
     gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
+    data_name = gal_data_name[gal_id]
+
     os.system('cp '+input_frame+' '+temp_dir+'temp_det.fits')
     for i in range(0,iteration):
         print ('+ iteration '+str(i))
@@ -291,6 +293,7 @@ def make_detection_frame(gal_id, input_frame, weight_frame, fn, output_frame, ba
 def make_source_cat(gal_id):
     print ('- Making Source Catalogues ... ')
     gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
+    data_name = gal_data_name[gal_id]
     methods = gal_methods[gal_id]
 
     i = -1
@@ -303,7 +306,7 @@ def make_source_cat(gal_id):
         weight_frame = data_dir+gal_name+'_'+fn+'_cropped.weight.fits'
 
         #print ('DET', main_frame, weight_frame)
-        psf_frame = psf_dir+'psf_'+fn+'.inst.fits'
+        psf_frame = psf_dir+data_name+'_psf_'+fn+'.inst.fits'
         make_detection_frame(gal_id,main_frame, weight_frame,fn,output_frame=detection_frame)
         make_fancy_png(detection_frame,detection_frame+'.jpg',zoom=2)
         if fn == filters[0]:
@@ -409,6 +412,7 @@ def crossmatch(cat1,cat2,ra_param1,dec_param1,ra_param2,dec_param2,max_sep_arcse
 def make_multiwavelength_cat(gal_id, mode='forced-photometry'):
     print ('- Making the MASTER Source Catalogue ')
     gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
+    data_name = gal_data_name[gal_id]
 
     if mode=='cross-match' or mode=='forced-photometry':
         main_cat = sex_dir+gal_name+'_'+filters[0]+'_source_cat_proc.fits'
@@ -622,6 +626,7 @@ def forced_photometry(det_cat, photom_frame, mask_frame, back_rms_frame, fn, out
 def copy_sims(gal_id):
 
     gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
+    data_name = gal_data_name[gal_id]
     methods = gal_methods[gal_id]
 
     for fn in filters:
@@ -654,7 +659,9 @@ def make_source_cat_for_sim(gal_id):
 
     copy_sims(gal_id)
     gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
+    data_name = gal_data_name[gal_id]
     methods = gal_methods[gal_id]
+
     global data_dir
     data_dir = art_dir
     tables = []

@@ -49,9 +49,9 @@ def select_gcs_for_param(param_sources,mag_sources,param_det_art_gcs,mag_det_art
 
         param_median = np.nanmedian(param_det_art_gcs_in_mag_range)
         param_std = np.nanstd(param_det_art_gcs_in_mag_range)
-        param_lower_limit = param_median-1.5*param_std-0.05  
+        param_lower_limit = param_median-1.5*param_std-0.05
         param_upper_limit = param_median+1.5*param_std+0.05
-    
+
 
         if (param > param_lower_limit) and (param < param_upper_limit) :
             mask.append(1)
@@ -59,10 +59,11 @@ def select_gcs_for_param(param_sources,mag_sources,param_det_art_gcs,mag_det_art
             mask.append(0)
 
     mask = np.array(mask)
-    return mask 
+    return mask
 
 def select_GC_candidadates(gal_id):
     gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
+    data_name = gal_data_name[gal_id]
 
     fn_det = filters[0]
     #ART_GCs_cat = art_dir+gal_name+'_'+fn_det+'_ALL_ART_GCs.fits'
@@ -92,10 +93,10 @@ def select_GC_candidadates(gal_id):
         mag_sources = sources[mag_param]
         mask = select_gcs_for_param(param_sources,mag_sources,param_det_art_gcs,mag_det_art_gcs)
         selected_gcs_mask = selected_gcs_mask * mask
-    
+
     selected_gcs_mask = selected_gcs_mask.astype(np.bool_)
     selected_gcs_data = sources[selected_gcs_mask]
-    
+
     selected_gcs = fits.open(selected_gcs_cat)
     selected_gcs[1].data = selected_gcs_data
     selected_gcs.writeto(selected_gcs_cat, overwrite=True)

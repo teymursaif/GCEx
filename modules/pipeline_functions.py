@@ -40,6 +40,7 @@ class bcolors:
 
 def intro(gal_id):
     gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
+    data_name = gal_data_name[gal_id]
     global main_filter, other_filters, n_other_filters
     print (f"{bcolors.OKCYAN}- Analysis Started ... "+ bcolors.ENDC)
     print ('\n+ Analysing galaxy: '+str(gal_name))
@@ -103,8 +104,9 @@ def median_filter_array(data,fsize = 3):
 
 def get_data_info(gal_id):
     gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
+    data_name = gal_data_name[gal_id]
     methods = gal_methods[gal_id]
-    
+
     print ('- Check the input data for compatibility with pipeline')
     for fn in filters:
         try:
@@ -165,6 +167,7 @@ def get_data_info(gal_id):
 def resample_data(gal_id):
     print ('- Resampling data')
     gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
+    data_name = gal_data_name[gal_id]
     for fn in filters:
         resample_swarp(data_dir+gal_name+'_'+fn+'.fits',data_dir+gal_name+'_'+fn+'.weight.fits',\
                     gal_name,FRAME_SIZE[fn],fn,ra,dec,pixel_size=PIXEL_SCALES[fn],format='_resampled.fits',weight_format='_resampled.weight.fits')
@@ -312,6 +315,7 @@ def attach_sex_tables(tables,output_table) :
 
 def find_data(gal_id):
     gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
+    data_name = gal_data_name[gal_id]
     data_for_filters = np.empty(len(filters))
     for fn in filters:
         print ('- Searching for science frames for the galaxy '+str(gal_name)+\
@@ -464,7 +468,7 @@ def make_fancy_png(fitsfile,pngfile,text='',zoom=1, mode='lsb') :
         #print (int(dx/5),int(dy/5))
         image = rebin(image,(int(dy/5),int(dx/5)))
 
-    
+
     scale = ZScaleInterval() #LogStretch()
     ax.imshow(scale(image),cmap='gist_gray') #LogNorm #,vmin=min_, vmax=max_
     #ax.axis('off')
@@ -477,7 +481,7 @@ def make_fancy_png(fitsfile,pngfile,text='',zoom=1, mode='lsb') :
     image0 = sigma_clip(image,3, masked=False)
     min_g = np.nanmedian(image0)-0.1*np.nanstd(image0)
     max_g = np.nanmedian(image0)+5*np.nanstd(image)
-    image0 = image - min_g 
+    image0 = image - min_g
     image0 = image0 / (max_g - min_g)
     image0[image0>1]=1
     image0[image0<0]=0
@@ -485,7 +489,7 @@ def make_fancy_png(fitsfile,pngfile,text='',zoom=1, mode='lsb') :
     image0 = np.log(image0**0.5+10)
 
     #print (min_g,max_g)
-    ax.imshow((image0),cmap='gist_gray') 
+    ax.imshow((image0),cmap='gist_gray')
     ax.invert_yaxis()
     ax.text(int(X*0.05),int(Y*0.90),text,color='red',fontsize=50)
     fig.savefig(pngfile+'.log.png',dpi=150)
@@ -504,7 +508,7 @@ def make_fancy_png(fitsfile,pngfile,text='',zoom=1, mode='lsb') :
     image0 = image
     image0 = gaussian_filter(image0,sigma=0.25)
 
-    image = image - min_g 
+    image = image - min_g
     image = image / (max_g - min_g)
     image[image>1]=1
     image[image<0]=0
@@ -519,7 +523,7 @@ def make_fancy_png(fitsfile,pngfile,text='',zoom=1, mode='lsb') :
     image0[image0<0]=0
     image0 = (1-image0)*255
     image0[image0==0] = image[image0==0]
-    ax.imshow((image0),cmap='gist_gray',vmin=0, vmax=255) 
+    ax.imshow((image0),cmap='gist_gray',vmin=0, vmax=255)
     ax.invert_yaxis()
     #ax.text(int(X*0.05),int(Y*0.95),text,color='red',fontsize=30)
     fig.savefig(pngfile+'.lsb.png',dpi=150)
@@ -531,12 +535,12 @@ def make_fancy_png(fitsfile,pngfile,text='',zoom=1, mode='lsb') :
 def make_galaxy_frames(gal_id, resampled=False):
     print ('- Making cropped frames and weight maps')
     gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
-
+    data_name = gal_data_name[gal_id]
     methods = gal_methods[gal_id]
 
-    if 'RESAMPLE'in methods: 
+    if 'RESAMPLE'in methods:
         resampled='_resampled'
-    else: 
+    else:
         resampled=''
 
     for fn in filters:
@@ -558,6 +562,8 @@ def make_galaxy_frames(gal_id, resampled=False):
 
 def make_rgb(gal_id,rgb_filters=None):
     gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
+    data_name = gal_data_name[gal_id]
+
     if rgb_filters == None:
         print ('RGB filters are not specified. Skipping making an RGB image ...')
         return
@@ -600,6 +606,7 @@ def make_rgb(gal_id,rgb_filters=None):
 
 def clean_data(gal_id): #tbw
     gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
+    data_name = gal_data_name[gal_id]
     if COSMIC_CLEAN == False :
         clean_data_dir = data_dir
     elif COSMIC_CLEAN == True :
@@ -663,6 +670,7 @@ def csv_to_fits(input_csv,output_fits):
     bintable = convertNumpyToFitsBinTable(recarray)
     saveFitsBinTable(bintable, output_fits)
 
+############################################################
 
 def loadCsvAsNumpy(filename):
     # Function is developed by some nice people on the internet
@@ -695,11 +703,13 @@ def loadCsvAsNumpy(filename):
     return np.loadtxt(filename,
         dtype = dtype, delimiter = ',', skiprows = 1)
 
+############################################################
 
 def convertNumpyToFitsBinTable(recarray):
     #Function is developed by some nice people on the internet
     return fits.FITS_rec.from_columns(fits.ColDefs(recarray))
 
+############################################################
 
 def saveFitsBinTable(bintable, filename):
     #Function is developed by some nice people on the internet
@@ -710,3 +720,6 @@ def saveFitsBinTable(bintable, filename):
 
 ############################################################
 
+def rebin(a, shape):
+    sh = shape[0],a.shape[0]//shape[0],shape[1],a.shape[1]//shape[1]
+    return a.reshape(sh).sum(-1).sum(1)

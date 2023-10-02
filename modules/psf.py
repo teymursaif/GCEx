@@ -45,8 +45,10 @@ plt.rc('text', usetex=True)
 
 def estimate_aper_corr(gal_id):
     gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
+    data_name = gal_data_name[gal_id]
+
     for fn in filters:
-        psf_file = psf_dir+'psf_'+fn+'.fits'
+        psf_file = psf_dir+data_name+'_psf_'+fn+'.fits'
         if os.path.exists(psf_file):
             aper_size_arcsec = (APERTURE_SIZE[fn])
             #aper_size_pixel = aper_size_arcsec/PIXEL_SCALES[fn]
@@ -106,8 +108,10 @@ def estimate_fwhm_for_psf_fits(psf_fits_file_name, psf_pixel_scale=-1):
 
 def estimate_fwhm(gal_id):
     gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
+    data_name = gal_data_name[gal_id]
+
     for fn in filters:
-        psf_file = psf_dir+'psf_'+fn+'.fits'
+        psf_file = psf_dir+data_name+'_psf_'+fn+'.fits'
         print ('- estimating psf FWHM for filter:', fn)
         if os.path.exists(psf_file):
             psf_fits_file = fits.open(psf_file)
@@ -170,6 +174,7 @@ def getFWHM_GaussianFitScaledAmp(img):
 def simulate_GCs_all(gal_id):
     print (f"{bcolors.OKCYAN}- making artificial globular clusters"+ bcolors.ENDC)
     gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
+    data_name = gal_data_name[gal_id]
     for n in range(N_SIM_GCS):
         simualte_GCs(gal_id,n)
 
@@ -177,6 +182,7 @@ def simulate_GCs_all(gal_id):
 
 def simualte_GCs(gal_id,n):
     gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
+    data_name = gal_data_name[gal_id]
     methods = gal_methods[gal_id]
 
     ra_gal = ra
@@ -337,7 +343,7 @@ def simualte_GCs(gal_id,n):
 
         #print ('GCSIM2',science_frame)
 
-        psf_file = psf_dir+'psf_'+fn+'.fits'
+        psf_file = psf_dir+data_name+'_psf_'+fn+'.fits'
         print ('- Making artificial GCs for data in filter:', fn)
         if os.path.exists(psf_file):
             donothing = 1
@@ -663,11 +669,12 @@ def makeKing2D(cc, rc, mag, zeropoint, exptime, pixel_size):
 def make_psf_all_filters(gal_id):
     print (f"{bcolors.OKCYAN}- Making PSF models for all the filters"+ bcolors.ENDC)
     gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
+    data_name = gal_data_name[gal_id]
 
     for fn in filters:
         print ('- Making PSF for filter', fn)
 
-        psf_file = psf_dir+'psf_'+fn+'.fits'
+        psf_file = psf_dir+data_name+'_psf_'+fn+'.fits'
         if os.path.exists(psf_file):
             print ('- A psf model is found, however the pipeline continues to make a new one.')
             #return 0
@@ -705,10 +712,10 @@ def make_psf_all_filters(gal_id):
         ###
 
         make_psf_for_frame(main_frame,weight_frame,source_cat,fn,psf_frame_inst,mode='auto',resample=False)
-        shutil.copy(psf_frame_inst,psf_dir+'psf_'+fn+'.inst.fits')
+        shutil.copy(psf_frame_inst,psf_dir+data_name+'_psf_'+fn+'.inst.fits')
 
         make_psf_for_frame(main_frame,weight_frame,source_cat,fn,psf_frame,mode='auto')
-        shutil.copy(psf_frame,psf_dir+'psf_'+fn+'.fits')
+        shutil.copy(psf_frame,psf_dir+data_name+'_psf_'+fn+'.fits')
 
         #psf_frame_soren = '/data/users/saifollahi/Euclid/ERO/ERO-data/PSF/psf_VIS_v3c_Soren.fits'
         #normalize_psf(psf_frame_soren)
@@ -1024,7 +1031,7 @@ def make_radial_profile_for_psf(psf_frames,pixelsize,zp,output_png):
                     flux_apers = FLUX_APER[j]
                     det_flag = 1
                     print ('- centeroid and fwhm of the PSF model are:', x, y, fwhm)
-                    
+
                     break
 
         #print (flux_apers)

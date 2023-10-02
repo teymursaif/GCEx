@@ -44,6 +44,8 @@ def fit_galaxy_sersic_all_filters(gal_id):
 
     print (f"{bcolors.OKCYAN}- Sersic modeling of the host galaxy"+ bcolors.ENDC)
     gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
+    data_name = gal_data_name[gal_id]
+
     gal_cat = cats_dir+gal_name+'_sersic_params.csv'
     cat = open(gal_cat, 'w')
 
@@ -78,7 +80,7 @@ def fit_galaxy_sersic_all_filters(gal_id):
         try :\
         #if True:
             ra_, dec_, Re_, mag_, n_, PA_, q_ = fit_galaxy_sersic(main_data,weight_data,ra,dec,gal_name,fn,pix_size,fit_dir,zp,plotting=True,\
-            r_cut=GAL_FRAME_SIZE[fn], r_cut_fit=GAL_FRAME_SIZE[fn], scale=scale, constraint=constraint)
+            r_cut=GAL_FRAME_SIZE[fn], r_cut_fit=GAL_FRAME_SIZE[fn], scale=scale, constraint=constraint, data_name=data_name)
             ra_ = float(ra_)
             dec_ = float(dec_)
             #if USE_GAL_SUB_IMG == True:
@@ -371,6 +373,7 @@ def change_weight_map(weight_in,weight_out,make_weight) :
 def estimate_frame_back(frame,gal_name,filtername) :
 
     gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
+    data_name = gal_data_name[gal_id]
 
     X = get_header(frame,keyword='NAXIS1')
     Y = get_header(frame,keyword='NAXIS2')
@@ -763,7 +766,7 @@ def make_radial_profile(data,ellipse,exptime=1,mask=None,sn_stop=1./3.,rad_stop=
 ############################################################
 
 def fit_galaxy_sersic(main_data,weight_data,ra,dec,obj_name,filter_name,pix_size,fit_dir,zp,\
-    r_cut,r_cut_fit,scale,constraint='None',blur_frame=0,plotting=False) :
+    r_cut,r_cut_fit,scale,constraint='None',blur_frame=0,plotting=False,data_name='') :
 
     print ('\n+ Sersic fitting for the galaxy : '+str(obj_name))
 
@@ -780,8 +783,8 @@ def fit_galaxy_sersic(main_data,weight_data,ra,dec,obj_name,filter_name,pix_size
 
     ##########################
 
-    if os.path.exists(psf_dir+'psf_'+fn+'.inst.fits'):
-        psf_frame = psf_dir+'psf_'+fn+'.inst.fits'
+    if os.path.exists(psf_dir+data_name+'_psf_'+fn+'.inst.fits'):
+        psf_frame = psf_dir+data_name+'_psf_'+fn+'.inst.fits'
     else:
         psf_frame = 'None'
 

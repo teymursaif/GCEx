@@ -51,6 +51,7 @@ def shorten_filter_name(filtername):
 def assess_GC_simulations_general(gal_id):
 
     gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
+    data_name = gal_data_name[gal_id]
 
     # load main cats for plotting
     fn_det = filters[0]
@@ -187,7 +188,9 @@ def assess_GC_simulations_general(gal_id):
 ############################################################
 
 def assess_GC_simulations_compactness(gal_id):
+
     gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
+    data_name = gal_data_name[gal_id]
 
     # load main cats for plotting
     fn_det = filters[0]
@@ -248,7 +251,3 @@ def assess_GC_simulations_compactness(gal_id):
         plt.close()
 
 ############################################################
-
-def rebin(a, shape):
-    sh = shape[0],a.shape[0]//shape[0],shape[1],a.shape[1]//shape[1]
-    return a.reshape(sh).sum(-1).sum(1)
