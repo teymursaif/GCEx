@@ -2,12 +2,12 @@ import os, sys
 import math
 import numpy as np
 import matplotlib.pyplot as plt
-from astroquery.mast import Observations
+#from astroquery.mast import Observations
 from astropy.io import fits
 from astropy.wcs import WCS
 from astropy import units as u
 from astropy.coordinates import SkyCoord
-from scipy.ndimage import gaussian_filter
+#from scipy.ndimage import gaussian_filter
 from scipy.ndimage import median_filter
 from astropy.stats import sigma_clip
 from astropy.visualization import *
@@ -226,7 +226,7 @@ def make_mask(frame, sex_source_cat, weight_frame, seg_map, mask_out, mask_out2,
 
 ############################################################
 
-def make_detection_frame(gal_id, input_frame, weight_frame, fn, output_frame, backsize=32, backfiltersize=1, iteration=3):
+def make_detection_frame(gal_id, input_frame, weight_frame, fn, output_frame, backsize=64, backfiltersize=1, iteration=3):
     print ('- Making the detection frame for filter ', fn)
     gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
     data_name = gal_data_name[gal_id]
@@ -262,7 +262,7 @@ def make_detection_frame(gal_id, input_frame, weight_frame, fn, output_frame, ba
             img1.writeto(temp_dir+'temp_seg'+str(i)+'.fits',overwrite=True)
 
         command = SE_executable+' '+temp_dir+'temp_det.fits'+' -c '+str(external_dir)+'default.sex -CATALOG_NAME '+temp_dir+'temp_sex_cat.fits'+str(i)+'.fits '+ \
-        '-PARAMETERS_NAME '+str(external_dir)+'sex_default.param -DETECT_MINAREA 5 -DETECT_MAXAREA 200 -DETECT_THRESH 1.5 -ANALYSIS_THRESH 1.5 ' + \
+        '-PARAMETERS_NAME '+str(external_dir)+'sex_default.param -DETECT_MINAREA 5 -DETECT_MAXAREA 200 -DETECT_THRESH 2.0 -ANALYSIS_THRESH 2.0 ' + \
         '-DEBLEND_NTHRESH 16 -DEBLEND_MINCONT 0.005 ' + weight_command + \
         '-FILTER_NAME  '+str(external_dir)+'default.conv -STARNNW_NAME '+str(external_dir)+'default.nnw -PIXEL_SCALE ' + str(PIXEL_SCALES[filters[0]]) + ' ' \
         '-BACK_SIZE '+ str(backsize)+' -BACK_FILTERSIZE '+ str(backfiltersize)+' -CHECKIMAGE_TYPE BACKGROUND,-BACKGROUND,APERTURES ' +  \
@@ -352,11 +352,11 @@ def make_source_cat(gal_id):
 
         ####
         command = SE_executable+' '+detection_frame+','+frame+' -c '+external_dir+'default.sex -CATALOG_NAME '+source_cat_name+' '+ \
-        '-PARAMETERS_NAME '+external_dir+'default.param -DETECT_MINAREA 5 -DETECT_THRESH 1.5 -ANALYSIS_THRESH 1.5 ' + \
-        '-DEBLEND_NTHRESH 32 -DEBLEND_MINCONT 0.0005 ' + weight_command + ' -PHOT_APERTURES '+str(psf_dia_ref_pixel)+','+str(PHOTOM_APERS)+' -GAIN ' + str(gain) + ' ' \
+        '-PARAMETERS_NAME '+external_dir+'default.param -DETECT_MINAREA 5 -DETECT_THRESH 2.0 -ANALYSIS_THRESH 2.0 ' + \
+        '-DEBLEND_NTHRESH 16 -DEBLEND_MINCONT 0.005 ' + weight_command + ' -PHOT_APERTURES '+str(psf_dia_ref_pixel)+','+str(PHOTOM_APERS)+' -GAIN ' + str(gain) + ' ' \
         '-MAG_ZEROPOINT ' +str(zp) + ' -BACKPHOTO_TYPE GLOBAL '+\
         '-FILTER Y -FILTER_NAME  '+external_dir+'tophat_1.5_3x3.conv -STARNNW_NAME '+external_dir+'default.nnw -PIXEL_SCALE ' + str(pix_size) + ' ' \
-        '-BACK_SIZE 32 -BACK_FILTERSIZE 1 -CHECKIMAGE_TYPE APERTURES,FILTERED,BACKGROUND,-BACKGROUND,SEGMENTATION,BACKGROUND_RMS ' +  \
+        '-BACK_SIZE 64 -BACK_FILTERSIZE 1 -CHECKIMAGE_TYPE APERTURES,FILTERED,BACKGROUND,-BACKGROUND,SEGMENTATION,BACKGROUND_RMS ' +  \
         '-CHECKIMAGE_NAME '+check_image_aper+','+check_image_filtered+','+check_image_back+','+check_image_noback+','+check_image_segm+\
         ','+check_image_back_rms+' -VERBOSE_TYPE NORMAL'+' -PSF_NAME '+psf_frame
         #print (command)

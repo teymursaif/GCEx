@@ -2,7 +2,7 @@ import os, sys
 import math
 import numpy as np
 import matplotlib.pyplot as plt
-from astroquery.mast import Observations
+#from astroquery.mast import Observations
 from astropy.io import fits
 from astropy.wcs import WCS
 from astropy import units as u

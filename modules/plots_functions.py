@@ -40,7 +40,7 @@ def assess_GC_simulations(gal_id):
 ############################################################
 
 def shorten_filter_name(filtername):
-    short_filternames = ['F606W','F814W','VIS','F475W']
+    short_filternames = ['F606W','F814W','VIS','F475W','NISP-Y','NISP-J','NISP-H']
     for short_filtername in short_filternames:
         if short_filtername in filtername :
             return short_filtername
@@ -66,9 +66,9 @@ def assess_GC_simulations_general(gal_id):
     colors = ['red','green','cyan','blue','purple','black']
 
     if len(filters)==1:
-        fig, ax = plt.subplots(4, len(filters)+1, figsize=(6*(len(filters)+1),5*3), constrained_layout=True)
+        fig, ax = plt.subplots(6, len(filters)+1, figsize=(6*(len(filters)+1),7*3), constrained_layout=True)
     else:
-        fig, ax = plt.subplots(4, len(filters), figsize=(6*len(filters),5*3), constrained_layout=True)
+        fig, ax = plt.subplots(6, len(filters), figsize=(6*len(filters),7*3), constrained_layout=True)
 
     n_filter = -1
     for fn in filters:
@@ -132,54 +132,54 @@ def assess_GC_simulations_general(gal_id):
             param2 = det_art_gcs['MAG_AUTO_'+fn]
             param3 = sources[GC_SEL_PARAMS[0]+'_'+fn]
             param4 = sources['F_MAG_APER_CORR_'+fn]
-            ax[2][n_filter+1].scatter(param3,param4,s=20,color='grey',alpha=0.2,marker='o',label='Detected Sources')
-            ax[2][n_filter+1].scatter(param1,param2,s=50,color=colors[n_filter],alpha=0.2,marker='o',label='Detected Artificial GCs')
+            ax[3][n_filter].scatter(param3,param4,s=20,color='grey',alpha=0.2,marker='o',label='Detected Sources')
+            ax[3][n_filter].scatter(param1,param2,s=50,color=colors[n_filter],alpha=0.2,marker='o',label='Detected Artificial GCs')
             #ax[2][n_filter+1].set_title(gal_name+', '+sfn)
-            ax[2][n_filter+1].set_ylabel('$m_{'+sfn+', AUTO} \ [mag]$')
-            ax[2][n_filter+1].set_xlabel('$'+(GC_SEL_PARAMS[0]).replace("_", "-")+'_{'+sfn+'} \ [mag]$')
+            ax[3][n_filter].set_ylabel('$m_{'+sfn+', AUTO} \ [mag]$')
+            ax[3][n_filter].set_xlabel('$'+(GC_SEL_PARAMS[0]).replace("_", "-")+'_{'+sfn+'} \ [mag]$')
             mag1 = GC_MAG_RANGE[0]+5*np.log10(distance*1e+5)-0.25+color(fn,fn_det)
             #mag2 = GC_MAG_RANGE[1]+5*np.log10(distance*1e+5)+0.25+color(fn,fn_det)
             mag2 = np.nanmax(param2)
-            ax[2][n_filter+1].set_ylim([mag1,mag2])
-            ax[2][n_filter+1].set_xlim([-0.2,1.5])
-            ax[2][n_filter+1].legend(loc='upper left')
-            ax[2][n_filter+1].tick_params(which='both',direction='in')
+            ax[3][n_filter].set_ylim([mag1,mag2])
+            ax[3][n_filter].set_xlim([-0.2,1.5])
+            ax[3][n_filter].legend(loc='upper left')
+            ax[3][n_filter].tick_params(which='both',direction='in')
 
             ### add data from some tables
 
         #5. completness of detection in mag in DET filter
-        if fn == fn_det:
-            mag_source_sim = art_gcs['GC_MAG_'+fn]
-            mag_source_obs = det_art_gcs['GC_MAG_'+fn]
-            ax[3][n_filter].hist(mag_source_sim,bins=np.arange(10,30,0.2),color='black',alpha=1,label='ALL simulated GCs')
-            ax[3][n_filter].hist(mag_source_obs,bins=np.arange(10,30,0.2),color=colors[n_filter],alpha=1,label='Detected simulated GCs')
-            mag1 = GC_MAG_RANGE[0]+5*np.log10(distance*1e+5)-0.25+color(fn,fn_det)
-            mag2 = GC_MAG_RANGE[1]+5*np.log10(distance*1e+5)+0.25+color(fn,fn_det)
-            ax[3][n_filter].set_xlim([mag1,mag2])
-            ax[3][n_filter].set_xlabel('$m_{'+sfn+', SIM} \ [mag]$')
-            ax[3][n_filter].set_ylabel('N')
-            ax[3][n_filter].legend(loc='upper left')
+        #if fn == fn_det:
+        mag_source_sim = art_gcs['GC_MAG_'+fn]
+        mag_source_obs = det_art_gcs['GC_MAG_'+fn]
+        ax[4][n_filter].hist(mag_source_sim,bins=np.arange(10,30,0.2),color='black',alpha=1,label='ALL simulated GCs')
+        ax[4][n_filter].hist(mag_source_obs,bins=np.arange(10,30,0.2),color=colors[n_filter],alpha=1,label='Detected simulated GCs')
+        mag1 = GC_MAG_RANGE[0]+5*np.log10(distance*1e+5)-0.25+color(fn,fn_det)
+        mag2 = GC_MAG_RANGE[1]+5*np.log10(distance*1e+5)+0.25+color(fn,fn_det)
+        ax[4][n_filter].set_xlim([mag1,mag2])
+        ax[4][n_filter].set_xlabel('$m_{'+sfn+', SIM} \ [mag]$')
+        ax[4][n_filter].set_ylabel('N')
+        ax[4][n_filter].legend(loc='upper left')
 
         #6. completness of detection in radial distance in all filters and the combination
-        if fn == fn_det:
-            #r_source_sim = np.sqrt((art_gcs['RA_'+fn]-ra)**2 + (art_gcs['DEC_'+fn]-dec)**2)
-            #r_source_obs = np.sqrt((det_art_gcs['RA_'+fn]-ra)**2 + (det_art_gcs['DEC_'+fn]-dec)**2)
+        #if fn == fn_det:
+        #r_source_sim = np.sqrt((art_gcs['RA_'+fn]-ra)**2 + (art_gcs['DEC_'+fn]-dec)**2)
+        #r_source_obs = np.sqrt((det_art_gcs['RA_'+fn]-ra)**2 + (det_art_gcs['DEC_'+fn]-dec)**2)
 
-            mag_source_sim = art_gcs['GC_MAG_'+fn]
-            r_source_sim = np.sqrt((art_gcs['RA_GC']-ra)**2 + (art_gcs['DEC_GC']-dec)**2)*3600
-            r_source_obs = np.sqrt((det_art_gcs['RA_GC']-ra)**2 + (det_art_gcs['DEC_GC']-dec)**2)*3600
+        mag_source_sim = art_gcs['GC_MAG_'+fn]
+        r_source_sim = np.sqrt((art_gcs['RA_GC']-ra)**2 + (art_gcs['DEC_GC']-dec)**2)*3600
+        r_source_obs = np.sqrt((det_art_gcs['RA_GC']-ra)**2 + (det_art_gcs['DEC_GC']-dec)**2)*3600
 
-            r_source_sim = r_source_sim[mag_source_sim<(np.nanmax(mag_source_obs))]
-            r_source_obs = r_source_obs[mag_source_obs<(np.nanmax(mag_source_obs))]
+        r_source_sim = r_source_sim[mag_source_sim<(np.nanmax(mag_source_obs))]
+        r_source_obs = r_source_obs[mag_source_obs<(np.nanmax(mag_source_obs))]
 
-            ax[3][n_filter+1].hist(r_source_sim,bins=np.arange(0,np.nanmax(r_source_sim),np.nanmax(r_source_sim)/20),color='black',alpha=1,label='ALL simulated GCs')
-            ax[3][n_filter+1].hist(r_source_obs,bins=np.arange(0,np.nanmax(r_source_sim),np.nanmax(r_source_sim)/20),color=colors[n_filter],alpha=1,label='Detected simulated GCs')
-            #mag1 = GC_MAG_RANGE[0]+5*np.log10(distance*1e+5)-0.25+color(fn,fn_det)
-            #mag2 = GC_MAG_RANGE[1]+5*np.log10(distance*1e+5)+0.25+color(fn,fn_det)
-            #ax[3][n_filter].set_xlim([mag1,mag2])
-            ax[3][n_filter+1].set_xlabel('$R_{GAL, SIM} \ [arcsec]$')
-            ax[3][n_filter+1].set_ylabel('N')
-            ax[3][n_filter+1].legend(loc='upper left')
+        ax[5][n_filter].hist(r_source_sim,bins=np.arange(0,np.nanmax(r_source_sim),np.nanmax(r_source_sim)/20),color='black',alpha=1,label='ALL simulated GCs')
+        ax[5][n_filter].hist(r_source_obs,bins=np.arange(0,np.nanmax(r_source_sim),np.nanmax(r_source_sim)/20),color=colors[n_filter],alpha=1,label='Detected simulated GCs')
+        #mag1 = GC_MAG_RANGE[0]+5*np.log10(distance*1e+5)-0.25+color(fn,fn_det)
+        #mag2 = GC_MAG_RANGE[1]+5*np.log10(distance*1e+5)+0.25+color(fn,fn_det)
+        #ax[3][n_filter].set_xlim([mag1,mag2])
+        ax[5][n_filter].set_xlabel('$R_{GAL, SIM} \ [arcsec]$')
+        ax[5][n_filter].set_ylabel('N')
+        ax[5][n_filter].legend(loc='upper left')
 
     fig.tight_layout()
     plt.savefig(plots_dir+gal_name+'_'+fn+'_check_plot.png',dpi=100)

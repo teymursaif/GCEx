@@ -39,8 +39,8 @@ def initialize_params() :
     ### (if ZP, EXPTIME and GAIN are missing from the header, define them for a given filter)
 
     WORKING_DIR = './'
-    PRIMARY_FRAME_SIZE_ARCSEC = 2000 #arcsec
-    FRAME_SIZE_ARCSEC = 2000 #cut-out size from the original frame for the general anlaysis (arcsec)
+    PRIMARY_FRAME_SIZE_ARCSEC = 3000 #arcsec
+    FRAME_SIZE_ARCSEC = 3000 #cut-out size from the original frame for the general anlaysis (arcsec)
 
     # defining the executables (what you type in the command-line that executes the program)
     SE_executable = 'sex'
@@ -77,10 +77,10 @@ def initialize_params() :
 
     #Euclid ERO
     TARGETS = []
-    #PSF modeling for VIS
-    TARGETS.append(['0 ERO-PERSEUS ERO-PERSEUS-VIS-PSF 049.63837 +41.60172 20 VIS MODEL_PSF ---'])
+    # PSF modeling for VIS
+    #TARGETS.append(['0 ERO-FORNAX ERO-FORNAX 053.96397 -35.26515 20 VIS MODEL_PSF ---'])
     # PSF modeling for NISP
-    #TARGETS.append(['1 ERO-FORNAX ERO-FORNAX 053.96397 -35.26515 20 NISP-Y,NISP-J,NISP-H MODEL_PSF ---'])
+    TARGETS.append(['1 ERO-FORNAX ERO-FORNAX-NISP-PSF 053.96397 -35.26515 20 NISP-Y,NISP-J,NISP-H MODEL_PSF ---'])
 
     # NOTE: possible methods -> RESAMPLE_DATA, MODEL_PSF, FIT_GAL, USE_SUB_GAL, MAKE_CAT, MAKE_GC_CAT
     # NOTE: possible comments -> MASSIVE,DWARF,LSB
@@ -112,8 +112,8 @@ def initialize_params() :
     MODEL_PSF = True
     RATIO_OVERSAMPLE_PSF = 10 #do not go beyond 10, this will have consequences for undersampling later
     PSF_IMAGE_SIZE = 40 #PSF size in the instruments pixel-scale
-    MAG_LIMIT_PSF = 21 #19 for NISP
-    MAG_LIMIT_SAT = 19 #17 for NISP #saturation limit
+    MAG_LIMIT_PSF = 19 #for NISP
+    MAG_LIMIT_SAT = 17 #for NISP #saturation limit
     ELL_LIMIT_PSF = 0.1
     #FWHM_UPPER_LIMIT_PSF =
     #FWHM_LOWER_LIMIT_PSF =
@@ -143,7 +143,7 @@ def initialize_params() :
 
     input_dir = working_directory+'inputs/'
     output_dir = working_directory+'outputs/'
-    main_data_dir = '/data/users/saifollahi/Euclid/ERO/ERO-data/ERO-PERSEUS/'
+    main_data_dir = input_dir+'main_data/'
 
     data_dir = input_dir+'data/'
     psf_dir = input_dir+'psf/'

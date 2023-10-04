@@ -78,7 +78,7 @@ def initialize_params() :
     #Euclid ERO
     TARGETS = []
     #PSF modeling for VIS
-    TARGETS.append(['0 ERO-PERSEUS ERO-PERSEUS-VIS-PSF 049.63837 +41.60172 20 VIS MODEL_PSF ---'])
+    TARGETS.append(['0 ERO-PERSEUS ERO-PERSEUS-NISP-PSF 049.63837 +41.60172 20 NISP-Y,NISP-J,NISP-H MODEL_PSF ---'])
     # PSF modeling for NISP
     #TARGETS.append(['1 ERO-FORNAX ERO-FORNAX 053.96397 -35.26515 20 NISP-Y,NISP-J,NISP-H MODEL_PSF ---'])
 
@@ -112,8 +112,8 @@ def initialize_params() :
     MODEL_PSF = True
     RATIO_OVERSAMPLE_PSF = 10 #do not go beyond 10, this will have consequences for undersampling later
     PSF_IMAGE_SIZE = 40 #PSF size in the instruments pixel-scale
-    MAG_LIMIT_PSF = 21 #19 for NISP
-    MAG_LIMIT_SAT = 19 #17 for NISP #saturation limit
+    MAG_LIMIT_PSF = 19 #for NISP
+    MAG_LIMIT_SAT = 17 #for NISP #saturation limit
     ELL_LIMIT_PSF = 0.1
     #FWHM_UPPER_LIMIT_PSF =
     #FWHM_LOWER_LIMIT_PSF =

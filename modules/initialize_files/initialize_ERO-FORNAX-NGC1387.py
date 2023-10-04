@@ -39,8 +39,8 @@ def initialize_params() :
     ### (if ZP, EXPTIME and GAIN are missing from the header, define them for a given filter)
 
     WORKING_DIR = './'
-    PRIMARY_FRAME_SIZE_ARCSEC = 2000 #arcsec
-    FRAME_SIZE_ARCSEC = 2000 #cut-out size from the original frame for the general anlaysis (arcsec)
+    PRIMARY_FRAME_SIZE_ARCSEC = 1500 #arcsec
+    FRAME_SIZE_ARCSEC = 1500 #cut-out size from the original frame for the general anlaysis (arcsec)
 
     # defining the executables (what you type in the command-line that executes the program)
     SE_executable = 'sex'
@@ -77,10 +77,7 @@ def initialize_params() :
 
     #Euclid ERO
     TARGETS = []
-    #PSF modeling for VIS
-    TARGETS.append(['0 ERO-PERSEUS ERO-PERSEUS-VIS-PSF 049.63837 +41.60172 20 VIS MODEL_PSF ---'])
-    # PSF modeling for NISP
-    #TARGETS.append(['1 ERO-FORNAX ERO-FORNAX 053.96397 -35.26515 20 NISP-Y,NISP-J,NISP-H MODEL_PSF ---'])
+    TARGETS.append(['1 ERO-FORNAX NGC1387 54.2376406 -35.5065765 20 VIS,NISP-Y,NISP-J,NISP-H SIM_GC MASSIVE']) #FIT_GAL,USE_SUB_GAL,MAKE_CAT
 
     # NOTE: possible methods -> RESAMPLE_DATA, MODEL_PSF, FIT_GAL, USE_SUB_GAL, MAKE_CAT, MAKE_GC_CAT
     # NOTE: possible comments -> MASSIVE,DWARF,LSB
@@ -120,7 +117,7 @@ def initialize_params() :
 
 
     #------------------------------ GC SIMULATION ------------------------------
-    N_ART_GCS = 10
+    N_ART_GCS = 100
     N_SIM_GCS = 1
     COSMIC_CLEAN = False #does not work at the moment anyways...
     GC_SIZE_RANGE = [1.5,6] #lower value should be small enough to make some point-sources for performance check, in pc
@@ -143,7 +140,7 @@ def initialize_params() :
 
     input_dir = working_directory+'inputs/'
     output_dir = working_directory+'outputs/'
-    main_data_dir = '/data/users/saifollahi/Euclid/ERO/ERO-data/ERO-PERSEUS/'
+    main_data_dir = input_dir+'main_data/'
 
     data_dir = input_dir+'data/'
     psf_dir = input_dir+'psf/'

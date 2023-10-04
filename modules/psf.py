@@ -33,9 +33,9 @@ class bcolors:
 
 #plotting parameters
 plt.style.use('tableau-colorblind10')
-plt.rc('axes', labelsize=18)
-plt.rc('xtick', labelsize=15)
-plt.rc('ytick', labelsize=15)
+plt.rc('axes', labelsize=24)
+plt.rc('xtick', labelsize=18)
+plt.rc('ytick', labelsize=18)
 plt.rc('axes', linewidth=1.7)
 plt.rc('font',**{'family':'serif','serif':['Times']})
 plt.rcParams['hatch.linewidth'] = 2.0
@@ -126,7 +126,7 @@ def estimate_fwhm(gal_id):
             #print (FWHM_x,FWHM_y)
             #print (FWHM_x*psf_pixel_scale ,FWHM_y*psf_pixel_scale)
             FWHMS_ARCSEC[fn] = np.mean([FWHM_x*psf_pixel_scale ,FWHM_y*psf_pixel_scale])
-            APERTURE_SIZE[fn] = 2*FWHMS_ARCSEC[fn]
+            APERTURE_SIZE[fn] = 1*FWHMS_ARCSEC[fn]
             print ('- FWHM in filter', fn, 'is', FWHMS_ARCSEC[fn], 'arcsec')
 
         else:
@@ -340,6 +340,7 @@ def simualte_GCs(gal_id,n):
         weight_data = weight[0].data
         mask = weight_data
         mask[mask>0]=1
+        wf=WCS(science_frame)
 
         #print ('GCSIM2',science_frame)
 
@@ -397,7 +398,7 @@ def simualte_GCs(gal_id,n):
             #print (len(GC_RA), i)
             ra = GC_RA[i]
             dec = GC_DEC[i]
-            y, x = w.all_world2pix(ra, dec, 0)
+            y, x = wf.all_world2pix(ra, dec, 0)
             x0 = int(x+0.5)
             y0 = int(y+0.5)
             #xos = x * RATIO_OVERSAMPLE_PSF
@@ -446,15 +447,17 @@ def simualte_GCs(gal_id,n):
             y1 = y0-dy
             y2 = y0-dy+y_psf
 
-            if x1 < 0 or y1 < 0 or x2 > X or y2 > Y:
-                print ('--- GC outside of the frame, skipping simulating the GC ...')
+            X = X_oversampled
+            Y = Y_oversampled
+
+            if x1 < (dx+1) or y1 < (dy+1) or x2 > (X-dx-1) or y2 > (Y-dy-1):
+                print (f"{bcolors.WARNING}--- GC outside of the frame, skipping simulating the GC ..."+ bcolors.ENDC)
                 ART_GC_FLAG.append(-1)
                 continue
             else:
                 ART_GC_FLAG.append(1)
 
-            #print (X,Y)
-            #print (x1,x2,y1,y2)
+            #print (x,y)
             #print (x1,x2,y1,y2)
             x1_psf = 0
             x2_psf = x_psf
@@ -704,10 +707,10 @@ def make_psf_all_filters(gal_id):
         params.write('FLUXERR_APER('+str(1)+') #RMS error for AUTO flux [count]\n')
         params.close()
 
-        if os.path.exists(source_cat):
-            donothing=1
-        else:
-            os.system(command)
+        #if os.path.exists(source_cat):
+        #    donothing=1
+        #else:
+        os.system(command)
 
         ###
 
@@ -721,11 +724,12 @@ def make_psf_all_filters(gal_id):
         #normalize_psf(psf_frame_soren)
         #psf_frames = [psf_frame, psf_frame_soren]
         zp = ZPS[fn]
-        make_radial_profile_for_psf([psf_frame],0,zp,\
+        make_radial_profile_for_psf([psf_frame],fn,0,zp,\
             output_png=plots_dir+gal_name+'_'+fn+'_psf_radial_profiles.png')
         #make_radial_profile_for_psf([psf_frame_inst],0,zp,\
         #    output_png=check_plots_dir+gal_name+'_'+fn+'_psf_inst_radial_profiles.png')
 
+        make_fancy_png(psf_frame,psf_frame+'.png',text='PSF for '+fn,zoom=2,cmap='seismic')
 
 ############################################################
 
@@ -758,7 +762,7 @@ def make_psf_for_frame(main_frame,weight_frame,source_cat,filtername,psf_frame,m
     (sex_cat_data ['ELLIPTICITY'] < ELL_LIMIT_PSF) & \
     (sex_cat_data ['MAG_AUTO'] > MAG_LIMIT_SAT) & \
     (sex_cat_data ['MAG_AUTO'] < MAG_LIMIT_PSF) & \
-    (sex_cat_data ['FWHM_IMAGE'] > 0.5) & \
+    (sex_cat_data ['FWHM_IMAGE'] > 1) & \
     (sex_cat_data ['FWHM_IMAGE'] < 10))
     sex_cat_data = sex_cat_data[mask]
 
@@ -929,7 +933,7 @@ def make_psf_for_frame(main_frame,weight_frame,source_cat,filtername,psf_frame,m
             #' -IMAGE_SIZE '+str(radius_pix)+','+str(radius_pix)+' -PIXEL_SCALE '+str(pix_size/RATIO_OVERSAMPLE_PSF)+\
             #' -CENTER_TYPE MANUAL -CENTER '+str(ra)+','+str(dec)+' -SUBTRACT_BACK N -VERBOSE_TYPE QUIET'
 
-    print (command)
+    #print (command)
     os.system(command)
 
     psf_data = fits.open(psf_frame)
@@ -953,7 +957,9 @@ def make_psf_for_frame(main_frame,weight_frame,source_cat,filtername,psf_frame,m
 
 ############################################################
 
-def make_radial_profile_for_psf(psf_frames,pixelsize,zp,output_png):
+def make_radial_profile_for_psf(psf_frames,fn,pixelsize,zp,output_png):
+
+    fig, ax = plt.subplots(figsize=(8,6), constrained_layout=True)
 
     colors = ['black','red','cyan','green','blue']
     i = -1
@@ -1046,17 +1052,18 @@ def make_radial_profile_for_psf(psf_frames,pixelsize,zp,output_png):
             d_flux_apers.append(df/A/(psf_pixel_size**2))
             radi_arcsec.append((radial_profile_apers_values[j]/2)*psf_pixel_size)
 
-        plt.scatter(radi_arcsec,d_flux_apers,s=40,marker='o',color=colors[i],label='PSF MODEL\n(FWHM = '+\
+        plt.scatter(radi_arcsec,d_flux_apers/np.nanmax(d_flux_apers),s=40,marker='o',color=colors[i],label='PSF MODEL for '+fn+'\n(FWHM = '+\
             str(fwhm*psf_pixel_size)[:5]+' arcsec)',alpha=1)
 
-    plt.xlabel('Radius [arcsec]')
+    ax.set_xlabel('Radius [arcsec]')
+    ax.set_ylabel('Normalized flux')
     #plt.xscale('log')
     #plt.yscale('log')
-    plt.xlim([0,3*fwhm*psf_pixel_size])
-    plt.ylabel('Normalized flux')
-    #plt.legend(loc='upper right',fontsize=20)
+    ax.set_xlim([0,3*fwhm*psf_pixel_size])
+    ax.set_ylim([-0.05,1.05])
+    plt.legend(loc='upper right',fontsize=20)
     plt.tick_params(which='both',direction='in')
-    plt.tight_layout()
+    #plt.tight_layout()
     plt.savefig(output_png,dpi=100)
     plt.close()
 

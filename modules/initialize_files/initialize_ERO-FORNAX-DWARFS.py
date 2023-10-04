@@ -39,8 +39,8 @@ def initialize_params() :
     ### (if ZP, EXPTIME and GAIN are missing from the header, define them for a given filter)
 
     WORKING_DIR = './'
-    PRIMARY_FRAME_SIZE_ARCSEC = 2000 #arcsec
-    FRAME_SIZE_ARCSEC = 2000 #cut-out size from the original frame for the general anlaysis (arcsec)
+    PRIMARY_FRAME_SIZE_ARCSEC = 200 #arcsec
+    FRAME_SIZE_ARCSEC = 200 #cut-out size from the original frame for the general anlaysis (arcsec)
 
     # defining the executables (what you type in the command-line that executes the program)
     SE_executable = 'sex'
@@ -77,10 +77,19 @@ def initialize_params() :
 
     #Euclid ERO
     TARGETS = []
-    #PSF modeling for VIS
-    TARGETS.append(['0 ERO-PERSEUS ERO-PERSEUS-VIS-PSF 049.63837 +41.60172 20 VIS MODEL_PSF ---'])
-    # PSF modeling for NISP
-    #TARGETS.append(['1 ERO-FORNAX ERO-FORNAX 053.96397 -35.26515 20 NISP-Y,NISP-J,NISP-H MODEL_PSF ---'])
+    #TARGETS.append(['2 ERO-FORNAX FCC188 054.26901 -35.59002 20 VIS,NISP-Y,NISP-J,NISP-H --- DWARF,LSB'])
+    #TARGETS.append(['3 ERO-FORNAX FCC156 053.92795 -35.33825 20 VIS,NISP-Y,NISP-J,NISP-H --- DWARF,LSB'])
+    #TARGETS.append(['4 ERO-FORNAX FCC195 054.34752 -34.89999 20 VIS,NISP-Y,NISP-J,NISP-H --- DWARF,LSB'])
+    #TARGETS.append(['5 ERO-FORNAX FCC140 053.73535 -35.19085 20 VIS,NISP-Y,NISP-J,NISP-H --- DWARF,LSB'])
+    #TARGETS.append(['6 ERO-FORNAX FCC181 054.22195 -34.93843 20 VIS,NISP-Y,NISP-J,NISP-H --- DWARF,LSB'])
+    #TARGETS.append(['7 ERO-FORNAX FCC171 054.15530 -35.38588 20 VIS,FDS-r --- DWARF,LSB'])
+    #TARGETS.append(['8 ERO-FORNAX FCC157 053.92910 -35.51372 20 VIS,FDS-r --- DWARF,LSB'])
+    #TARGETS.append(['9 ERO-FORNAX FCC146 053.79801 -35.32300 20 VIS,FDS-r --- DWARF,LSB'])
+    #TARGETS.append(['10 ERO-FORNAX FCC144 053.75087 -35.32226 20 VIS,FDS-r --- DWARF,LSB'])
+    #TARGETS.append(['11 ERO-FORNAX FCC145 053.77289 -35.21845 20 VIS,FDS-r --- DWARF,LSB'])
+    #TARGETS.append(['12 ERO-FORNAX FCC142 053.74258 -35.04281 20 VIS,FDS-r --- DWARF,LSB'])
+    #TARGETS.append(['13 ERO-FORNAX FCC160 054.01694 -35.38885 20 VIS,NISP-Y,NISP-J,NISP-H --- DWARF,LSB'])
+    #TARGETS.append(['14 ERO-FORNAX FCC197 054.42155 -35.29612 20 VIS,FDS-r --- DWARF,LSB'])
 
     # NOTE: possible methods -> RESAMPLE_DATA, MODEL_PSF, FIT_GAL, USE_SUB_GAL, MAKE_CAT, MAKE_GC_CAT
     # NOTE: possible comments -> MASSIVE,DWARF,LSB
@@ -112,8 +121,8 @@ def initialize_params() :
     MODEL_PSF = True
     RATIO_OVERSAMPLE_PSF = 10 #do not go beyond 10, this will have consequences for undersampling later
     PSF_IMAGE_SIZE = 40 #PSF size in the instruments pixel-scale
-    MAG_LIMIT_PSF = 21 #19 for NISP
-    MAG_LIMIT_SAT = 19 #17 for NISP #saturation limit
+    MAG_LIMIT_PSF = 19 for NISP
+    MAG_LIMIT_SAT = 17 for NISP #saturation limit
     ELL_LIMIT_PSF = 0.1
     #FWHM_UPPER_LIMIT_PSF =
     #FWHM_LOWER_LIMIT_PSF =
@@ -143,7 +152,7 @@ def initialize_params() :
 
     input_dir = working_directory+'inputs/'
     output_dir = working_directory+'outputs/'
-    main_data_dir = '/data/users/saifollahi/Euclid/ERO/ERO-data/ERO-PERSEUS/'
+    main_data_dir = input_dir+'main_data/'
 
     data_dir = input_dir+'data/'
     psf_dir = input_dir+'psf/'

@@ -2,7 +2,7 @@ import os, sys
 import math
 import numpy as np
 import matplotlib.pyplot as plt
-from astroquery.mast import Observations
+#from astroquery.mast import Observations
 from astropy.io import fits
 from astropy.wcs import WCS
 from astropy import units as u
@@ -438,7 +438,7 @@ def copy_header(fitsfile1,fitsfile2):
 
 ############################################################
 
-def make_fancy_png(fitsfile,pngfile,text='',zoom=1, mode='lsb') :
+def make_fancy_png(fitsfile,pngfile,text='',zoom=1, mode='lsb', cmap='gist_gray') :
     main = fits.open(fitsfile)
     header = get_fits_header(fitsfile)
     X = header['NAXIS1']
@@ -470,7 +470,7 @@ def make_fancy_png(fitsfile,pngfile,text='',zoom=1, mode='lsb') :
 
 
     scale = ZScaleInterval() #LogStretch()
-    ax.imshow(scale(image),cmap='gist_gray') #LogNorm #,vmin=min_, vmax=max_
+    ax.imshow(scale(image),cmap=cmap) #LogNorm #,vmin=min_, vmax=max_
     #ax.axis('off')
     ax.invert_yaxis()
     #fig.tight_layout()
@@ -489,7 +489,7 @@ def make_fancy_png(fitsfile,pngfile,text='',zoom=1, mode='lsb') :
     image0 = np.log(image0**0.5+10)
 
     #print (min_g,max_g)
-    ax.imshow((image0),cmap='gist_gray')
+    ax.imshow((image0),cmap=cmap)
     ax.invert_yaxis()
     ax.text(int(X*0.05),int(Y*0.90),text,color='red',fontsize=50)
     fig.savefig(pngfile+'.log.png',dpi=150)
@@ -523,7 +523,7 @@ def make_fancy_png(fitsfile,pngfile,text='',zoom=1, mode='lsb') :
     image0[image0<0]=0
     image0 = (1-image0)*255
     image0[image0==0] = image[image0==0]
-    ax.imshow((image0),cmap='gist_gray',vmin=0, vmax=255)
+    ax.imshow((image0),cmap=cmap,vmin=0, vmax=255)
     ax.invert_yaxis()
     #ax.text(int(X*0.05),int(Y*0.95),text,color='red',fontsize=30)
     fig.savefig(pngfile+'.lsb.png',dpi=150)
