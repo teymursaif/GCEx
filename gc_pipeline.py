@@ -18,13 +18,13 @@ for gal_id in gal_params.keys():
 
     # step 0. inistialize pipleine and prepare data
     intro(gal_id)
-    copy_data(gal_id)
+    #copy_data(gal_id)
     get_data_info(gal_id)
 
     if 'RESAMPLE'in methods:
         resample_data(gal_id)
 
-    make_galaxy_frames(gal_id)
+    #make_galaxy_frames(gal_id)
 
     if 'MODEL_PSF' in methods:
         make_psf_all_filters(gal_id)
@@ -48,7 +48,12 @@ for gal_id in gal_params.keys():
     # step 4. GC selection, assessment, GC catalogs and properties
     if 'MAKE_GC_CAT' in methods:
         select_GC_candidadates(gal_id)
-        measure_GC_properties(gal_id)
+        #measure_GC_properties(gal_id)
 
     finalize(gal_id)
     # step FINALE
+
+if (MERGE_CATS == True):
+    merge_cats_all(gal_params)
+    #select_GC_candidadates_merged(gal_id)
+    #measure_GC_properties_merged(gal_id)

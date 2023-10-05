@@ -717,9 +717,122 @@ def saveFitsBinTable(bintable, filename):
     binTableHDU = fits.BinTableHDU(bintable)
     fits.HDUList([primaryHDU, binTableHDU]).writeto(filename)
 
-
 ############################################################
 
 def rebin(a, shape):
     sh = shape[0],a.shape[0]//shape[0],shape[1],a.shape[1]//shape[1]
     return a.reshape(sh).sum(-1).sum(1)
+
+############################################################
+
+def merge_cats_all(gal_params):
+    merge_cats(gal_param)
+    merge_sims(gal_param)
+    merge_gc_cats(gal_param)
+
+############################################################
+
+def merge_cats(gal_param): #gcs, sim_gcs
+
+    print ('- Merging the catalogs produced in this run...')
+
+    # 1
+    source_cats = []
+    for gal_id in gal_params.keys():
+        gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
+        cat_name = cats_dir+gal_name+'_master_cat_forced.fits'
+        source_cats.append(cat_name)
+        id = gal_id
+
+    data_name = gal_data_name[id]
+    output_cat = cats_dir+data_name+'_forced_merged.fits'
+    topcat_friendly_output_cat = cats_dir+data_name+'_forced_merged+.fits'
+    attach_sex_tables(source_cats,output_cat)
+    make_cat_topcat_friendly(output_cat,topcat_friendly_output_cat)
+
+    # 2
+    source_cats = []
+    for gal_id in gal_params.keys():
+        gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
+        cat_name = cats_dir+gal_name+'_master_cat_lsb_forced.fits'
+        source_cats.append(cat_name)
+        id = gal_id
+
+    data_name = gal_data_name[id]
+    output_cat = cats_dir+data_name+'_lsb_forced_merged.fits'
+    topcat_friendly_output_cat = cats_dir+data_name+'_lsb_forced_merged+.fits'
+    attach_sex_tables(source_cats,output_cat)
+    make_cat_topcat_friendly(output_cat,topcat_friendly_output_cat)
+
+
+############################################################
+
+def merge_gc_cats(gal_param): #gcs, sim_gcs
+
+    print ('- Merging the catalogs produced in this run...')
+
+    # source catalogues
+    source_cats = []
+    for gal_id in gal_params.keys():
+        gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
+        cat_name = final_cats_dir+gal_name+'_selected_GCs.fits'
+        source_cats.append(cat_name)
+        id = gal_id
+
+    data_name = gal_data_name[id]
+    output_cat = final_cats_dir+data_name+'_selected_GCs_merged.fits'
+    topcat_friendly_output_cat = final_cats_dir+data_name+'_selected_GCs_merged+.fits'
+    attach_sex_tables(source_cats,output_cat)
+    make_cat_topcat_friendly(output_cat,topcat_friendly_output_cat)
+
+############################################################
+
+def merge_sims(gal_param): #gcs, sim_gcs
+
+    print ('- Merging the simulated catalogues produced in this run...')
+
+    # 1
+    source_cats = []
+    for gal_id in gal_params.keys():
+        gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
+        cat_name = art_dir+gal_name+'_'+fn_det+'_ALL_DET_ART_GCs.fits'
+        source_cats.append(cat_name)
+        id = gal_id
+
+    data_name = gal_data_name[id]
+    output_cat = cats_dir+data_name+'_ALL_DET_ART_GCs_merged.fits'
+    topcat_friendly_output_cat = cats_dir+data_name+'_ALL_DET_ART_GCs_merged+.fits'
+    attach_sex_tables(source_cats,output_cat)
+    make_cat_topcat_friendly(output_cat,topcat_friendly_output_cat)
+
+    # 2
+    source_cats = []
+    for gal_id in gal_params.keys():
+        gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
+        cat_name = art_dir+gal_name+'_'+fn_det+'_ALL_ART_GCs.fits'
+        source_cats.append(cat_name)
+        id = gal_id
+
+    data_name = gal_data_name[id]
+    output_cat = cats_dir+data_name+'_ALL_ART_GCs_merged.fits'
+    topcat_friendly_output_cat = cats_dir+data_name+'_ALL_ART_GCs_merged+.fits'
+    attach_sex_tables(source_cats,output_cat)
+    make_cat_topcat_friendly(output_cat,topcat_friendly_output_cat)
+
+############################################################
+
+def make_cat_topcat_friendly(input_cat,output_cat):
+    ttypes = list()
+    cat = fits.open(input_cat)
+    n_cols = (len((cat[1].data)[0]))
+    for i in range (0,n_cols) :
+        #i = i+1
+        #ttypes.append('TTYPE'+str(i))
+        #for ttype in ttypes :
+        #print (cat[1].header[ttype])
+        col_name = cat[1].columns[i].name
+        #print (col_name)
+        if '-' in col_name :
+            cat[1].columns[i].name = col_name.replace('-','_')
+
+    cat.writeto(output_cat,overwrite=True)
