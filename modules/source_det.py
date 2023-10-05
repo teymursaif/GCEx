@@ -449,7 +449,7 @@ def make_multiwavelength_cat(gal_id, mode='forced-photometry'):
         os.system('mv join.fits '+cats_dir+gal_name+'_master_cat.fits')
 
     if mode=='forced-photometry':
-        det_cat = sex_dir+gal_name+'_'+filters[0]+'_source_cat_proc.fits'
+        det_cat = sex_dir+gal_name+'_'+filters[0]+'_source_cat_proc_lsb.fits'
         #det_cat = cats_dir+gal_name+'_master_cat.fits'
         output = temp_dir+'join.fits'
         os.system('rm '+output)
@@ -482,7 +482,7 @@ def make_multiwavelength_cat(gal_id, mode='forced-photometry'):
             print ("- Force photometry of frame in filter "+fn)
             #forced_photometry(det_cat, photom_frame, mask_frame, back_rms_frame, fn,  output, mode='aperture-corr')
             #forced_photometry(output, photom_frame, mask_frame, back_rms_frame, fn,  output, mode='circular-aperture', aper_size_arcsec=0.5) #radius
-            forced_photometry(output, photom_frame, mask_frame, back_rms_frame, fn,  output, mode='circular-aperture', aper_size_arcsec=1)
+            #forced_photometry(output, photom_frame, mask_frame, back_rms_frame, fn,  output, mode='circular-aperture', aper_size_arcsec=1)
             forced_photometry(output, photom_frame, mask_frame, back_rms_frame, fn,  output, mode='circular-aperture', aper_size_arcsec=2)
             forced_photometry(output, photom_frame, mask_frame, back_rms_frame, fn,  output, mode='circular-aperture', aper_size_arcsec=5)
             forced_photometry(output, photom_frame, mask_frame, back_rms_frame, fn,  output, mode='circular-aperture', aper_size_arcsec=10)
