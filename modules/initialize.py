@@ -50,7 +50,7 @@ def initialize_params() :
 
     ### (if ZP, EXPTIME and GAIN are missing from the header, define them for a given filter)
     INPUT_ZP = {'VIS':30,'NISP-Y':30,'NISP-J':30,'NISP-H':30}
-    INPUT_EXPTIME = {'VIS':565,'NISP-Y':121,'NISP-J':116,'NISP-H':81}
+    INPUT_EXPTIME = {'VIS':565,'NISP-Y':81,'NISP-J':81,'NISP-H':81}
     INPUT_GAIN = {'VIS':2,'NISP-Y':1,'NISP-J':1,'NISP-H':1}
 
     # ------------------------------ GALAXIES/TARGETS ------------------------------
@@ -78,17 +78,17 @@ def initialize_params() :
     #Euclid ERO
     TARGETS = []
 
-    TARGETS.append(['1 ERO-FORNAX ERO-FORNAX-1 54.41498968710675 -35.58635104214481 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_CAT,MAKE_GC_CAT ---']) #MAKE_CAT,
-    TARGETS.append(['2 ERO-FORNAX ERO-FORNAX-2 54.020110517026325 -35.58700320641283 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_CAT,MAKE_GC_CAT  ---'])
-    TARGETS.append(['3 ERO-FORNAX ERO-FORNAX-3 53.625231108456134 -35.58636741821876 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_CAT,SIM_GC,MAKE_GC_CAT ---'])
-    TARGETS.append(['4 ERO-FORNAX ERO-FORNAX-4 54.41340800663024 -35.2638620852018 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_CAT,SIM_GC,MAKE_GC_CAT ---'])
+    TARGETS.append(['1 ERO-FORNAX ERO-FORNAX-1 54.41498968710675 -35.58635104214481 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_CAT ---']) #MAKE_CAT,
+    TARGETS.append(['2 ERO-FORNAX ERO-FORNAX-2 54.020110517026325 -35.58700320641283 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_CAT ---'])
+    TARGETS.append(['3 ERO-FORNAX ERO-FORNAX-3 53.625231108456134 -35.58636741821876 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_CAT ---'])
+    TARGETS.append(['4 ERO-FORNAX ERO-FORNAX-4 54.41340800663024 -35.2638620852018 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_CAT ---'])
 
-    TARGETS.append(['5 ERO-FORNAX ERO-FORNAX-5 54.02010052441082 -35.26450654419051 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_CAT,SIM_GC,MAKE_GC_CAT ---'])
-    TARGETS.append(['6 ERO-FORNAX ERO-FORNAX-6 53.62679280653799 -35.263878267794965 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_CAT,SIM_GC,MAKE_GC_CAT ---'])
-    TARGETS.append(['7 ERO-FORNAX ERO-FORNAX-7 54.41183879946199 -34.94135934996358 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_CAT,SIM_GC,MAKE_GC_CAT ---'])
-    TARGETS.append(['8 ERO-FORNAX ERO-FORNAX-8 54.020090610601954 -34.9419961237686 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_CAT,SIM_GC,MAKE_GC_CAT ---'])
+    TARGETS.append(['5 ERO-FORNAX ERO-FORNAX-5 54.02010052441082 -35.26450654419051 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_CAT ---'])
+    TARGETS.append(['6 ERO-FORNAX ERO-FORNAX-6 53.62679280653799 -35.263878267794965 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_CAT ---'])
+    TARGETS.append(['7 ERO-FORNAX ERO-FORNAX-7 54.41183879946199 -34.94135934996358 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_CAT ---'])
+    TARGETS.append(['8 ERO-FORNAX ERO-FORNAX-8 54.020090610601954 -34.9419961237686 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_CAT ---'])
 
-    TARGETS.append(['9 ERO-FORNAX ERO-FORNAX-9 53.62834218888022 -34.94137533958052 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_CAT,SIM_GC,MAKE_GC_CAT ---'])
+    TARGETS.append(['9 ERO-FORNAX ERO-FORNAX-9 53.62834218888022 -34.94137533958052 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_CAT ---'])
 
     MERGE_CATS = True
 
@@ -111,7 +111,7 @@ def initialize_params() :
     BACKGROUND_ANNULUS_START = 3 #The size of background annulus for forced photoemtry as a factor of FWHM
     BACKGROUND_ANNULUS_TICKNESS = 20 # the thickness of the background annulus in pixels
     CROSS_MATCH_RADIUS_ARCSEC = 0.25
-    MAG_LIMIT_CAT = 26
+    MAG_LIMIT_CAT = 25
 
     # -------------------------------- PSF MODELING -------------------------------
 
@@ -133,7 +133,7 @@ def initialize_params() :
     N_ART_GCS = 250
     N_SIM_GCS = 2
     COSMIC_CLEAN = False #does not work at the moment anyways...
-    GC_SIZE_RANGE = [1.5,6] #lower value should be small enough to make some point-sources for performance check, in pc
+    GC_SIZE_RANGE = [2,6] #lower value should be small enough to make some point-sources for performance check, in pc
     GC_MAG_RANGE = [-10,-5]
     GC_REF_MAG = {'VIS':-8, 'NISP-Y':-8.5,'NISP-J':-8.5,'NISP-H':-8.5 } #magnitude of a typical GC in the given filters should be defined here.
     GC_SIM_MODE = 'UNIFORM' # 'UNIFORM' or 'CONCENTRATED'
@@ -228,3 +228,9 @@ def finalize(gal_id):
 
 welcome()
 initialize_params()
+
+#export PATH="/net/cannon/data/users/saifollahi/miniconda3/bin:
+#/net/cannon/data/users/saifollahi/miniconda3/condabin:
+#/net/cannon/usr/lib64/qt-3.3/bin:/net/cannon/usr/local/bin:
+#/net/cannon/usr/local/sbin:/net/cannon/usr/bin:/net/cannon/usr/sbin
+#:/net/cannon/bin:/sbin:$PATH"

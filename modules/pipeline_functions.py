@@ -732,7 +732,7 @@ def merge_cats_all(gal_params):
 
 ############################################################
 
-def merge_cats(gal_param): #gcs, sim_gcs
+def merge_cats(): #gcs, sim_gcs
 
     print ('- Merging the catalogs produced in this run...')
 
@@ -748,6 +748,7 @@ def merge_cats(gal_param): #gcs, sim_gcs
     output_cat = cats_dir+data_name+'_forced_merged.fits'
     topcat_friendly_output_cat = cats_dir+data_name+'_forced_merged+.fits'
     attach_sex_tables(source_cats,output_cat)
+    clean_dublicates_in_cat(output_cat)
     make_cat_topcat_friendly(output_cat,topcat_friendly_output_cat)
 
     # 2
@@ -762,12 +763,13 @@ def merge_cats(gal_param): #gcs, sim_gcs
     output_cat = cats_dir+data_name+'_lsb_forced_merged.fits'
     topcat_friendly_output_cat = cats_dir+data_name+'_lsb_forced_merged+.fits'
     attach_sex_tables(source_cats,output_cat)
+    clean_dublicates_in_cat(output_cat)
     make_cat_topcat_friendly(output_cat,topcat_friendly_output_cat)
 
 
 ############################################################
 
-def merge_gc_cats(gal_param): #gcs, sim_gcs
+def merge_gc_cats(): #gcs, sim_gcs
 
     print ('- Merging the catalogs produced in this run...')
 
@@ -783,11 +785,12 @@ def merge_gc_cats(gal_param): #gcs, sim_gcs
     output_cat = final_cats_dir+data_name+'_selected_GCs_merged.fits'
     topcat_friendly_output_cat = final_cats_dir+data_name+'_selected_GCs_merged+.fits'
     attach_sex_tables(source_cats,output_cat)
+    clean_dublicates_in_cat(output_cat)
     make_cat_topcat_friendly(output_cat,topcat_friendly_output_cat)
 
 ############################################################
 
-def merge_sims(gal_param): #gcs, sim_gcs
+def merge_sims(): #gcs, sim_gcs
 
     print ('- Merging the simulated catalogues produced in this run...')
 
@@ -804,6 +807,8 @@ def merge_sims(gal_param): #gcs, sim_gcs
     topcat_friendly_output_cat = cats_dir+data_name+'_ALL_DET_ART_GCs_merged+.fits'
     attach_sex_tables(source_cats,output_cat)
     make_cat_topcat_friendly(output_cat,topcat_friendly_output_cat)
+    clean_dublicates_in_cat(output_cat)
+    make_cat_topcat_friendly(output_cat,topcat_friendly_output_cat)
 
     # 2
     source_cats = []
@@ -817,6 +822,8 @@ def merge_sims(gal_param): #gcs, sim_gcs
     output_cat = cats_dir+data_name+'_ALL_ART_GCs_merged.fits'
     topcat_friendly_output_cat = cats_dir+data_name+'_ALL_ART_GCs_merged+.fits'
     attach_sex_tables(source_cats,output_cat)
+    make_cat_topcat_friendly(output_cat,topcat_friendly_output_cat)
+    clean_dublicates_in_cat(output_cat)
     make_cat_topcat_friendly(output_cat,topcat_friendly_output_cat)
 
 ############################################################
@@ -836,3 +843,45 @@ def make_cat_topcat_friendly(input_cat,output_cat):
             cat[1].columns[i].name = col_name.replace('-','_')
 
     cat.writeto(output_cat,overwrite=True)
+
+############################################################
+
+def clean_dublicates_in_cat(cat_name):
+    main = fits.open(cat_name)
+    data = main[1].data
+    #data = data[:10000]
+    RA = data['RA']
+    DEC = data['DEC']
+    N = len(RA)
+    repeated_idxs = []
+
+    #print (N)
+    l= 0.01/3600.
+    unique_idxs = np.full(N, True, dtype=bool)
+
+    for i in range(N):
+
+        if i in repeated_idxs:
+            #unique_idxs.append(False)
+            unique_idxs[i] = False
+            #print (i)
+            continue
+
+        #unique_flag = 1
+        ra0 = RA[i]
+        dec0 = DEC[i]
+
+        t = np.argwhere( (abs(RA-ra0)<l) & (abs(DEC-dec0)<l) )
+        tf = t.flatten(order='c')
+        tfd = np.setdiff1d(tf,i)
+
+        for idx in tfd:
+            repeated_idxs.append(idx)
+            print (idx)
+
+        #if unique_flag == 1 :
+            #unique_idxs.append(True)
+
+    data = data[unique_idxs]
+    main[1].data = data
+    main.writeto(cat_name+'.duplicates_removed.fits',overwrite=True)

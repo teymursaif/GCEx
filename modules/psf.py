@@ -624,7 +624,6 @@ def makeKing2D(cc, rc, mag, zeropoint, exptime, pixel_size):
     for i in range(0, Size):
         for j in range(0, Size):
             flux = 0
-
             n = 10
             #if (abs(i-Size/2) < 5) and (abs(j-Size/2) < 5):
             #    n = 50
@@ -689,8 +688,8 @@ def make_psf_all_filters(gal_id):
         main_frame = data_dir+gal_name+'_'+fn+'_cropped.fits'
         weight_frame = data_dir+gal_name+'_'+fn+'_cropped.weight.fits'
         source_cat = sex_dir+gal_name+'_'+fn+'_source_cat_for_psf_model.fits'
-        psf_frame = psfs_dir+gal_name+'psf_'+fn+'.fits'
-        psf_frame_inst = psfs_dir+gal_name+'psf_'+fn+'.inst.fits'
+        psf_frame = psfs_dir+data_name+'_psf_'+fn+'.fits'
+        psf_frame_inst = psfs_dir+data_name+'_psf_'+fn+'.inst.fits'
 
         # run SE
         command = SE_executable+' '+main_frame+' -c '+external_dir+'default.sex -CATALOG_NAME '+source_cat+' '+ \
@@ -715,22 +714,24 @@ def make_psf_all_filters(gal_id):
 
 
         make_psf_for_frame(main_frame,weight_frame,source_cat,fn,psf_frame,mode='auto')
-        shutil.copy(psf_frame,psf_dir+gal_name+'_psf_'+fn+'.fits')
+        shutil.copy(psf_frame,psf_dir+data_name+'_psf_'+fn+'.fits')
 
         #psf_frame_soren = '/data/users/saifollahi/Euclid/ERO/ERO-data/PSF/psf_VIS_v3c_Soren.fits'
         #normalize_psf(psf_frame_soren)
         #psf_frames = [psf_frame, psf_frame_soren]
         make_radial_profile_for_psf([psf_frame],fn,0,zp,\
-            output_png=plots_dir+gal_name+'_'+fn+'_psf_radial_profiles.png')
+            output_png=plots_dir+data_name+'_'+fn+'_psf_radial_profiles.png')
 
-        make_fancy_png(psf_frame,img_dir+gal_name+'psf_'+fn+'.fits'+'.png',text='PSF for '+fn,zoom=2,cmap='seismic')
+        make_fancy_png(psf_frame,img_dir+data_name+'psf_'+fn+'.fits'+'.png',text='PSF for '+fn,zoom=2,cmap='seismic')
 
         ####
         #make_psf_for_frame(main_frame,weight_frame,source_cat,fn,psf_frame_inst,mode='auto',resample=False)
-        #shutil.copy(psf_frame_inst,psf_dir+gal_name+'_psf_'+fn+'.inst.fits')
+        #shutil.copy(psf_frame_inst,psf_dir+data_name+'_psf_'+fn+'.inst.fits')
 
         #make_radial_profile_for_psf([psf_frame_inst],0,zp,\
-        #    output_png=check_plots_dir+gal_name+'_'+fn+'_psf_inst_radial_profiles.png')
+        #    output_png=check_plots_dir+data_name+'_'+fn+'_psf_inst_radial_profiles.png')
+
+        os.system('rm '+psfs_dir+'*star*.fits')
 
 ############################################################
 
@@ -790,9 +791,11 @@ def make_psf_for_frame(main_frame,weight_frame,source_cat,filtername,psf_frame,m
     ax.tick_params(which='both',direction='in')
     ax.set_xlabel('m$_{'+fn+'}$ \ [mag]')
     ax.set_ylabel('FWHM$_{'+fn+'}$ \ [pixel]')
-    plt.savefig(plots_dir+'psf_'+fn+'_selected_for_psf.png')
+    #plt.savefig(plots_dir+'psf_'+fn+'_selected_for_psf.png')
+    output_plot = psf_frame+'.stars-selected-for-psf.png'
+    plt.savefig(output_plot)
     plt.close()
-
+    os.system('mv '+output_plot+' '+plots_dir)
     #return 0
 
     ###############
@@ -813,17 +816,20 @@ def make_psf_for_frame(main_frame,weight_frame,source_cat,filtername,psf_frame,m
     print ('- Number of selected stars: '+str(N))
 
     psfs = list()
-    for i in range(N) :
+    #for i in range(N) :
+    if N > 500 :
+        N = 500
+    for i in range(N):
 
         XC = list()
         YC = list()
-
         ra = RA[i]
         dec = DEC[i]
         x = X[i]
         y = Y[i]
         mag = MAG[i]
         fwhm = FWHM[i]
+
         star_fits_file = psfs_dir+gal_name+'_'+fn+'_star_'+str(i)+'.fits'
         star_weight_file = psfs_dir+gal_name+'_'+fn+'_star_'+str(i)+'.weight.fits'
 
@@ -905,14 +911,16 @@ def make_psf_for_frame(main_frame,weight_frame,source_cat,filtername,psf_frame,m
 
         psf_data = fits.open(output_back_sub)
         psf_data[0].header['PIXELSCL'] = psf_pixel_size
-        psf_data[0].header['CRPIX1'] = x0
+        psf_data[0].header['CRPIX1'] = x_c
         psf_data[0].header['CRVAL1'] = 0
-        psf_data[0].header['CRPIX2'] = y0
+        psf_data[0].header['CRPIX2'] = y_c
         psf_data[0].header['CRVAL2'] = 0
         norm = 2.512**(mag-MAG_LIMIT_PSF)
         psf_data[0].data = (psf_data[0].data*norm)
         psf_data.writeto(output_back_sub,overwrite=True)
         #normalize_psf(output_back_sub)
+
+        #print (i, ra, dec, x, y, fwhm, x_c, y_c)
 
 
         fwhm_ = make_radial_profile_for_psf([output_back_sub],fn,pix_size,zp,output_png=None)
@@ -920,12 +928,12 @@ def make_psf_for_frame(main_frame,weight_frame,source_cat,filtername,psf_frame,m
         if (fwhm_ > fwhm_min) and (fwhm_ < fwhm_max) and (abs(fwhm-fwhm_)<1e-1) :
             fwhm_flag = 1
 
-        if i < 40 :
+        if i < 5 :
             fwhm_ = make_radial_profile_for_psf([output_back_sub],fn,pix_size,zp,\
                 output_png=check_plots_dir+gal_name+'_'+fn+'_star_'+str(i)+'.cropped-back_radial_profile_'+str(fwhm_flag)+\
                 '_'+str(ra0)[:9]+'_'+str(dec0)[:9]+'.png')
 
-        print ('*****', i, fwhm, fwhm_, fwhm_flag)
+        #print ('*****', i, fwhm, fwhm_, fwhm_flag)
 
         if (det_flag == 1) and (fwhm_flag == 1):
             star_frames = star_frames+output_back_sub+','
@@ -943,7 +951,7 @@ def make_psf_for_frame(main_frame,weight_frame,source_cat,filtername,psf_frame,m
         psf_pixel_size  = pix_size
 
     command = swarp_executable+' '+star_frames+' -c '+external_dir+'default.swarp -IMAGEOUT_NAME '+psf_frame+\
-            ' -WEIGHTOUT_NAME '+psf_weight_frame+' -WEIGHT_TYPE MAP_WEIGHT -SUBTRACT_BACK Y -CELESTIAL_TYPE NATIVE'+\
+            ' -WEIGHTOUT_NAME '+psf_weight_frame+' -WEIGHT_TYPE MAP_WEIGHT -SUBTRACT_BACK Y -CELESTIAL_TYPE EQUATORIAL'+\
             ' -RESAMPLE Y -PIXELSCALE_TYPE  MANUAL -PIXEL_SCALE '+str(psf_pixel_size)+' -RESAMPLING_TYPE LANCZOS4 '+\
             ' -IMAGE_SIZE '+str(psf_frame_size_pix)+','+str(psf_frame_size_pix)+' -CENTER_TYPE MANUAL -CENTER '+str(0)+','+str(0)+\
             ' -BACK_SIZE '+str(psf_frame_size_pix)+' -BACK_FILTERSIZE 1'
@@ -1005,7 +1013,7 @@ def make_radial_profile_for_psf(psf_frames,fn,pixelsize,zp,output_png):
         elif pixelsize > 0 :
             psf_pixel_size = pixelsize
 
-        radial_profile_apers_array = np.arange(2,X_psf/2,0.1/psf_pixel_size)
+        radial_profile_apers_array = np.arange(0.05/psf_pixel_size,X_psf/2,0.05/psf_pixel_size)
         radial_profile_apers_values = radial_profile_apers_array
         radial_profile_apers = ''
         for rad in radial_profile_apers_array:

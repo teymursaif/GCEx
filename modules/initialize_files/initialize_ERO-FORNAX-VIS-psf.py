@@ -50,7 +50,7 @@ def initialize_params() :
 
     ### (if ZP, EXPTIME and GAIN are missing from the header, define them for a given filter)
     INPUT_ZP = {'VIS':30,'NISP-Y':30,'NISP-J':30,'NISP-H':30}
-    INPUT_EXPTIME = {'VIS':565,'NISP-Y':121,'NISP-J':116,'NISP-H':81}
+    INPUT_EXPTIME = {'VIS':565,'NISP-Y':81,'NISP-J'81,'NISP-H':81}
     INPUT_GAIN = {'VIS':2,'NISP-Y':1,'NISP-J':1,'NISP-H':1}
 
     # ------------------------------ GALAXIES/TARGETS ------------------------------
@@ -145,7 +145,7 @@ def initialize_params() :
 
     input_dir = working_directory+'inputs/'
     output_dir = working_directory+'outputs/'
-    main_data_dir = input_dir+'main_data/'
+    main_data_dir = working_directory+'ERO-data/ERO-FORNAX/'
 
     data_dir = input_dir+'data/'
     psf_dir = input_dir+'psf/'

@@ -14,6 +14,7 @@ from modules.gc_det import *
 
 for gal_id in gal_params.keys():
 
+    gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
     methods = gal_methods[gal_id]
 
     # step 0. inistialize pipleine and prepare data
@@ -54,6 +55,8 @@ for gal_id in gal_params.keys():
     # step FINALE
 
 if (MERGE_CATS == True):
-    merge_cats_all(gal_params)
-    #select_GC_candidadates_merged(gal_id)
-    #measure_GC_properties_merged(gal_id)
+    merge_cats()
+    #merge_sims()
+    #merge_gc_cats()
+    #select_GC_candidadates_merged()
+    #measure_GC_properties_merged()

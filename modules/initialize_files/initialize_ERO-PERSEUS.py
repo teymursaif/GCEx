@@ -13,7 +13,7 @@ def initialize_params() :
     PHOTOM_APERS, FWHMS_ARCSEC, APERTURE_SIZE, PSF_REF_RAD_FRAC, BACKGROUND_ANNULUS_START, BACKGROUND_ANNULUS_TICKNESS, TARGETS, APERTURE_SIZE, \
     MAG_LIMIT_CAT, CROSS_MATCH_RADIUS_ARCSEC, GC_SIZE_RANGE, GC_MAG_RANGE, RATIO_OVERSAMPLE_PSF, PSF_PIXEL_SCALE, PSF_SIZE, MODEL_PSF, \
     PIXEL_SCALES, ZPS, PRIMARY_FRAME_SIZE, FRAME_SIZE, GAL_FRAME_SIZE, EXPTIME, GAIN, GC_REF_MAG, PSF_PIXELSCL_KEY, FWHM_LIMIT, INPUT_ZP, INPUT_EXPTIME, \
-    MAG_LIMIT_SAT, MAG_LIMIT_PSF, GC_SEL_PARAMS, ELL_LIMIT_PSF, GC_SIM_MODE
+    MAG_LIMIT_SAT, MAG_LIMIT_PSF, GC_SEL_PARAMS, ELL_LIMIT_PSF, GC_SIM_MODE, MERGE_CATS
     global SE_executable,galfit_executable,swarp_executable
 
     FWHMS_ARCSEC = {}
@@ -39,8 +39,9 @@ def initialize_params() :
     ### (if ZP, EXPTIME and GAIN are missing from the header, define them for a given filter)
 
     WORKING_DIR = './'
-    PRIMARY_FRAME_SIZE_ARCSEC = 1500 #arcsec
-    FRAME_SIZE_ARCSEC = 1500 #cut-out size from the original frame for the general anlaysis (arcsec)
+    main_data_dir = WORKING_DIR+'ERO-data/ERO-PERSEUS/'
+    PRIMARY_FRAME_SIZE_ARCSEC = 1200 #arcsec
+    FRAME_SIZE_ARCSEC = 1200 #cut-out size from the original frame for the general anlaysis (arcsec)
 
     # defining the executables (what you type in the command-line that executes the program)
     SE_executable = 'sex'
@@ -50,7 +51,7 @@ def initialize_params() :
 
     ### (if ZP, EXPTIME and GAIN are missing from the header, define them for a given filter)
     INPUT_ZP = {'VIS':30,'NISP-Y':30,'NISP-J':30,'NISP-H':30}
-    INPUT_EXPTIME = {'VIS':565,'NISP-Y':121,'NISP-J':116,'NISP-H':81}
+    INPUT_EXPTIME = {'VIS':565,'NISP-Y':81,'NISP-J':81,'NISP-H':81}
     INPUT_GAIN = {'VIS':2,'NISP-Y':1,'NISP-J':1,'NISP-H':1}
 
     # ------------------------------ GALAXIES/TARGETS ------------------------------
@@ -77,16 +78,41 @@ def initialize_params() :
 
     #Euclid ERO
     TARGETS = []
-    TARGETS.append(['1 ERO-FORNAX NGC1387 54.2376406 -35.5065765 20 VIS,NISP-Y,NISP-J,NISP-H SIM_GC MASSIVE']) #FIT_GAL,USE_SUB_GAL,MAKE_CAT
+
+    from astropy.wcs import WCS
+    from astropy.io import fits
+    frame = main_data_dir+'/ERO-PERSEUS_VIS.fits'
+    main = fits.open(frame)
+    hdr = main[0].header
+    X = hdr['NAXIS1']
+    Y = hdr['NAXIS2']
+    S = np.max([X,Y])
+    w=WCS(frame)
+    N = 4
+    PRIMARY_FRAME_SIZE_ARCSEC = int(S/N)+10
+    FRAME_SIZE_ARCSEC = int(S/N)+10
+    for j in range(N):
+        for i in range(N):
+            m = (j*N+i)
+            xc =  (i) * (X/N) + (X/N)/2.
+            yc =  (j) * (Y/N) + (Y/N)/2.
+            ra, dec = w.all_pix2world(yc,xc,0)
+            target_str = str(m)+' ERO-PERSEUS ERO-PERSEUS-'+str(m)+' '+str(ra)+' '+str(dec)+' 70 VIS,NISP-Y,NISP-J,NISP-H MAKE_CAT ---'
+            TARGETS.append([target_str])
+            print (target_str)
+
+    #print (TARGETS)
+
+    MERGE_CATS = True
 
     # NOTE: possible methods -> RESAMPLE_DATA, MODEL_PSF, FIT_GAL, USE_SUB_GAL, MAKE_CAT, MAKE_GC_CAT
     # NOTE: possible comments -> MASSIVE,DWARF,LSB
 
     global TABLES
     TABLES = {}
-    TABLES['acsfcs']='./archival_tables/ACS-FCS-GCs.fits'
-    TABLES['fornax-spec-gcs']='./archival_tables/Fornax_spec_UCDs_and_GCs.fits'
-    TABLES['fornax-spec-stars']='./archival_tables/Fornax_spec_foreground_stars.fits'
+    #TABLES['acsfcs']='./archival_tables/ACS-FCS-GCs.fits'
+    #TABLES['fornax-spec-gcs']='./archival_tables/Fornax_spec_UCDs_and_GCs.fits'
+    #TABLES['fornax-spec-stars']='./archival_tables/Fornax_spec_foreground_stars.fits'
 
     # ------------------------------  GALAXY FITTING ------------------------------
 
@@ -98,7 +124,7 @@ def initialize_params() :
     BACKGROUND_ANNULUS_START = 3 #The size of background annulus for forced photoemtry as a factor of FWHM
     BACKGROUND_ANNULUS_TICKNESS = 20 # the thickness of the background annulus in pixels
     CROSS_MATCH_RADIUS_ARCSEC = 0.25
-    MAG_LIMIT_CAT = 26
+    MAG_LIMIT_CAT = 25
 
     # -------------------------------- PSF MODELING -------------------------------
 
@@ -117,10 +143,10 @@ def initialize_params() :
 
 
     #------------------------------ GC SIMULATION ------------------------------
-    N_ART_GCS = 100
-    N_SIM_GCS = 1
+    N_ART_GCS = 250
+    N_SIM_GCS = 2
     COSMIC_CLEAN = False #does not work at the moment anyways...
-    GC_SIZE_RANGE = [1.5,6] #lower value should be small enough to make some point-sources for performance check, in pc
+    GC_SIZE_RANGE = [2,6] #lower value should be small enough to make some point-sources for performance check, in pc
     GC_MAG_RANGE = [-10,-5]
     GC_REF_MAG = {'VIS':-8, 'NISP-Y':-8.5,'NISP-J':-8.5,'NISP-H':-8.5 } #magnitude of a typical GC in the given filters should be defined here.
     GC_SIM_MODE = 'UNIFORM' # 'UNIFORM' or 'CONCENTRATED'
@@ -140,7 +166,6 @@ def initialize_params() :
 
     input_dir = working_directory+'inputs/'
     output_dir = working_directory+'outputs/'
-    main_data_dir = input_dir+'main_data/'
 
     data_dir = input_dir+'data/'
     psf_dir = input_dir+'psf/'
@@ -215,3 +240,9 @@ def finalize(gal_id):
 
 welcome()
 initialize_params()
+
+#export PATH="/net/cannon/data/users/saifollahi/miniconda3/bin:
+#/net/cannon/data/users/saifollahi/miniconda3/condabin:
+#/net/cannon/usr/lib64/qt-3.3/bin:/net/cannon/usr/local/bin:
+#/net/cannon/usr/local/sbin:/net/cannon/usr/bin:/net/cannon/usr/sbin
+#:/net/cannon/bin:/sbin:$PATH"

@@ -50,7 +50,7 @@ def initialize_params() :
 
     ### (if ZP, EXPTIME and GAIN are missing from the header, define them for a given filter)
     INPUT_ZP = {'VIS':30,'NISP-Y':30,'NISP-J':30,'NISP-H':30}
-    INPUT_EXPTIME = {'VIS':565,'NISP-Y':121,'NISP-J':116,'NISP-H':81}
+    INPUT_EXPTIME = {'VIS':565,'NISP-Y':81,'NISP-J':81,'NISP-H':81}
     INPUT_GAIN = {'VIS':2,'NISP-Y':1,'NISP-J':1,'NISP-H':1}
 
     # ------------------------------ GALAXIES/TARGETS ------------------------------
@@ -112,7 +112,7 @@ def initialize_params() :
     ### for making PSF (method=MODEL_PSF)
     MODEL_PSF = True
     RATIO_OVERSAMPLE_PSF = 10 #do not go beyond 10, this will have consequences for undersampling later
-    PSF_IMAGE_SIZE = 80 #PSF size in the instruments pixel-scale
+    PSF_IMAGE_SIZE = 40 #PSF size in the instruments pixel-scale
     MAG_LIMIT_PSF = 20. #for NISP
     MAG_LIMIT_SAT = 18. #for NISP #saturation limit
     ELL_LIMIT_PSF = 0.1

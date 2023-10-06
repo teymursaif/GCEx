@@ -13,7 +13,7 @@ def initialize_params() :
     PHOTOM_APERS, FWHMS_ARCSEC, APERTURE_SIZE, PSF_REF_RAD_FRAC, BACKGROUND_ANNULUS_START, BACKGROUND_ANNULUS_TICKNESS, TARGETS, APERTURE_SIZE, \
     MAG_LIMIT_CAT, CROSS_MATCH_RADIUS_ARCSEC, GC_SIZE_RANGE, GC_MAG_RANGE, RATIO_OVERSAMPLE_PSF, PSF_PIXEL_SCALE, PSF_SIZE, MODEL_PSF, \
     PIXEL_SCALES, ZPS, PRIMARY_FRAME_SIZE, FRAME_SIZE, GAL_FRAME_SIZE, EXPTIME, GAIN, GC_REF_MAG, PSF_PIXELSCL_KEY, FWHM_LIMIT, INPUT_ZP, INPUT_EXPTIME, \
-    MAG_LIMIT_SAT, MAG_LIMIT_PSF, GC_SEL_PARAMS, ELL_LIMIT_PSF, GC_SIM_MODE, MERGE_CATS 
+    MAG_LIMIT_SAT, MAG_LIMIT_PSF, GC_SEL_PARAMS, ELL_LIMIT_PSF, GC_SIM_MODE, MERGE_CATS
     global SE_executable,galfit_executable,swarp_executable
 
     FWHMS_ARCSEC = {}
@@ -50,7 +50,7 @@ def initialize_params() :
 
     ### (if ZP, EXPTIME and GAIN are missing from the header, define them for a given filter)
     INPUT_ZP = {'VIS':30,'NISP-Y':30,'NISP-J':30,'NISP-H':30}
-    INPUT_EXPTIME = {'VIS':565,'NISP-Y':121,'NISP-J':116,'NISP-H':81}
+    INPUT_EXPTIME = {'VIS':565,'NISP-Y':81,'NISP-J':81,'NISP-H':81}
     INPUT_GAIN = {'VIS':2,'NISP-Y':1,'NISP-J':1,'NISP-H':1}
 
     # ------------------------------ GALAXIES/TARGETS ------------------------------
@@ -114,7 +114,7 @@ def initialize_params() :
     MODEL_PSF = True
     RATIO_OVERSAMPLE_PSF = 10 #do not go beyond 10, this will have consequences for undersampling later
     PSF_IMAGE_SIZE = 40 #PSF size in the instruments pixel-scale
-    MAG_LIMIT_PSF = 21 #19 for NISP
+    MAG_LIMIT_PSF = 20 #19 for NISP
     MAG_LIMIT_SAT = 19 #17 for NISP #saturation limit
     ELL_LIMIT_PSF = 0.1
     #FWHM_UPPER_LIMIT_PSF =
