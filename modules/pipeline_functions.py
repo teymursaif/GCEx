@@ -807,8 +807,6 @@ def merge_sims(): #gcs, sim_gcs
     topcat_friendly_output_cat = cats_dir+data_name+'_ALL_DET_ART_GCs_merged+.fits'
     attach_sex_tables(source_cats,output_cat)
     make_cat_topcat_friendly(output_cat,topcat_friendly_output_cat)
-    clean_dublicates_in_cat(output_cat)
-    make_cat_topcat_friendly(output_cat,topcat_friendly_output_cat)
 
     # 2
     source_cats = []
@@ -822,8 +820,6 @@ def merge_sims(): #gcs, sim_gcs
     output_cat = cats_dir+data_name+'_ALL_ART_GCs_merged.fits'
     topcat_friendly_output_cat = cats_dir+data_name+'_ALL_ART_GCs_merged+.fits'
     attach_sex_tables(source_cats,output_cat)
-    make_cat_topcat_friendly(output_cat,topcat_friendly_output_cat)
-    clean_dublicates_in_cat(output_cat)
     make_cat_topcat_friendly(output_cat,topcat_friendly_output_cat)
 
 ############################################################
