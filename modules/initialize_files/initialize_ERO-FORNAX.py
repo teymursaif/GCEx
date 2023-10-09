@@ -13,7 +13,7 @@ def initialize_params() :
     PHOTOM_APERS, FWHMS_ARCSEC, APERTURE_SIZE, PSF_REF_RAD_FRAC, BACKGROUND_ANNULUS_START, BACKGROUND_ANNULUS_TICKNESS, TARGETS, APERTURE_SIZE, \
     MAG_LIMIT_CAT, CROSS_MATCH_RADIUS_ARCSEC, GC_SIZE_RANGE, GC_MAG_RANGE, RATIO_OVERSAMPLE_PSF, PSF_PIXEL_SCALE, PSF_SIZE, MODEL_PSF, \
     PIXEL_SCALES, ZPS, PRIMARY_FRAME_SIZE, FRAME_SIZE, GAL_FRAME_SIZE, EXPTIME, GAIN, GC_REF_MAG, PSF_PIXELSCL_KEY, FWHM_LIMIT, INPUT_ZP, INPUT_EXPTIME, \
-    MAG_LIMIT_SAT, MAG_LIMIT_PSF, GC_SEL_PARAMS, ELL_LIMIT_PSF, GC_SIM_MODE, MERGE_CATS
+    MAG_LIMIT_SAT, MAG_LIMIT_PSF, GC_SEL_PARAMS, ELL_LIMIT_PSF, GC_SIM_MODE, MERGE_CATS, MERGE_SIM_GC_CATS
     global SE_executable,galfit_executable,swarp_executable
 
     FWHMS_ARCSEC = {}
@@ -78,12 +78,12 @@ def initialize_params() :
     #Euclid ERO
     TARGETS = []
 
-    TARGETS.append(['1 ERO-FORNAX ERO-FORNAX-1 54.41498968710675 -35.58635104214481 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_CAT ---']) #MAKE_CAT,
-    TARGETS.append(['2 ERO-FORNAX ERO-FORNAX-2 54.020110517026325 -35.58700320641283 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_CAT ---'])
-    TARGETS.append(['3 ERO-FORNAX ERO-FORNAX-3 53.625231108456134 -35.58636741821876 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_CAT ---'])
-    TARGETS.append(['4 ERO-FORNAX ERO-FORNAX-4 54.41340800663024 -35.2638620852018 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_CAT ---'])
+    TARGETS.append(['1 ERO-FORNAX ERO-FORNAX-1 54.41498968710675 -35.58635104214481 20 VIS,NISP-Y,NISP-J,NISP-H --- ---'])
+    TARGETS.append(['2 ERO-FORNAX ERO-FORNAX-2 54.020110517026325 -35.58700320641283 20 VIS,NISP-Y,NISP-J,NISP-H --- ---'])
+    TARGETS.append(['3 ERO-FORNAX ERO-FORNAX-3 53.625231108456134 -35.58636741821876 20 VIS,NISP-Y,NISP-J,NISP-H --- ---'])
+    TARGETS.append(['4 ERO-FORNAX ERO-FORNAX-4 54.41340800663024 -35.2638620852018 20 VIS,NISP-Y,NISP-J,NISP-H --- ---'])
 
-    TARGETS.append(['5 ERO-FORNAX ERO-FORNAX-5 54.02010052441082 -35.26450654419051 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_CAT ---'])
+    TARGETS.append(['5 ERO-FORNAX ERO-FORNAX-5 54.02010052441082 -35.26450654419051 20 VIS,NISP-Y,NISP-J,NISP-H --- ---'])
     TARGETS.append(['6 ERO-FORNAX ERO-FORNAX-6 53.62679280653799 -35.263878267794965 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_CAT ---'])
     TARGETS.append(['7 ERO-FORNAX ERO-FORNAX-7 54.41183879946199 -34.94135934996358 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_CAT ---'])
     TARGETS.append(['8 ERO-FORNAX ERO-FORNAX-8 54.020090610601954 -34.9419961237686 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_CAT ---'])
@@ -91,6 +91,7 @@ def initialize_params() :
     TARGETS.append(['9 ERO-FORNAX ERO-FORNAX-9 53.62834218888022 -34.94137533958052 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_CAT ---'])
 
     MERGE_CATS = True
+    MERGE_SIM_GC_CATS = False
 
     # NOTE: possible methods -> RESAMPLE_DATA, MODEL_PSF, FIT_GAL, USE_SUB_GAL, MAKE_CAT, MAKE_GC_CAT
     # NOTE: possible comments -> MASSIVE,DWARF,LSB
@@ -98,8 +99,11 @@ def initialize_params() :
     global TABLES
     TABLES = {}
     TABLES['acsfcs']='./archival_tables/ACS-FCS-GCs.fits'
-    TABLES['fornax-spec-gcs']='./archival_tables/Fornax_spec_UCDs_and_GCs.fits'
+    TABLES['fornax-spec-gcs']='./archival_tables/Fornax_spec_UCDs_and_GCs.fits' #only Saifollahi+2021b
+    TABLES['fornax-spec-gcs-all']='./archival_tables/Fornax_spec_UCDs_and_GCs_all.fits'
     TABLES['fornax-spec-stars']='./archival_tables/Fornax_spec_foreground_stars.fits'
+    TABLES['fornax-spec-galaxies']='./archival_tables/Fornax_spec_background_galaxies.fits'
+    TABLES['gaia-stars']='./archival_tables/gaia_dr3_sources.fits'
 
     # ------------------------------  GALAXY FITTING ------------------------------
 
@@ -108,10 +112,10 @@ def initialize_params() :
     # ---------------------- SOURCE DETECTION AND PHOTOMETRY ----------------------
 
     PHOTOM_APERS = '1,2,4,8,12,16,20,30,40' #aperture-sizes (diameters) in pixels for aperture photometry with Sextractor
-    BACKGROUND_ANNULUS_START = 3 #The size of background annulus for forced photoemtry as a factor of FWHM
+    BACKGROUND_ANNULUS_START = 4 #The size of background annulus for forced photoemtry as a factor of FWHM
     BACKGROUND_ANNULUS_TICKNESS = 20 # the thickness of the background annulus in pixels
     CROSS_MATCH_RADIUS_ARCSEC = 0.25
-    MAG_LIMIT_CAT = 25
+    MAG_LIMIT_CAT = 25.0 #25
 
     # -------------------------------- PSF MODELING -------------------------------
 
@@ -131,7 +135,7 @@ def initialize_params() :
 
     #------------------------------ GC SIMULATION ------------------------------
     N_ART_GCS = 250
-    N_SIM_GCS = 2
+    N_SIM_GCS = 1
     COSMIC_CLEAN = False #does not work at the moment anyways...
     GC_SIZE_RANGE = [2,6] #lower value should be small enough to make some point-sources for performance check, in pc
     GC_MAG_RANGE = [-10,-5]

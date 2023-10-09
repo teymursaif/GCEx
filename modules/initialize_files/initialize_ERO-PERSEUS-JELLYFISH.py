@@ -13,7 +13,7 @@ def initialize_params() :
     PHOTOM_APERS, FWHMS_ARCSEC, APERTURE_SIZE, PSF_REF_RAD_FRAC, BACKGROUND_ANNULUS_START, BACKGROUND_ANNULUS_TICKNESS, TARGETS, APERTURE_SIZE, \
     MAG_LIMIT_CAT, CROSS_MATCH_RADIUS_ARCSEC, GC_SIZE_RANGE, GC_MAG_RANGE, RATIO_OVERSAMPLE_PSF, PSF_PIXEL_SCALE, PSF_SIZE, MODEL_PSF, \
     PIXEL_SCALES, ZPS, PRIMARY_FRAME_SIZE, FRAME_SIZE, GAL_FRAME_SIZE, EXPTIME, GAIN, GC_REF_MAG, PSF_PIXELSCL_KEY, FWHM_LIMIT, INPUT_ZP, INPUT_EXPTIME, \
-    MAG_LIMIT_SAT, MAG_LIMIT_PSF, GC_SEL_PARAMS, ELL_LIMIT_PSF, GC_SIM_MODE, MERGE_CATS
+    MAG_LIMIT_SAT, MAG_LIMIT_PSF, GC_SEL_PARAMS, ELL_LIMIT_PSF, GC_SIM_MODE, MERGE_CATS, MERGE_SIM_GC_CATS
     global SE_executable,galfit_executable,swarp_executable
 
     FWHMS_ARCSEC = {}
@@ -39,8 +39,9 @@ def initialize_params() :
     ### (if ZP, EXPTIME and GAIN are missing from the header, define them for a given filter)
 
     WORKING_DIR = './'
-    PRIMARY_FRAME_SIZE_ARCSEC = 1500 #arcsec
-    FRAME_SIZE_ARCSEC = 1500 #cut-out size from the original frame for the general anlaysis (arcsec)
+    main_data_dir = WORKING_DIR+'ERO-data/ERO-PERSEUS/'
+    PRIMARY_FRAME_SIZE_ARCSEC = 200 #arcsec
+    FRAME_SIZE_ARCSEC = 200 #cut-out size from the original frame for the general anlaysis (arcsec)
 
     # defining the executables (what you type in the command-line that executes the program)
     SE_executable = 'sex'
@@ -77,15 +78,46 @@ def initialize_params() :
 
     #Euclid ERO
     TARGETS = []
-    #PSF modeling for VIS
-    TARGETS.append(['0 ERO-IC10 ERO-IC10 5.1062500 +59.2880556 0.64 NISP-Y,NISP-J,NISP-H MODEL_PSF ---'])
-    # PSF modeling for NISP
-    #TARGETS.append(['1 ERO-FORNAX ERO-FORNAX 053.96397 -35.26515 20 NISP-Y,NISP-J,NISP-H MODEL_PSF ---'])
+    #49.8640400,41.6353100
+    #50.0917500,41.6407200
+    
+    TARGETS.append(['1 ERO-PERSEUS PERSEUS-JELLYFISH-1 49.8640400 41.6353100 70 VIS,NISP-Y,NISP-J,NISP-H MAKE_CAT ---'])
+    TARGETS.append(['2 ERO-PERSEUS PERSEUS-JELLYFISH-2 50.0917500 41.6407200 70 VIS,NISP-Y,NISP-J,NISP-H MAKE_CAT ---'])
+    """
+    from astropy.wcs import WCS
+    from astropy.io import fits
+    frame = main_data_dir+'/ERO-PERSEUS_VIS.fits'
+    main = fits.open(frame)
+    hdr = main[0].header
+    X = hdr['NAXIS1']
+    Y = hdr['NAXIS2']
+    S = np.max([X,Y])
+    w=WCS(frame)
+    N = 3
+    PRIMARY_FRAME_SIZE_ARCSEC = int(S/N/10)+100
+    FRAME_SIZE_ARCSEC = int(S/N/10)+100
+    print (FRAME_SIZE_ARCSEC)
+    for j in range(N):
+        for i in range(N):
+            m = (j*N+i)
+            xc =  (i) * (X/N) + (X/N)/2.
+            yc =  (j) * (Y/N) + (Y/N)/2.
+            ra, dec = w.all_pix2world(yc,xc,0)
+            if m < 2:
+                target_str = str(m)+' ERO-PERSEUS ERO-PERSEUS-'+str(m)+' '+str(ra)+' '+str(dec)+' 70 VIS,NISP-Y,NISP-J,NISP-H MAKE_CAT ---'
+            else:
+                target_str = str(m)+' ERO-PERSEUS ERO-PERSEUS-'+str(m)+' '+str(ra)+' '+str(dec)+' 70 VIS,NISP-Y,NISP-J,NISP-H MAKE_CAT ---'
+
+            TARGETS.append([target_str])
+            print (target_str)
+
+    #print (TARGETS)
+    """
+    MERGE_CATS = False
+    MERGE_SIM_GC_CATS = False
 
     # NOTE: possible methods -> RESAMPLE_DATA, MODEL_PSF, FIT_GAL, USE_SUB_GAL, MAKE_CAT, MAKE_GC_CAT
     # NOTE: possible comments -> MASSIVE,DWARF,LSB
-
-    MERGE_CATS = False
 
     global TABLES
     TABLES = {}
@@ -103,7 +135,7 @@ def initialize_params() :
     BACKGROUND_ANNULUS_START = 3 #The size of background annulus for forced photoemtry as a factor of FWHM
     BACKGROUND_ANNULUS_TICKNESS = 20 # the thickness of the background annulus in pixels
     CROSS_MATCH_RADIUS_ARCSEC = 0.25
-    MAG_LIMIT_CAT = 26
+    MAG_LIMIT_CAT = 28
 
     # -------------------------------- PSF MODELING -------------------------------
 
@@ -114,18 +146,18 @@ def initialize_params() :
     MODEL_PSF = True
     RATIO_OVERSAMPLE_PSF = 10 #do not go beyond 10, this will have consequences for undersampling later
     PSF_IMAGE_SIZE = 40 #PSF size in the instruments pixel-scale
-    MAG_LIMIT_PSF = 20 #19 for NISP
-    MAG_LIMIT_SAT = 18 #17 for NISP #saturation limit
+    MAG_LIMIT_PSF = 21 #19 for NISP
+    MAG_LIMIT_SAT = 19 #17 for NISP #saturation limit
     ELL_LIMIT_PSF = 0.1
     #FWHM_UPPER_LIMIT_PSF =
     #FWHM_LOWER_LIMIT_PSF =
 
 
     #------------------------------ GC SIMULATION ------------------------------
-    N_ART_GCS = 10
-    N_SIM_GCS = 1
+    N_ART_GCS = 250
+    N_SIM_GCS = 2
     COSMIC_CLEAN = False #does not work at the moment anyways...
-    GC_SIZE_RANGE = [1.5,6] #lower value should be small enough to make some point-sources for performance check, in pc
+    GC_SIZE_RANGE = [2,6] #lower value should be small enough to make some point-sources for performance check, in pc
     GC_MAG_RANGE = [-10,-5]
     GC_REF_MAG = {'VIS':-8, 'NISP-Y':-8.5,'NISP-J':-8.5,'NISP-H':-8.5 } #magnitude of a typical GC in the given filters should be defined here.
     GC_SIM_MODE = 'UNIFORM' # 'UNIFORM' or 'CONCENTRATED'
@@ -145,7 +177,6 @@ def initialize_params() :
 
     input_dir = working_directory+'inputs/'
     output_dir = working_directory+'outputs/'
-    main_data_dir = working_directory+'ERO-data/ERO-SHOWCASE/'
 
     data_dir = input_dir+'data/'
     psf_dir = input_dir+'psf/'
@@ -220,3 +251,9 @@ def finalize(gal_id):
 
 welcome()
 initialize_params()
+
+#export PATH="/net/cannon/data/users/saifollahi/miniconda3/bin:
+#/net/cannon/data/users/saifollahi/miniconda3/condabin:
+#/net/cannon/usr/lib64/qt-3.3/bin:/net/cannon/usr/local/bin:
+#/net/cannon/usr/local/sbin:/net/cannon/usr/bin:/net/cannon/usr/sbin
+#:/net/cannon/bin:/sbin:$PATH"

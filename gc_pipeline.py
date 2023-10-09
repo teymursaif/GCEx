@@ -3,6 +3,7 @@ import warnings
 
 copy_initialize_file_command = 'cp '+str(sys.argv[1])+' ./modules/initialize.py'
 os.system(copy_initialize_file_command)
+#print (sys.argv)
 
 from modules.initialize import *
 from modules.pipeline_functions import *
@@ -19,13 +20,16 @@ for gal_id in gal_params.keys():
 
     # step 0. inistialize pipleine and prepare data
     intro(gal_id)
-    #copy_data(gal_id)
+    if 'PREPARE_DATA' in sys.argv:
+        copy_data(gal_id)
+
     get_data_info(gal_id)
 
     if 'RESAMPLE'in methods:
         resample_data(gal_id)
-
-    #make_galaxy_frames(gal_id)
+    
+    if 'PREPARE_FRAME' in sys.argv:
+        make_galaxy_frames(gal_id)
 
     if 'MODEL_PSF' in methods:
         make_psf_all_filters(gal_id)
@@ -39,6 +43,7 @@ for gal_id in gal_params.keys():
     # step 2. detection, photometry and make the main source catalogue
     if 'MAKE_CAT' in methods:
         make_source_cat_full(gal_id)
+        #assess_photom(gal_id)
 
     # step 3. GC analysis: completeness, selection, measurments
     if 'SIM_GC' in methods:

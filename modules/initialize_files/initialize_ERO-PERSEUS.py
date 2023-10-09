@@ -13,7 +13,7 @@ def initialize_params() :
     PHOTOM_APERS, FWHMS_ARCSEC, APERTURE_SIZE, PSF_REF_RAD_FRAC, BACKGROUND_ANNULUS_START, BACKGROUND_ANNULUS_TICKNESS, TARGETS, APERTURE_SIZE, \
     MAG_LIMIT_CAT, CROSS_MATCH_RADIUS_ARCSEC, GC_SIZE_RANGE, GC_MAG_RANGE, RATIO_OVERSAMPLE_PSF, PSF_PIXEL_SCALE, PSF_SIZE, MODEL_PSF, \
     PIXEL_SCALES, ZPS, PRIMARY_FRAME_SIZE, FRAME_SIZE, GAL_FRAME_SIZE, EXPTIME, GAIN, GC_REF_MAG, PSF_PIXELSCL_KEY, FWHM_LIMIT, INPUT_ZP, INPUT_EXPTIME, \
-    MAG_LIMIT_SAT, MAG_LIMIT_PSF, GC_SEL_PARAMS, ELL_LIMIT_PSF, GC_SIM_MODE, MERGE_CATS
+    MAG_LIMIT_SAT, MAG_LIMIT_PSF, GC_SEL_PARAMS, ELL_LIMIT_PSF, GC_SIM_MODE, MERGE_CATS, MERGE_SIM_GC_CATS
     global SE_executable,galfit_executable,swarp_executable
 
     FWHMS_ARCSEC = {}
@@ -40,8 +40,8 @@ def initialize_params() :
 
     WORKING_DIR = './'
     main_data_dir = WORKING_DIR+'ERO-data/ERO-PERSEUS/'
-    PRIMARY_FRAME_SIZE_ARCSEC = 1200 #arcsec
-    FRAME_SIZE_ARCSEC = 1200 #cut-out size from the original frame for the general anlaysis (arcsec)
+    #PRIMARY_FRAME_SIZE_ARCSEC = 1200 #arcsec
+    #FRAME_SIZE_ARCSEC = 1200 #cut-out size from the original frame for the general anlaysis (arcsec)
 
     # defining the executables (what you type in the command-line that executes the program)
     SE_executable = 'sex'
@@ -88,22 +88,28 @@ def initialize_params() :
     Y = hdr['NAXIS2']
     S = np.max([X,Y])
     w=WCS(frame)
-    N = 4
-    PRIMARY_FRAME_SIZE_ARCSEC = int(S/N)+10
-    FRAME_SIZE_ARCSEC = int(S/N)+10
+    N = 3
+    PRIMARY_FRAME_SIZE_ARCSEC = int(S/N/10)+100
+    FRAME_SIZE_ARCSEC = int(S/N/10)+100
+    print (FRAME_SIZE_ARCSEC)
     for j in range(N):
         for i in range(N):
             m = (j*N+i)
             xc =  (i) * (X/N) + (X/N)/2.
             yc =  (j) * (Y/N) + (Y/N)/2.
             ra, dec = w.all_pix2world(yc,xc,0)
-            target_str = str(m)+' ERO-PERSEUS ERO-PERSEUS-'+str(m)+' '+str(ra)+' '+str(dec)+' 70 VIS,NISP-Y,NISP-J,NISP-H MAKE_CAT ---'
+            if m < 2:
+                target_str = str(m)+' ERO-PERSEUS ERO-PERSEUS-'+str(m)+' '+str(ra)+' '+str(dec)+' 70 VIS,NISP-Y,NISP-J,NISP-H MAKE_CAT ---'
+            else:
+                target_str = str(m)+' ERO-PERSEUS ERO-PERSEUS-'+str(m)+' '+str(ra)+' '+str(dec)+' 70 VIS,NISP-Y,NISP-J,NISP-H MAKE_CAT ---'
+
             TARGETS.append([target_str])
             print (target_str)
 
     #print (TARGETS)
 
     MERGE_CATS = True
+    MERGE_SIM_GC_CATS = False
 
     # NOTE: possible methods -> RESAMPLE_DATA, MODEL_PSF, FIT_GAL, USE_SUB_GAL, MAKE_CAT, MAKE_GC_CAT
     # NOTE: possible comments -> MASSIVE,DWARF,LSB

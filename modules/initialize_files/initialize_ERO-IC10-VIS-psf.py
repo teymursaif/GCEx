@@ -39,8 +39,8 @@ def initialize_params() :
     ### (if ZP, EXPTIME and GAIN are missing from the header, define them for a given filter)
 
     WORKING_DIR = './'
-    PRIMARY_FRAME_SIZE_ARCSEC = 1500 #arcsec
-    FRAME_SIZE_ARCSEC = 1500 #cut-out size from the original frame for the general anlaysis (arcsec)
+    PRIMARY_FRAME_SIZE_ARCSEC = 3600 #arcsec
+    FRAME_SIZE_ARCSEC = 3600 #cut-out size from the original frame for the general anlaysis (arcsec)
 
     # defining the executables (what you type in the command-line that executes the program)
     SE_executable = 'sex'
@@ -78,7 +78,7 @@ def initialize_params() :
     #Euclid ERO
     TARGETS = []
     #PSF modeling for VIS
-    TARGETS.append(['0 ERO-IC10 ERO-IC10 5.1062500 +59.2880556 0.64 NISP-Y,NISP-J,NISP-H MODEL_PSF ---'])
+    TARGETS.append(['0 ERO-IC10 ERO-IC10 5.1062500 +59.2880556 0.64 VIS MODEL_PSF ---'])
     # PSF modeling for NISP
     #TARGETS.append(['1 ERO-FORNAX ERO-FORNAX 053.96397 -35.26515 20 NISP-Y,NISP-J,NISP-H MODEL_PSF ---'])
 
@@ -114,8 +114,8 @@ def initialize_params() :
     MODEL_PSF = True
     RATIO_OVERSAMPLE_PSF = 10 #do not go beyond 10, this will have consequences for undersampling later
     PSF_IMAGE_SIZE = 40 #PSF size in the instruments pixel-scale
-    MAG_LIMIT_PSF = 20 #19 for NISP
-    MAG_LIMIT_SAT = 18 #17 for NISP #saturation limit
+    MAG_LIMIT_PSF = 21 #19 for NISP
+    MAG_LIMIT_SAT = 19 #17 for NISP #saturation limit
     ELL_LIMIT_PSF = 0.1
     #FWHM_UPPER_LIMIT_PSF =
     #FWHM_LOWER_LIMIT_PSF =

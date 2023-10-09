@@ -110,40 +110,44 @@ def assess_GC_simulations_general(gal_id):
             param2 = det_art_gcs['MAG_AUTO_'+fn]
             param3 = sources['FWHM_IMAGE_'+fn]
             param4 = sources['MAG_AUTO_'+fn]
-            ax[2][n_filter].scatter(param4,param3,s=20,color='grey',alpha=0.2,marker='o',label='Detected Sources')
-            ax[2][n_filter].scatter(param2,param1,s=50,color=colors[n_filter],alpha=0.2,marker='o',label='Detected Artificial GCs')
-            #ax[2][n_filter].set_title(gal_name+', '+sfn)
-            ax[2][n_filter].set_xlabel('$m_{'+sfn+', AUTO} \ [mag]$')
-            ax[2][n_filter].set_ylabel('$FWHM_{'+sfn+', AUTO}\  [pixels]$')
+            ax[2][0].scatter(param4,param3,s=20,color='grey',alpha=0.2,marker='o',label='Detected Sources')
+            ax[2][0].scatter(param2,param1,s=50,color=colors[n_filter],alpha=0.2,marker='o',label='Detected Artificial GCs')
+            #ax[2][0].set_title(gal_name+', '+sfn)
+            ax[2][0].set_xlabel('$m_{'+sfn+', AUTO} \ [mag]$')
+            ax[2][0].set_ylabel('$FWHM_{'+sfn+', AUTO}\  [pixels]$')
             mag1 = GC_MAG_RANGE[0]+5*np.log10(distance*1e+5)-0.25+color(fn,fn_det)
             #mag2 = GC_MAG_RANGE[1]+5*np.log10(distance*1e+5)+0.25+color(fn,fn_det)
             mag2 = np.nanmax(param2)
-            ax[2][n_filter].set_xlim([mag1,mag2])
+            ax[2][0].set_xlim([mag1,mag2])
             fwhm1 = FWHMS_ARCSEC[fn]/PIXEL_SCALES[fn]*0.5
             fwhm2 = FWHMS_ARCSEC[fn]/PIXEL_SCALES[fn]*2.5
-            ax[2][n_filter].set_ylim([fwhm1,fwhm2])
-            #ax[2][n_filter].set_ylim([0,10])
-            ax[2][n_filter].legend(loc='upper left')
-            ax[2][n_filter].tick_params(which='both',direction='in')
+            ax[2][0].set_ylim([fwhm1,fwhm2])
+            #ax[2][0].set_ylim([0,10])
+            ax[2][0].legend(loc='upper left')
+            ax[2][0].tick_params(which='both',direction='in')
 
 
         if fn == fn_det:
-            param1 = det_art_gcs[GC_SEL_PARAMS[0]+'_'+fn]
-            param2 = det_art_gcs['MAG_AUTO_'+fn]
-            param3 = sources[GC_SEL_PARAMS[0]+'_'+fn]
-            param4 = sources['F_MAG_APER_CORR_'+fn]
-            ax[3][n_filter].scatter(param3,param4,s=20,color='grey',alpha=0.2,marker='o',label='Detected Sources')
-            ax[3][n_filter].scatter(param1,param2,s=50,color=colors[n_filter],alpha=0.2,marker='o',label='Detected Artificial GCs')
-            #ax[2][n_filter+1].set_title(gal_name+', '+sfn)
-            ax[3][n_filter].set_ylabel('$m_{'+sfn+', AUTO} \ [mag]$')
-            ax[3][n_filter].set_xlabel('$'+(GC_SEL_PARAMS[0]).replace("_", "-")+'_{'+sfn+'} \ [mag]$')
-            mag1 = GC_MAG_RANGE[0]+5*np.log10(distance*1e+5)-0.25+color(fn,fn_det)
-            #mag2 = GC_MAG_RANGE[1]+5*np.log10(distance*1e+5)+0.25+color(fn,fn_det)
-            mag2 = np.nanmax(param2)
-            ax[3][n_filter].set_ylim([mag1,mag2])
-            ax[3][n_filter].set_xlim([-0.2,1.5])
-            ax[3][n_filter].legend(loc='upper left')
-            ax[3][n_filter].tick_params(which='both',direction='in')
+            for i in range(len(GC_SEL_PARAMS)):
+                if i == len(filters):
+                    break
+
+                param1 = det_art_gcs[GC_SEL_PARAMS[i]+'_'+fn]
+                param2 = det_art_gcs['MAG_AUTO_'+fn]
+                param3 = sources[GC_SEL_PARAMS[i]+'_'+fn]
+                param4 = sources['F_MAG_APER_CORR_'+fn]
+                ax[3][i].scatter(param3,param4,s=20,color='grey',alpha=0.2,marker='o',label='Detected Sources')
+                ax[3][i].scatter(param1,param2,s=50,color=colors[n_filter],alpha=0.2,marker='o',label='Detected Artificial GCs')
+                #ax[2][n_filter+1].set_title(gal_name+', '+sfn)
+                ax[3][i].set_ylabel('$m_{'+sfn+', AUTO} \ [mag]$')
+                ax[3][i].set_xlabel('$'+(GC_SEL_PARAMS[i]).replace("_", "-")+'_{'+sfn+'} \ [mag]$')
+                mag1 = GC_MAG_RANGE[0]+5*np.log10(distance*1e+5)-0.25+color(fn,fn_det)
+                #mag2 = GC_MAG_RANGE[1]+5*np.log10(distance*1e+5)+0.25+color(fn,fn_det)
+                mag2 = np.nanmax(param2)
+                ax[3][i].set_ylim([mag2,mag1])
+                ax[3][i].set_xlim([-0.2,1.5])
+                ax[3][i].legend(loc='upper left')
+                ax[3][i].tick_params(which='both',direction='in')
 
             ### add data from some tables
 
@@ -176,7 +180,7 @@ def assess_GC_simulations_general(gal_id):
         ax[5][n_filter].hist(r_source_obs,bins=np.arange(0,np.nanmax(r_source_sim),np.nanmax(r_source_sim)/20),color=colors[n_filter],alpha=1,label='Detected simulated GCs')
         #mag1 = GC_MAG_RANGE[0]+5*np.log10(distance*1e+5)-0.25+color(fn,fn_det)
         #mag2 = GC_MAG_RANGE[1]+5*np.log10(distance*1e+5)+0.25+color(fn,fn_det)
-        #ax[3][n_filter].set_xlim([mag1,mag2])
+        #ax[3][i].set_xlim([mag1,mag2])
         ax[5][n_filter].set_xlabel('$R_{GAL, SIM} \ [arcsec]$')
         ax[5][n_filter].set_ylabel('N')
         ax[5][n_filter].legend(loc='upper left')
@@ -244,7 +248,7 @@ def assess_GC_simulations_compactness(gal_id):
         ci2 = np.nanmedian(ci_det_art_gcs)+0.5
 
         ax.set_xlim([ci1,ci2])
-        ax.set_ylim([MAG_LIMIT_SAT,MAG_LIMIT_CAT])
+        ax.set_ylim([MAG_LIMIT_CAT,MAG_LIMIT_SAT])
 
         plt.legend()
         plt.savefig(plots_dir+gal_name+'_'+fn_det+'_compactness-index-'+str(aper1)+'-'+str(aper2)+'.png',dpi=150)

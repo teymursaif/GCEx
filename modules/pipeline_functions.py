@@ -191,19 +191,19 @@ def get_fits_header(fitsfile):
 ############################################################
 
 def get_header(file,keyword=None):
-	'''
-	Reads the fits file and outputs the header dictionary.
-	OR
-	If a keyword is given, returns value of the keyword.
+    '''
+    Reads the fits file and outputs the header dictionary.
+    OR
+    If a keyword is given, returns value of the keyword.
 
-	'''
+    '''
     #Function is developed by Aku Venhola
 
-	fitsfile = fits.open(file)
-	if keyword:
-		return fitsfile[0].header[keyword]
-	else:
-		return fitsfile[0].header
+    fitsfile = fits.open(file)
+    if keyword:
+        return fitsfile[0].header[keyword]
+    else:
+        return fitsfile[0].header
 
 ############################################################
 
@@ -748,14 +748,15 @@ def merge_cats(): #gcs, sim_gcs
     output_cat = cats_dir+data_name+'_forced_merged.fits'
     topcat_friendly_output_cat = cats_dir+data_name+'_forced_merged+.fits'
     attach_sex_tables(source_cats,output_cat)
-    clean_dublicates_in_cat(output_cat)
-    make_cat_topcat_friendly(output_cat,topcat_friendly_output_cat)
+    clean_cat = clean_dublicates_in_cat(output_cat)
+    make_cat_topcat_friendly(clean_cat,topcat_friendly_output_cat)
 
     # 2
+    #print ('test')
     source_cats = []
     for gal_id in gal_params.keys():
         gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
-        cat_name = cats_dir+gal_name+'_master_cat_lsb_forced.fits'
+        cat_name = cats_dir+gal_name+'_lsb_master_cat_forced.fits'
         source_cats.append(cat_name)
         id = gal_id
 
@@ -763,8 +764,8 @@ def merge_cats(): #gcs, sim_gcs
     output_cat = cats_dir+data_name+'_lsb_forced_merged.fits'
     topcat_friendly_output_cat = cats_dir+data_name+'_lsb_forced_merged+.fits'
     attach_sex_tables(source_cats,output_cat)
-    clean_dublicates_in_cat(output_cat)
-    make_cat_topcat_friendly(output_cat,topcat_friendly_output_cat)
+    clean_cat = clean_dublicates_in_cat(output_cat)
+    make_cat_topcat_friendly(clean_cat,topcat_friendly_output_cat)
 
 
 ############################################################
@@ -785,8 +786,8 @@ def merge_gc_cats(): #gcs, sim_gcs
     output_cat = final_cats_dir+data_name+'_selected_GCs_merged.fits'
     topcat_friendly_output_cat = final_cats_dir+data_name+'_selected_GCs_merged+.fits'
     attach_sex_tables(source_cats,output_cat)
-    clean_dublicates_in_cat(output_cat)
-    make_cat_topcat_friendly(output_cat,topcat_friendly_output_cat)
+    clean_cat = clean_dublicates_in_cat(output_cat)
+    make_cat_topcat_friendly(clean_cat,topcat_friendly_output_cat)
 
 ############################################################
 
@@ -843,19 +844,29 @@ def make_cat_topcat_friendly(input_cat,output_cat):
 ############################################################
 
 def clean_dublicates_in_cat(cat_name):
+
+    # Thanks to Petra Awad for helping to make the function faster
+
     main = fits.open(cat_name)
     data = main[1].data
     #data = data[:10000]
     RA = data['RA']
     DEC = data['DEC']
     N = len(RA)
-    repeated_idxs = []
-
     #print (N)
-    l= 0.01/3600.
+    R = np.vstack((RA, DEC)).T
+    l = 0.01/3600
+    repeated_idxs = []
     unique_idxs = np.full(N, True, dtype=bool)
 
-    for i in range(N):
+    M = rangesearch(R, R, l)
+    C = np.array([len(m) for m in M])
+    ind = np.where(C > 1)[0]
+    #print(len(ind))
+    possible_repeated_indices = ind
+    #print (possible_repeated_indices)
+
+    for i in possible_repeated_indices:
 
         if i in repeated_idxs:
             #unique_idxs.append(False)
@@ -873,11 +884,35 @@ def clean_dublicates_in_cat(cat_name):
 
         for idx in tfd:
             repeated_idxs.append(idx)
-            print (idx)
+            #print (idx)
 
         #if unique_flag == 1 :
             #unique_idxs.append(True)
 
     data = data[unique_idxs]
+    #print (len(data))
     main[1].data = data
-    main.writeto(cat_name+'.duplicates_removed.fits',overwrite=True)
+    main.writeto(cat_name+'.unique.fits',overwrite=True)
+
+    return (cat_name+'.unique.fits')
+
+############################################################
+
+def rangesearch(X, Y, Radius, return_distances = False):
+
+    from sklearn.neighbors import KDTree
+
+    '''
+    - Short-hand for applying MATLAB's rangesearch function
+    for finding indices and distances to nearest neighbors (NN).  
+    - Default for returning distances is False.
+    '''
+    
+    tree = KDTree(X)
+    NN = tree.query_radius(Y, Radius, return_distances)
+    
+    return NN
+
+############################################################
+    
+

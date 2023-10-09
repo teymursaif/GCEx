@@ -39,7 +39,7 @@ class bcolors:
 def make_source_cat_full(gal_id):
     print (f"{bcolors.OKCYAN}- making source catalogs and photometry"+ bcolors.ENDC)
     make_source_cat(gal_id)
-    make_multiwavelength_cat(gal_id, mode='forced-photometry')
+    make_multiwavelength_cat(gal_id, mode='forced-photometry-gc-lsb')
 
 ############################################################
 
@@ -238,59 +238,59 @@ def make_mask(frame, sex_source_cat, weight_frame, seg_map, mask_out, mask_out2,
 
 ############################################################
 
-def make_detection_frame(gal_id, input_frame, weight_frame, fn, output_frame, backsize=32, backfiltersize=1, iteration=2):
+def make_detection_frame(gal_id, input_frame, weight_frame, fn, output_frame, backsize=16, backfiltersize=1, iteration=2):
     print ('- Making the detection frame for filter ', fn)
     gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
     data_name = gal_data_name[gal_id]
 
-    os.system('cp '+input_frame+' '+temp_dir+'temp_det.fits')
+    os.system('cp '+input_frame+' '+temp_dir+gal_name+'.temp_det.fits')
     for i in range(0,iteration):
         print ('+ iteration '+str(i))
         #os.system('mv temp.check.fits temp0.fits')
         if i == 0 :
             weight_command = '-WEIGHT_TYPE MAP_WEIGHT -WEIGHT_IMAGE '+weight_frame+' -WEIGHT_THRESH 0.001 '
         elif i > 0 :
-            weight_command = '-WEIGHT_TYPE MAP_WEIGHT -WEIGHT_IMAGE '+temp_dir+'temp_weight'+str(i)+'.fits -WEIGHT_THRESH 0.001 '
+            weight_command = '-WEIGHT_TYPE MAP_WEIGHT -WEIGHT_IMAGE '+temp_dir+gal_name+'.temp_weight'+str(i)+'.fits -WEIGHT_THRESH 0.001 '
 
         #print (weight_command)
 
         # make segmentation map
         #if i == 0 :
-        command = SE_executable+' '+temp_dir+'temp_det.fits'+' -c '+str(external_dir)+'default.sex -CATALOG_NAME '+temp_dir+'temp_sex_cat.fits'+str(i)+'.fits '+ \
+        command = SE_executable+' '+temp_dir+gal_name+'.temp_det.fits'+' -c '+str(external_dir)+'default.sex -CATALOG_NAME '+temp_dir+gal_name+'.temp_sex_cat.fits'+str(i)+'.fits '+ \
         '-PARAMETERS_NAME '+str(external_dir)+'sex_default.param -DETECT_MINAREA 5 -DETECT_MAXAREA 200 -DETECT_THRESH 1.5 -ANALYSIS_THRESH 1.5 ' + \
         '-DEBLEND_NTHRESH 16 -DEBLEND_MINCONT 0.005 ' + weight_command + \
         '-FILTER_NAME  '+str(external_dir)+'default.conv -STARNNW_NAME '+str(external_dir)+'default.nnw -PIXEL_SCALE ' + str(PIXEL_SCALES[filters[0]]) + ' ' \
         '-BACK_SIZE 256 -BACK_FILTERSIZE 3 -CHECKIMAGE_TYPE SEGMENTATION ' +  \
-        '-CHECKIMAGE_NAME '+temp_dir+'temp_seg'+str(i)+'.fits'+' -VERBOSE_TYPE NORMAL'
+        '-CHECKIMAGE_NAME '+temp_dir+gal_name+'.temp_seg'+str(i)+'.fits'+' -VERBOSE_TYPE NORMAL'
         os.system(command)
 
         if i>0:
-            img1 = fits.open(temp_dir+'temp_seg'+str(i)+'.fits')
-            img2 = fits.open(temp_dir+'temp_seg'+str(i-1)+'.fits')
+            img1 = fits.open(temp_dir+gal_name+'.temp_seg'+str(i)+'.fits')
+            img2 = fits.open(temp_dir+gal_name+'.temp_seg'+str(i-1)+'.fits')
             data1 = img1[0].data
             data2 = img2[0].data
             data1 = data1+data2
             img1[0].data = data1
-            img1.writeto(temp_dir+'temp_seg'+str(i)+'.fits',overwrite=True)
+            img1.writeto(temp_dir+gal_name+'.temp_seg'+str(i)+'.fits',overwrite=True)
 
-        command = SE_executable+' '+temp_dir+'temp_det.fits'+' -c '+str(external_dir)+'default.sex -CATALOG_NAME '+temp_dir+'temp_sex_cat.fits'+str(i)+'.fits '+ \
-        '-PARAMETERS_NAME '+str(external_dir)+'sex_default.param -DETECT_MINAREA 5 -DETECT_MAXAREA 200 -DETECT_THRESH 2.0 -ANALYSIS_THRESH 2.0 ' + \
+        command = SE_executable+' '+temp_dir+gal_name+'.temp_det.fits'+' -c '+str(external_dir)+'default.sex -CATALOG_NAME '+temp_dir+gal_name+'.temp_sex_cat.fits'+str(i)+'.fits '+ \
+        '-PARAMETERS_NAME '+str(external_dir)+'sex_default.param -DETECT_MINAREA 5 -DETECT_MAXAREA 200 -DETECT_THRESH 1.5 -ANALYSIS_THRESH 1.5 ' + \
         '-DEBLEND_NTHRESH 16 -DEBLEND_MINCONT 0.005 ' + weight_command + \
         '-FILTER_NAME  '+str(external_dir)+'default.conv -STARNNW_NAME '+str(external_dir)+'default.nnw -PIXEL_SCALE ' + str(PIXEL_SCALES[filters[0]]) + ' ' \
         '-BACK_SIZE '+ str(backsize)+' -BACK_FILTERSIZE '+ str(backfiltersize)+' -CHECKIMAGE_TYPE BACKGROUND,-BACKGROUND,APERTURES ' +  \
-        '-CHECKIMAGE_NAME '+temp_dir+'temp_back'+str(i)+'.fits,'+temp_dir+'temp_-back'+str(i)+'.fits,'+temp_dir+'temp_aper'+str(i)+'.fits'+' -VERBOSE_TYPE NORMAL'
+        '-CHECKIMAGE_NAME '+temp_dir+gal_name+'.temp_back'+str(i)+'.fits,'+temp_dir+gal_name+'.temp_-back'+str(i)+'.fits,'+temp_dir+gal_name+'.temp_aper'+str(i)+'.fits'+' -VERBOSE_TYPE NORMAL'
         #print (command)
         os.system(command)
 
         #if i > 0 :
         #    attach_sex_tables([temp_dir+'temp_sex_cat.fits'+str(i-1)+'.fits',temp_dir+'temp_sex_cat.fits'+str(i)+'.fits'],temp_dir+'temp_sex_cat.fits'+str(i)+'.fits')
 
-        make_mask(input_frame,temp_dir+'temp_sex_cat.fits'+str(i)+'.fits',weight_frame,temp_dir+'temp_seg'+str(i)+'.fits',\
-            temp_dir+'temp_mask'+str(i+1)+'.fits',temp_dir+'temp_mask+'+str(i+1)+'.fits',temp_dir+'temp_weight'+str(i+1)+'.fits',\
-            temp_dir+'temp_flag.fits'+str(i)+'.fits', ra, dec)
+        make_mask(input_frame,temp_dir+gal_name+'.temp_sex_cat.fits'+str(i)+'.fits',weight_frame,temp_dir+gal_name+'.temp_seg'+str(i)+'.fits',\
+            temp_dir+gal_name+'.temp_mask'+str(i+1)+'.fits',temp_dir+gal_name+'.temp_mask+'+str(i+1)+'.fits',temp_dir+gal_name+'.temp_weight'+str(i+1)+'.fits',\
+            temp_dir+gal_name+'.temp_flag.fits'+str(i)+'.fits', ra, dec)
 
     img1 = fits.open(input_frame)
-    img2 = fits.open(temp_dir+'temp_back'+str(iteration-1)+'.fits')
+    img2 = fits.open(temp_dir+gal_name+'.temp_back'+str(iteration-1)+'.fits')
     data1 = img1[0].data
     data2 = img2[0].data
     data1 = data1-data2
@@ -298,7 +298,7 @@ def make_detection_frame(gal_id, input_frame, weight_frame, fn, output_frame, ba
     img1.writeto(output_frame,overwrite=True)
 
     #os.system('rm temp*.fits')
-    os.system('cp '+temp_dir+'temp_mask'+str(iteration-1)+'.fits'+' '+sex_dir+gal_name+'_'+fn+'_'+'mask'+'_cropped.fits')
+    os.system('cp '+temp_dir+gal_name+'.temp_mask'+str(iteration-1)+'.fits'+' '+sex_dir+gal_name+'_'+fn+'_'+'mask'+'_cropped.fits')
 
 ############################################################
 
@@ -311,8 +311,8 @@ def make_source_cat(gal_id):
 
     i = -1
     for fn in filters:
-        if fn != fn_det:
-            continue
+        #if fn != fn_det:
+        #    continue
         i=i+1
         os.system('cp '+external_dir+'sex_default.param '+external_dir+'default.param')
         detection_frame = detection_dir+gal_name+'_'+fn+'_'+'detection'+'_cropped.fits'
@@ -380,8 +380,8 @@ def make_source_cat(gal_id):
         ####
         print (f"{bcolors.OKCYAN}- making source catalogs for point-sources"+ bcolors.ENDC)
         command = SE_executable+' '+detection_frame+','+frame+' -c '+external_dir+'default.sex -CATALOG_NAME '+source_cat_name+' '+ \
-        '-PARAMETERS_NAME '+external_dir+'default.param -DETECT_MINAREA 5 -DETECT_THRESH 2.0 -ANALYSIS_THRESH 2.0 ' + \
-        '-DEBLEND_NTHRESH 16 -DEBLEND_MINCONT 0.005 ' + weight_command + ' -PHOT_APERTURES '+str(psf_dia_ref_pixel)+','+str(PHOTOM_APERS)+' -GAIN ' + str(gain) + ' ' \
+        '-PARAMETERS_NAME '+external_dir+'default.param -DETECT_MINAREA 4 -DETECT_THRESH 1.5 -ANALYSIS_THRESH 1.5 ' + \
+        '-DEBLEND_NTHRESH 32 -DEBLEND_MINCONT 0.0005 ' + weight_command + ' -PHOT_APERTURES '+str(psf_dia_ref_pixel)+','+str(PHOTOM_APERS)+' -GAIN ' + str(gain) + ' ' \
         '-MAG_ZEROPOINT ' +str(zp) + ' -BACKPHOTO_TYPE GLOBAL '+\
         '-FILTER Y -FILTER_NAME  '+external_dir+'tophat_1.5_3x3.conv -STARNNW_NAME '+external_dir+'default.nnw -PIXEL_SCALE ' + str(pix_size) + ' ' \
         '-BACK_SIZE 32 -BACK_FILTERSIZE 1 -CHECKIMAGE_TYPE APERTURES,FILTERED,BACKGROUND,-BACKGROUND,SEGMENTATION,BACKGROUND_RMS ' +  \
@@ -455,20 +455,22 @@ def make_multiwavelength_cat(gal_id, mode='forced-photometry'):
     print ('- Making the MASTER Source Catalogue ')
     gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
     data_name = gal_data_name[gal_id]
+    fn_det = filters[0]
 
     if mode=='cross-match' : #or mode=='forced-photometry':
-        main_cat = sex_dir+gal_name+'_'+filters[0]+'_source_cat_proc.fits'
+        main_cat = sex_dir+gal_name+'_'+fn_det+'_source_cat_proc.fits'
         os.system('cp '+main_cat+' join.fits')
         for fn in filters[1:2]:
             cat = sex_dir+gal_name+'_'+fn+'_source_cat_proc.fits'
-            crossmatch('join.fits',cat,'RA','DEC','RA_'+fn,'DEC_'+fn,CROSS_MATCH_RADIUS_ARCSEC,fn,'join.fits')
+            crossmatch(gal_name+'_join.fits',cat,'RA','DEC','RA_'+fn,'DEC_'+\
+                fn,CROSS_MATCH_RADIUS_ARCSEC,fn,gal_name+'_join.fits')
 
         os.system('mv join.fits '+cats_dir+gal_name+'_master_cat.fits')
 
-    if mode=='forced-photometry':
+    if (mode=='forced-photometry-gc-lsb') or (mode=='forced-photometry-gc'):
         det_cat = sex_dir+gal_name+'_'+filters[0]+'_source_cat_proc.fits'
         #det_cat = cats_dir+gal_name+'_master_cat.fits'
-        output = temp_dir+'join.fits'
+        output = temp_dir+gal_name+'_join.fits'
         os.system('rm '+output)
         shutil.copy(det_cat,output)
         for fn in filters:
@@ -476,15 +478,20 @@ def make_multiwavelength_cat(gal_id, mode='forced-photometry'):
             mask_frame = sex_dir+gal_name+'_'+fn+'_'+'mask'+'_cropped.fits'
             back_rms_frame = sex_dir+gal_name+'_'+fn+'_check_image_back_rms.fits'
             print ("- Force photometry of frame in filter "+fn)
-            forced_photometry(det_cat, photom_frame, mask_frame, back_rms_frame, fn,  output, mode='aperture-corr')
+            forced_photometry(det_cat, photom_frame, mask_frame, back_rms_frame, fn,  fn_det, output, mode='aperture-corr')
+            #forced_photometry(output, photom_frame, mask_frame, back_rms_frame, fn,  fn_det, output, mode='circular-flux-radius')
+            forced_photometry(output, photom_frame, mask_frame, back_rms_frame, fn,  fn_det, output, mode='circular-aperture', aper_size_arcsec=1) #radius
+            forced_photometry(output, photom_frame, mask_frame, back_rms_frame, fn,  fn_det, output, mode='circular-aperture', aper_size_arcsec=2)
+            forced_photometry(output, photom_frame, mask_frame, back_rms_frame, fn,  fn_det, output, mode='circular-aperture', aper_size_arcsec=3)
+            #forced_photometry(output, photom_frame, mask_frame, back_rms_frame, fn,  fn_det, output, mode='circular-aperture', aper_size_arcsec=4)
 
         os.system('mv '+output+' '+cats_dir+gal_name+'_master_cat_forced.fits')
 
         ####### lsb
-
+    if (mode=='forced-photometry-gc-lsb') or (mode=='forced-photometry-lsb'):
         det_cat = sex_dir+gal_name+'_'+filters[0]+'_source_cat_proc_lsb.fits'
         #det_cat = cats_dir+gal_name+'_master_cat.fits'
-        output = temp_dir+'join.fits'
+        output = temp_dir+data_name+'join.fits'
         os.system('rm '+output)
         shutil.copy(det_cat,output)
         for fn in filters:
@@ -492,13 +499,13 @@ def make_multiwavelength_cat(gal_id, mode='forced-photometry'):
             mask_frame = sex_dir+gal_name+'_'+fn+'_'+'mask'+'_cropped.fits'
             back_rms_frame = sex_dir+gal_name+'_'+fn+'_check_image_back_rms.fits'
             print ("- Force photometry of frame in filter "+fn)
-            #forced_photometry(output, photom_frame, mask_frame, back_rms_frame, fn,  output, mode='circular-aperture', aper_size_arcsec=0.5) #radius
-            #forced_photometry(output, photom_frame, mask_frame, back_rms_frame, fn,  output, mode='circular-aperture', aper_size_arcsec=1)
-            forced_photometry(output, photom_frame, mask_frame, back_rms_frame, fn,  output, mode='circular-aperture')
-            #forced_photometry(output, photom_frame, mask_frame, back_rms_frame, fn,  output, mode='circular-aperture', aper_size_arcsec=5)
-            #forced_photometry(output, photom_frame, mask_frame, back_rms_frame, fn,  output, mode='circular-aperture', aper_size_arcsec=10)
-            #forced_photometry(output, photom_frame, mask_frame, back_rms_frame, fn,  output, mode='circular-aperture', aper_size_arcsec=20)
-            #forced_photometry(det_cat, photom_frame, mask_frame, back_rms_frame, fn,  output, mode='elliptical-aperture')
+            #forced_photometry(output, photom_frame, mask_frame, back_rms_frame, fn,  fn_det, output, mode='circular-aperture', aper_size_arcsec=0.5) #radius
+            #forced_photometry(output, photom_frame, mask_frame, back_rms_frame, fn,  fn_det, output, mode='circular-aperture', aper_size_arcsec=1)
+            forced_photometry(output, photom_frame, mask_frame, back_rms_frame, fn,  fn_det, output, mode='circular-flux-radius')
+            forced_photometry(output, photom_frame, mask_frame, back_rms_frame, fn,  fn_det, output, mode='circular-aperture', aper_size_arcsec=2)
+            forced_photometry(output, photom_frame, mask_frame, back_rms_frame, fn,  fn_det, output, mode='circular-aperture', aper_size_arcsec=5)
+            forced_photometry(output, photom_frame, mask_frame, back_rms_frame, fn,  fn_det, output, mode='circular-aperture', aper_size_arcsec=10)
+            #forced_photometry(det_cat, photom_frame, mask_frame, back_rms_frame, fn,  fn_det, output, mode='elliptical-aperture')
 
         os.system('mv '+output+' '+cats_dir+gal_name+'_lsb_master_cat_forced.fits')
 
@@ -533,7 +540,7 @@ def crop_fits_data(fits_file,ra,dec,crop_size):
 
 ############################################################
 
-def forced_photometry(det_cat, photom_frame, mask_frame, back_rms_frame, fn, output, mode='aperture-corr', aper_size_arcsec=1):
+def forced_photometry(det_cat, photom_frame, mask_frame, back_rms_frame, fn, fn_det, output, mode='aperture-corr', aper_size_arcsec=1):
 
     cat = fits.open(det_cat)
     cat_data = cat[1].data
@@ -552,16 +559,16 @@ def forced_photometry(det_cat, photom_frame, mask_frame, back_rms_frame, fn, out
     fits_data = fits_file[0].data
     fits_header = fits_file[0].header
 
-    #mask_file = fits.open(mask_frame)
-    #mask_data = mask_file[0].data
+    mask_file = fits.open(mask_frame)
+    mask_data = mask_file[0].data
 
     back_rms = fits.open(back_rms_frame)
     back_rms_data = back_rms[0].data
 
-    #mask_data_bool = mask_data#.astype(np.bool_)
-    #mask_data_bool[mask_data>0.5] = 1
-    #mask_data_bool[mask_data<0.5] = 0
-    #mask_data_bool = mask_data_bool.astype(np.bool_)
+    mask_data_bool = mask_data#.astype(np.bool_)
+    mask_data_bool[mask_data>0.5] = 1
+    mask_data_bool[mask_data<0.5] = 0
+    mask_data_bool = mask_data_bool.astype(np.bool_)
 
     zp = ZPS[fn]
     exptime = EXPTIME[fn]
@@ -573,8 +580,9 @@ def forced_photometry(det_cat, photom_frame, mask_frame, back_rms_frame, fn, out
 
     RA = cat_data['RA']
     DEC = cat_data['DEC']
-    fn_det = filters[0]
+    #fn_det = filters[0]
     MAG_det = cat_data['MAG_AUTO_'+fn_det]
+
     FLUX_RADIUS = cat_data['FLUX_RADIUS_'+fn_det]
     FLUX, FLUX_ERR, MAG, MAG_ERR, BACK_FLUX, BACK_FLUX_ERR = [], [], [], [], [], []
     #mag_ref = cat_data['MAG_APER_CORR_F606W']
@@ -592,7 +600,16 @@ def forced_photometry(det_cat, photom_frame, mask_frame, back_rms_frame, fn, out
         print ("- sky annulus radi for forced photometry are (pixels):", sky_aper_size_1, sky_aper_size_2)
 
     elif mode=='circular-aperture':
+        aper_size = aper_size_arcsec/(PIXEL_SCALES[fn])
+        sky_aper_size_1 = int(BACKGROUND_ANNULUS_START*aper_size)
+        sky_aper_size_2 = int(sky_aper_size_1+sky_aper_size_1)
+        photom_method = 'subpixel'#'exact '
+        print ("- apreture radius for forced photometry is (pixels):", aper_size)
+        print ("- sky annulus radi for forced photometry are (pixels):", sky_aper_size_1, sky_aper_size_2)
+
+    elif mode=='circular-flux-radius':
         print ("- apreture radius for forced photometry is as the FLUX_RADIUS")
+
 
     a = 0
     for i in range(N_objects):
@@ -600,12 +617,26 @@ def forced_photometry(det_cat, photom_frame, mask_frame, back_rms_frame, fn, out
         dec = DEC[i]
         mag_det = MAG_det[i]
 
-        if mode=='circular-aperture':
+        if mag_det > MAG_LIMIT_CAT:
+            FLUX.append(-999)
+            FLUX_ERR.append(-999)
+            MAG.append(-999)
+            MAG_ERR.append(-999)
+            BACK_FLUX.append(-999)
+            BACK_FLUX_ERR.append(-999)
+            continue
+
+        if mode=='circular-flux-radius':
             flux_radius = FLUX_RADIUS[i]
+            try :
+                if flux_radius <=0 :
+                    flux_radius = 5.0/PIXEL_SCALES[fn]
+            except:
+                flux_radius = 5.0/PIXEL_SCALES[fn]
             aper_size = flux_radius #aper_size_arcsec/PIXEL_SCALES[fn]
             sky_aper_size_1 = int(BACKGROUND_ANNULUS_START*aper_size)
             sky_aper_size_2 = int(sky_aper_size_1+sky_aper_size_1)
-            photom_method = 'exact'
+            photom_method = 'subpixel'
 
         #y, x, = w.all_world2pix(ra, dec, 0)
 
@@ -613,7 +644,7 @@ def forced_photometry(det_cat, photom_frame, mask_frame, back_rms_frame, fn, out
         fits_file = fits.open(photom_frame)
         fits_data_cropped, data_header_cropped, lly, ury, llx, urx = crop_fits_data(fits_file, ra, dec, crop_size)
         error_data_cropped = error_data[lly:ury,llx:urx]
-        #mask_data_bool_cropped = mask_data_bool[lly:ury,llx:urx]
+        mask_data_bool_cropped = mask_data_bool[lly:ury,llx:urx]
 
         w_cropped = WCS(data_header_cropped)
         y, x, = w_cropped.all_world2pix(ra, dec, 0)
@@ -637,12 +668,12 @@ def forced_photometry(det_cat, photom_frame, mask_frame, back_rms_frame, fn, out
         aper = CircularAperture((x, y), aper_size)
         sky_aper = CircularAnnulus((x, y), sky_aper_size_1, sky_aper_size_2)
         aper_area = aper.area_overlap(data=fits_data_cropped,method=photom_method)
-        sky_area = sky_aper.area_overlap(data=fits_data_cropped,method=photom_method) #mask=mask_data_bool_cropped
+        sky_area = sky_aper.area_overlap(data=fits_data_cropped,mask=mask_data_bool_cropped,method=photom_method) #mask=mask_data_bool_cropped
         #print (aper_area, sky_area, sky_area/aper_area)
         #print (error_data_cropped)
 
         flux, flux_err = aper.do_photometry(data=fits_data_cropped,error=error_data_cropped,method=photom_method)
-        sky_flux, sky_flux_err = sky_aper.do_photometry(data=fits_data_cropped,error=error_data_cropped,method=photom_method) #mask=mask_data_bool_cropped,
+        sky_flux, sky_flux_err = sky_aper.do_photometry(data=fits_data_cropped,mask=mask_data_bool_cropped,error=error_data_cropped,method=photom_method) #mask=mask_data_bool_cropped,
         #print (flux, sky_flux)
         #print (flux_err, sky_flux_err)
         flux = flux[0]
@@ -653,7 +684,9 @@ def forced_photometry(det_cat, photom_frame, mask_frame, back_rms_frame, fn, out
         if mode == 'aperture-corr':
             flux_total = ((flux_sky_sub) / (PSF_REF_RAD_FRAC[fn]))[0]
         elif mode == 'circular-aperture':
-             flux_total = (flux_sky_sub)
+            flux_total = (flux_sky_sub)
+        elif mode == 'circular-flux-radius':
+            flux_total = (flux_sky_sub)
         #flux_err = (np.sqrt((flux_err**2)*exptime+(flux_sky_sub*exptime / GAIN[fn] / (PSF_REF_RAD_FRAC[fn]))))/exptime
         #print (flux, sky_flux)
         #print (flux_total)
@@ -686,20 +719,28 @@ def forced_photometry(det_cat, photom_frame, mask_frame, back_rms_frame, fn, out
 
     #print (N_objects,len(MAG))
     if mode=='aperture-corr':
-        expand_fits_table(output, 'F_FLUX_APER_CORR_'+fn,np.array(FLUX))
-        expand_fits_table(output, 'F_FLUXERR_APER_CORR_'+fn,np.array(FLUX_ERR))
+        #expand_fits_table(output, 'F_FLUX_APER_CORR_'+fn,np.array(FLUX))
+        #expand_fits_table(output, 'F_FLUXERR_APER_CORR_'+fn,np.array(FLUX_ERR))
         expand_fits_table(output, 'F_MAG_APER_CORR_'+fn,np.array(MAG))
         expand_fits_table(output, 'F_MAGERR_APER_CORR_'+fn,np.array(MAG_ERR))
-        expand_fits_table(output, 'F_BACK_FLUX_'+fn,np.array(BACK_FLUX))
-        expand_fits_table(output, 'F_BACK_FLUX_ERR_'+fn,np.array(BACK_FLUX_ERR))
+        #expand_fits_table(output, 'F_BACK_FLUX_'+fn,np.array(BACK_FLUX))
+        #expand_fits_table(output, 'F_BACK_FLUX_ERR_'+fn,np.array(BACK_FLUX_ERR))
 
-    elif mode=='circular-aperture':
-        expand_fits_table(output, 'F_FLUX_APER_R12_'+fn,np.array(FLUX))
-        expand_fits_table(output, 'F_FLUXERR_APER_R12_'+fn,np.array(FLUX_ERR))
+    elif mode=='circular-flux-radius':
+        #expand_fits_table(output, 'F_FLUX_APER_R12_'+fn,np.array(FLUX))
+        #expand_fits_table(output, 'F_FLUXERR_APER_R12_'+fn,np.array(FLUX_ERR))
         expand_fits_table(output, 'F_MAG_APER_R12_'+fn,np.array(MAG))
         expand_fits_table(output, 'F_MAGERR_APER_R12_'+fn,np.array(MAG_ERR))
-        expand_fits_table(output, 'F_BACK_FLUX_R12_'+fn,np.array(BACK_FLUX))
-        expand_fits_table(output, 'F_BACK_FLUX_ERR_R12_'+fn,np.array(BACK_FLUX_ERR))
+        #expand_fits_table(output, 'F_BACK_FLUX_R12_'+fn,np.array(BACK_FLUX))
+        #expand_fits_table(output, 'F_BACK_FLUX_ERR_R12_'+fn,np.array(BACK_FLUX_ERR))
+
+    elif mode=='circular-aperture':
+        #expand_fits_table(output, 'F_FLUX_APER_R12_'+fn,np.array(FLUX))
+        #expand_fits_table(output, 'F_FLUXERR_APER_R12_'+fn,np.array(FLUX_ERR))
+        expand_fits_table(output, 'F_MAG_APER_'+str(aper_size_arcsec)+'ARCSEC_'+fn,np.array(MAG))
+        expand_fits_table(output, 'F_MAGERR_APER_'+str(aper_size_arcsec)+'ARCSEC_'+fn,np.array(MAG_ERR))
+        #expand_fits_table(output, 'F_BACK_FLUX_R12_'+fn,np.array(BACK_FLUX))
+        #expand_fits_table(output, 'F_BACK_FLUX_ERR_R12_'+fn,np.array(BACK_FLUX_ERR))
 
 ############################################################
 
@@ -754,7 +795,7 @@ def make_source_cat_for_sim(gal_id):
         (gal_params[gal_id])[0] = gal_name
 
         make_source_cat(gal_id)
-        make_multiwavelength_cat(gal_id, mode='forced-photometry')
+        make_multiwavelength_cat(gal_id, mode='forced-photometry-gc')
 
         fn_det = filters[0]
         art_cat_name_csv = art_dir+gal_name_orig+'_'+fn_det+'_ART'+str(n)+'_'+str(N_ART_GCS)+'GCs.full_info.csv'

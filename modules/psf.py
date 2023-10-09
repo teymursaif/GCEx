@@ -126,7 +126,7 @@ def estimate_fwhm(gal_id):
             #print (FWHM_x,FWHM_y)
             #print (FWHM_x*psf_pixel_scale ,FWHM_y*psf_pixel_scale)
             FWHMS_ARCSEC[fn] = np.mean([FWHM_x*psf_pixel_scale ,FWHM_y*psf_pixel_scale])
-            APERTURE_SIZE[fn] = 1*FWHMS_ARCSEC[fn]
+            APERTURE_SIZE[fn] = 1.5*FWHMS_ARCSEC[fn]
             print ('- FWHM in filter', fn, 'is', FWHMS_ARCSEC[fn], 'arcsec')
 
         else:
@@ -200,7 +200,7 @@ def simualte_GCs(gal_id,n):
 
     weight_frame = data_dir+gal_name+'_'+fn_det+'_cropped.weight.fits'
     w=WCS(science_frame)
-    y_gal, x_gal= w.all_world2pix(ra_gal,dec_gal,0)
+    x_gal, y_gal= w.all_world2pix(ra_gal,dec_gal,0)
     weight = fits.open(weight_frame)
     weight_data = weight[0].data
     weight_header = weight[0].header
@@ -244,28 +244,30 @@ def simualte_GCs(gal_id,n):
         #print (SIZE)
         SIZE = random.sample(list(SIZE), N_ART_GCS)
 
-        #X_list = np.arange(1,X,1)
-        #Y_list = np.arange(1,Y,1)
-        #X_random = X_list.copy()
-        #Y_random = Y_list.copy()
-        #np.random.shuffle(X_random)
-        #np.random.shuffle(Y_random)
-
-        X1_random = x_gal + np.random.normal(0,X/5,2000*N_ART_GCS)
-        Y1_random = y_gal + np.random.normal(0,Y/5,2000*N_ART_GCS)
+        if GC_SIM_MODE == 'UNIFORM' :
+            X_list = np.arange(1,X,1)
+            Y_list = np.arange(1,Y,1)
+            X_random = X_list.copy()
+            Y_random = Y_list.copy()
+            np.random.shuffle(X_random)
+            np.random.shuffle(Y_random)
 
         if GC_SIM_MODE == 'CONCENTRATED' :
-            X2_random = x_gal + np.random.normal(0,X/10,2000*N_ART_GCS)
-            Y2_random = y_gal + np.random.normal(0,Y/10,2000*N_ART_GCS)
+            X1_random = x_gal + np.random.normal(0,X/2,2000*N_ART_GCS)
+            Y1_random = y_gal + np.random.normal(0,Y/2,2000*N_ART_GCS)
+            X2_random = x_gal + np.random.normal(0,X/10,1000*N_ART_GCS)
+            Y2_random = y_gal + np.random.normal(0,Y/10,1000*N_ART_GCS)
             X3_random = x_gal + np.random.normal(0,X/20,1000*N_ART_GCS)
             Y3_random = y_gal + np.random.normal(0,Y/20,1000*N_ART_GCS)
             X1_random = np.append(X1_random,X2_random)
             X1_random = np.append(X1_random,X3_random)
             Y1_random = np.append(Y1_random,Y2_random)
             Y1_random = np.append(Y1_random,Y3_random)
+            X_random = X1_random.copy()
+            Y_random = Y1_random.copy()
+
         #print (len(X1_random))
-        X_random = X1_random.copy()
-        Y_random = Y1_random.copy()
+        
         np.random.shuffle(X_random)
         np.random.shuffle(Y_random)
 
@@ -281,14 +283,16 @@ def simualte_GCs(gal_id,n):
             if (x<1) or (x>(X-1)) or (y<1) or (y>(Y-1)):
                 continue
 
-            if weight_data[x,y] > 0:
+            #print ()
+
+            if weight_data[y,x] > 0:
                 dx = np.arange(-0.5,0.51,0.1)
                 dx = random.sample(list(dx),1)
                 dy = np.arange(-0.5,0.51,0.1)
                 dy = random.sample(list(dy),1)
                 dx = dx[0]
                 dy = dy[0]
-                ra, dec = w.all_pix2world(y+dy,x+dx,0)
+                ra, dec = w.all_pix2world(x+dx,y+dy,0)
                 GC_X.append(x+dx)
                 GC_Y.append(y+dy)
                 GC_RA.append(ra)
@@ -377,7 +381,7 @@ def simualte_GCs(gal_id,n):
         temp = fits.open(art_dir+'temp.fits')
         X_oversampled = temp[0].header['NAXIS1']*1#RATIO_OVERSAMPLE_PSF
         Y_oversampled = temp[0].header['NAXIS2']*1#RATIO_OVERSAMPLE_PSF
-        temp[0].data = np.zeros((X_oversampled,Y_oversampled))
+        temp[0].data = np.zeros((Y_oversampled,X_oversampled))
         temp[0].header['NAXIS1'] = X_oversampled
         temp[0].header['NAXIS2'] = Y_oversampled
         temp.writeto(art_dir+'temp.fits',overwrite=True)
@@ -398,7 +402,7 @@ def simualte_GCs(gal_id,n):
             #print (len(GC_RA), i)
             ra = GC_RA[i]
             dec = GC_DEC[i]
-            y, x = wf.all_world2pix(ra, dec, 0)
+            x, y = wf.all_world2pix(ra, dec, 0)
             x0 = int(x+0.5)
             y0 = int(y+0.5)
             #xos = x * RATIO_OVERSAMPLE_PSF
@@ -450,20 +454,25 @@ def simualte_GCs(gal_id,n):
             X = X_oversampled
             Y = Y_oversampled
 
-            if x1 < (dx+1) or y1 < (dy+1) or x2 > (X-dx-1) or y2 > (Y-dy-1):
+            if x1 < (dx+1) or y1 < (dy+1) or x2 > (X-dx-1) or y2 > (Y-dy-1) :#or (abs(x2-x1)<x_psf) or (abs(y2-y1)<y_psf):
                 print (f"{bcolors.WARNING}--- GC outside of the frame, skipping simulating the GC ..."+ bcolors.ENDC)
                 ART_GC_FLAG.append(-1)
                 continue
             else:
                 ART_GC_FLAG.append(1)
-
-            #print (x,y)
-            #print (x1,x2,y1,y2)
+            
+            #print (X,Y)
+            print (x,y)
+            print (x1,x2,y1,y2)
+            #print (x_psf,y_psf)
             x1_psf = 0
             x2_psf = x_psf
             y1_psf = 0
             y2_psf = y_psf
-            data1[x1:x2,y1:y2] = data1[x1:x2,y1:y2]+data2[x1_psf:x2_psf,y1_psf:y2_psf]
+            #data1[x1:x2,y1:y2] = data1[x1:x2,y1:y2]+data2[x1_psf:x2_psf,y1_psf:y2_psf]
+            #print (np.shape(data1[y1:y2,x1:x2]))
+            #print (np.shape(data2[y1_psf:y2_psf,x1_psf:x2_psf]))
+            data1[y1:y2,x1:x2] = data1[y1:y2,x1:x2]+data2[y1_psf:y2_psf,x1_psf:x2_psf]
 
         df['GC_ABS_MAG_'+fn] = GC_ABS_MAG_FILTER
         df['GC_MAG_'+fn] = GC_MAG_FILTER
