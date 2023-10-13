@@ -126,7 +126,7 @@ def estimate_fwhm(gal_id):
             #print (FWHM_x,FWHM_y)
             #print (FWHM_x*psf_pixel_scale ,FWHM_y*psf_pixel_scale)
             FWHMS_ARCSEC[fn] = np.mean([FWHM_x*psf_pixel_scale ,FWHM_y*psf_pixel_scale])
-            APERTURE_SIZE[fn] = 1.5*FWHMS_ARCSEC[fn]
+            APERTURE_SIZE[fn] = 1.0*FWHMS_ARCSEC[fn]
             print ('- FWHM in filter', fn, 'is', FWHMS_ARCSEC[fn], 'arcsec')
 
         else:
@@ -702,13 +702,13 @@ def make_psf_all_filters(gal_id):
 
         # run SE
         command = SE_executable+' '+main_frame+' -c '+external_dir+'default.sex -CATALOG_NAME '+source_cat+' '+ \
-        '-PARAMETERS_NAME '+external_dir+'default.param -DETECT_MINAREA 8 -DETECT_THRESH 5.0 -ANALYSIS_THRESH 5.0 ' + \
+        '-PARAMETERS_NAME '+external_dir+'default_psf.param -DETECT_MINAREA 8 -DETECT_THRESH 5.0 -ANALYSIS_THRESH 5.0 ' + \
         '-DEBLEND_NTHRESH 1 -DEBLEND_MINCONT 1 -MAG_ZEROPOINT ' +str(zp) + ' -BACKPHOTO_TYPE GLOBAL '+\
         '-FILTER Y -FILTER_NAME  '+external_dir+'default.conv -STARNNW_NAME '+external_dir+'default.nnw -PIXEL_SCALE ' + \
         str(pix_size)+ ' -BACK_SIZE 128 -BACK_FILTERSIZE 3 -PHOT_APERTURES 10'
 
-        shutil.copy(external_dir+'sex_default.param',external_dir+'default.param')
-        params = open(external_dir+'default.param','a')
+        shutil.copy(external_dir+'sex_default.param',external_dir+'default_psf.param')
+        params = open(external_dir+'default_psf.param','a')
         params.write('MAG_APER('+str(1)+') #Fixed aperture magnitude vector [mag]\n')
         params.write('MAGERR_APER('+str(1)+') #RMS error vector for fixed aperture mag [mag]\n')
         params.write('FLUX_APER('+str(1)+') # Flux within a Kron-like elliptical aperture [count]\n')
@@ -881,7 +881,7 @@ def make_psf_for_frame(main_frame,weight_frame,source_cat,filtername,psf_frame,m
 
             source_cat = temp_dir+'temp.fits'
             command = SE_executable+' '+output+' -c '+external_dir+'default.sex -CATALOG_NAME '+source_cat+' '+ \
-                '-PARAMETERS_NAME '+external_dir+'default.param -DETECT_MINAREA 8 -DETECT_THRESH 3.0 -ANALYSIS_THRESH 3.0 ' + \
+                '-PARAMETERS_NAME '+external_dir+'sex_default.param -DETECT_MINAREA 8 -DETECT_THRESH 3.0 -ANALYSIS_THRESH 3.0 ' + \
                 '-DEBLEND_NTHRESH 1 -DEBLEND_MINCONT 1 -MAG_ZEROPOINT ' +str(zp) + ' -BACKPHOTO_TYPE GLOBAL '+\
                 '-FILTER Y -FILTER_NAME  '+external_dir+'default.conv -STARNNW_NAME '+external_dir+'default.nnw '+\
                 '-BACK_SIZE ' + str(psf_frame_size_pix) + ' -BACK_FILTERSIZE 1 -PHOT_APERTURES 10 -CHECKIMAGE_TYPE -BACKGROUND '+\
@@ -1034,8 +1034,8 @@ def make_radial_profile_for_psf(psf_frames,fn,pixelsize,zp,output_png):
         #print (radial_profile_apers_array)
 
 
-        shutil.copy(external_dir+'sex_default.param',external_dir+'default.param')
-        params = open(external_dir+'default.param','a')
+        shutil.copy(external_dir+'sex_default.param',external_dir+'default_psf.param')
+        params = open(external_dir+'default_psf.param','a')
         params.write('MAG_APER('+str(len(radial_profile_apers_values))+') #Fixed aperture magnitude vector [mag]\n')
         params.write('MAGERR_APER('+str(len(radial_profile_apers_values))+') #RMS error vector for fixed aperture mag [mag]\n')
         params.write('FLUX_APER('+str(len(radial_profile_apers_values))+') # Flux within a Kron-like elliptical aperture [count]\n')
@@ -1046,7 +1046,7 @@ def make_radial_profile_for_psf(psf_frames,fn,pixelsize,zp,output_png):
         source_cat = temp_dir+'temp.fits'
 
         command = SE_executable+' '+psf_frame+' -c '+external_dir+'default.sex -CATALOG_NAME '+source_cat+' '+ \
-            '-PARAMETERS_NAME '+external_dir+'default.param -DETECT_MINAREA 8 -DETECT_THRESH 3.0 -ANALYSIS_THRESH 3.0 ' + \
+            '-PARAMETERS_NAME '+external_dir+'default_psf.param -DETECT_MINAREA 8 -DETECT_THRESH 3.0 -ANALYSIS_THRESH 3.0 ' + \
             '-DEBLEND_NTHRESH 1 -DEBLEND_MINCONT 1 -MAG_ZEROPOINT ' +str(zp) + ' -BACKPHOTO_TYPE GLOBAL '+\
             '-FILTER Y -FILTER_NAME  '+external_dir+'default.conv -STARNNW_NAME '+external_dir+'default.nnw '+\
             '-BACK_SIZE '+str(psf_frame_size_pix)+' -BACK_FILTERSIZE 1 -PHOT_APERTURES '+radial_profile_apers

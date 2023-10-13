@@ -67,6 +67,7 @@ def select_GC_candidadates(gal_id):
 
     fn_det = filters[0]
     #ART_GCs_cat = art_dir+gal_name+'_'+fn_det+'_ALL_ART_GCs.fits'
+    
     DET_ART_GCs_cat = art_dir+gal_name+'_'+fn_det+'_ALL_DET_ART_GCs.fits'
     source_cat = cats_dir+gal_name+'_master_cat_forced.fits'
     selected_gcs_cat = final_cats_dir+gal_name+'_selected_GCs.fits'
@@ -100,3 +101,70 @@ def select_GC_candidadates(gal_id):
     selected_gcs = fits.open(selected_gcs_cat)
     selected_gcs[1].data = selected_gcs_data
     selected_gcs.writeto(selected_gcs_cat, overwrite=True)
+
+    cat = selected_gcs_cat
+    make_cat_topcat_friendly(cat,cat[:len(cat)-5]+'+.fits')
+    shutil.copy(cat[:len(cat)-5]+'+.fits',cat[:len(cat)-5]+'+.size-selected.fits')
+
+    print ('--- number of selected GCs after filter(s) in compactness is: ', len(selected_gcs_data) )
+
+    ### extra selection
+
+    if PARAM_SEL_METHOD == 'MANUAL':
+
+        if EXTERNAL_CROSSMATCH == True:
+            selected_gcs_cat_cm = final_cats_dir+gal_name+'_selected_GCs.EXT-MATCHED.fits'
+            crossmatch_left_wing(selected_gcs_cat,EXTERNAL_CROSSMATCH_CAT,'RA','DEC','RA','DEC',5.*PIXEL_SCALES[fn_det],fn_det,selected_gcs_cat_cm)
+            source_cat = selected_gcs_cat_cm
+
+        elif EXTERNAL_CROSSMATCH == False:
+            source_cat = selected_gcs_cat
+
+        sources = (fits.open(source_cat))[1].data
+
+        for param in PARAM_SEL_RANGE.keys():
+            #print (param)
+            if 'color' in str(param):
+                f1 = (PARAM_SEL_RANGE[param])[0]
+                f2 = (PARAM_SEL_RANGE[param])[1]
+                param_f1 = 'F_MAG_APER_CORR_'+f1
+                param_f2 = 'F_MAG_APER_CORR_'+f2
+                param_min = (PARAM_SEL_RANGE[param])[2]
+                param_max = (PARAM_SEL_RANGE[param])[3]
+
+                try : m1 = sources[param_f1]
+                except: m1 = sources[f1]
+                try : m2 = sources[param_f2]
+                except: m2 = sources[f2]
+
+                color = m1 - m2
+
+                for i in range(len(color)) :
+                    if (m1[i] > 0) and (m2[i] > 0) : 
+                        donothing = 1
+                    else: 
+                        #print (m1[i], m2[i])
+                        color[i] = 0.5*(param_min+param_max) 
+
+                param_mask = ((color>=param_min) & (color<=param_max))
+                sources = sources[param_mask]
+                print ('--- number of selected GCs after filter in color ', f1, ' - ', f2, ' is: ', len(sources) )
+                #expand_fits_table(source_cat,f1+'_'+f2,np.array(color))
+
+            else :
+                param_min = (PARAM_SEL_RANGE[param])[0]
+                param_max = (PARAM_SEL_RANGE[param])[1]
+                param = param + '_' + fn_det
+                param_mask = ((sources[param]>=param_min) & (sources[param]<=param_max))
+                sources = sources[param_mask]
+                print ('--- number of selected GCs after filter in ', param, ' is: ', len(sources))
+
+        selected_gcs_data = sources
+        selected_gcs = fits.open(selected_gcs_cat)
+        selected_gcs[1].data = sources
+        selected_gcs.writeto(selected_gcs_cat, overwrite=True)
+
+        cat = selected_gcs_cat
+        make_cat_topcat_friendly(cat,cat[:len(cat)-5]+'+.fits')
+
+

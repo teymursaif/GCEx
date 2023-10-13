@@ -61,7 +61,11 @@ for gal_id in gal_params.keys():
 
 if (MERGE_CATS == True):
     merge_cats()
-    #merge_sims()
-    #merge_gc_cats()
+
+if (MERGE_SIM_GC_CATS == True):
+    merge_sims()
+
+if (MERGE_GC_CATS == True):
+    merge_gc_cats()
     #select_GC_candidadates_merged()
     #measure_GC_properties_merged()

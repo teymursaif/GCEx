@@ -12,7 +12,7 @@ from scipy.ndimage import median_filter
 from astropy.stats import sigma_clip
 from astropy.visualization import *
 from astropy.visualization import make_lupton_rgb
-from astropy.table import Table, join_skycoord
+from astropy.table import Table, join_skycoord, Column
 from astropy import table
 import shutil
 import photutils
@@ -457,16 +457,16 @@ def make_fancy_png(fitsfile,pngfile,text='',zoom=1, mode='lsb', cmap='gist_gray'
     dy = y2-y1
     image = image[y1:y2,x1:x2]
 
-    if dx > 10000 and dy > 10000:
-        print ('* frame is too large. Rebining the frame 5 times.')
-        x1, x2, y1, y2 = 0, int(dx-(dx%5)), 0, int(dy-(dy%5))
+    if dx > 5000 and dy > 5000:
+        print ('* frame is too large. Rebining the frame 10 times.')
+        x1, x2, y1, y2 = 0, int(dx-(dx%10)), 0, int(dy-(dy%10))
         dx = int(x2-x1)
         dy = int(y2-y1)
         #print (dx,dy)
         image = image[y1:y2,x1:x2]
         #print (np.shape)
         #print (int(dx/5),int(dy/5))
-        image = rebin(image,(int(dy/5),int(dx/5)))
+        image = rebin(image,(int(dy/10),int(dx/10)))
 
 
     scale = ZScaleInterval() #LogStretch()
@@ -645,6 +645,19 @@ def expand_fits_table(table,new_param,new_param_values) :
 
 ############################################################
 
+#def expand_fits_table(input_table,new_param,new_param_values) :
+#    #fits_file = fits.open(input_table)
+#    #data = fits_file[1].data
+#    table = Table.read(input_table, format='fits')
+#    #print (table)
+#    c = Column(data=new_param_values, name=new_param)
+#    table.add_column(c)
+#    table.write(input_table, format='fits', overwrite='True')
+#    #table.close()
+
+
+############################################################
+
 def update_header(fits_file_name, header_keyword, value):
     fits_file = fits.open(fits_file_name)
     fits_file[0].header[header_keyword] = value
@@ -725,13 +738,6 @@ def rebin(a, shape):
 
 ############################################################
 
-def merge_cats_all(gal_params):
-    merge_cats(gal_param)
-    merge_sims(gal_param)
-    merge_gc_cats(gal_param)
-
-############################################################
-
 def merge_cats(): #gcs, sim_gcs
 
     print ('- Merging the catalogs produced in this run...')
@@ -753,19 +759,20 @@ def merge_cats(): #gcs, sim_gcs
 
     # 2
     #print ('test')
-    source_cats = []
-    for gal_id in gal_params.keys():
-        gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
-        cat_name = cats_dir+gal_name+'_lsb_master_cat_forced.fits'
-        source_cats.append(cat_name)
-        id = gal_id
+    if EXTRACT_DWARFS == True:
+        source_cats = []
+        for gal_id in gal_params.keys():
+            gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
+            cat_name = cats_dir+gal_name+'_lsb_master_cat_forced.fits'
+            source_cats.append(cat_name)
+            id = gal_id
 
-    data_name = gal_data_name[id]
-    output_cat = cats_dir+data_name+'_lsb_forced_merged.fits'
-    topcat_friendly_output_cat = cats_dir+data_name+'_lsb_forced_merged+.fits'
-    attach_sex_tables(source_cats,output_cat)
-    clean_cat = clean_dublicates_in_cat(output_cat)
-    make_cat_topcat_friendly(clean_cat,topcat_friendly_output_cat)
+        data_name = gal_data_name[id]
+        output_cat = cats_dir+data_name+'_lsb_forced_merged.fits'
+        topcat_friendly_output_cat = cats_dir+data_name+'_lsb_forced_merged+.fits'
+        attach_sex_tables(source_cats,output_cat)
+        clean_cat = clean_dublicates_in_cat(output_cat)
+        make_cat_topcat_friendly(clean_cat,topcat_friendly_output_cat)
 
 
 ############################################################
@@ -799,6 +806,7 @@ def merge_sims(): #gcs, sim_gcs
     source_cats = []
     for gal_id in gal_params.keys():
         gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
+        fn_det = filters[0]
         cat_name = art_dir+gal_name+'_'+fn_det+'_ALL_DET_ART_GCs.fits'
         source_cats.append(cat_name)
         id = gal_id
@@ -813,6 +821,7 @@ def merge_sims(): #gcs, sim_gcs
     source_cats = []
     for gal_id in gal_params.keys():
         gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
+        fn_det = filters[0]
         cat_name = art_dir+gal_name+'_'+fn_det+'_ALL_ART_GCs.fits'
         source_cats.append(cat_name)
         id = gal_id
@@ -855,7 +864,7 @@ def clean_dublicates_in_cat(cat_name):
     N = len(RA)
     #print (N)
     R = np.vstack((RA, DEC)).T
-    l = 0.01/3600
+    l = 0.1/3600
     repeated_idxs = []
     unique_idxs = np.full(N, True, dtype=bool)
 
@@ -914,5 +923,97 @@ def rangesearch(X, Y, Radius, return_distances = False):
     return NN
 
 ############################################################
-    
 
+def crossmatch(cat1,cat2,ra_param1,dec_param1,ra_param2,dec_param2,max_sep_arcsec,filter_name2,output_cat):
+
+    cat = fits.open(cat1, ignore_missing_end=True)
+    cat1_data = cat[1].data
+    ra1 = cat1_data[ra_param1]
+    dec1 = cat1_data[dec_param1]
+
+    cat = fits.open(cat2, ignore_missing_end=True)
+    cat2_data = cat[1].data
+
+    if (ra_param2 == ra_param1) and (dec_param2 == dec_param1):
+        cat[1].columns[ra_param2].name = ra_param2+'_'
+        cat[1].columns[dec_param2].name = dec_param2+'_'
+        ra_param2 = ra_param2+'_'
+        dec_param2 = dec_param2+'_'
+        cat2 = temp_dir+'temp0.fits'
+        cat.writeto(cat2 ,overwrite=True)
+        cat = fits.open(cat2, ignore_missing_end=True)
+        cat2_data = cat[1].data
+        
+    ra2 = cat2_data[ra_param2]
+    dec2 = cat2_data[dec_param2]
+    #print (ra2,dec2)
+    #print (ra_param2,dec_param2)
+
+    c1 = SkyCoord(ra=ra1*u.degree, dec=dec1*u.degree)
+    c2 = SkyCoord(ra=ra2*u.degree, dec=dec2*u.degree)
+    join_func = join_skycoord(max_sep_arcsec * u.arcsec)
+    j = join_func(c1, c2)
+
+    os.system('cp '+cat1+' '+temp_dir+'temp1.fits')
+    os.system('cp '+cat2+' '+temp_dir+'temp2.fits')
+
+    expand_fits_table(temp_dir+'temp1.fits','JOIN_ID_'+filter_name2,j[0])
+    expand_fits_table(temp_dir+'temp2.fits','JOIN_ID_'+filter_name2,j[1])
+
+    t1 = Table.read(temp_dir+'temp1.fits',format='fits')
+    t2 = Table.read(temp_dir+'temp2.fits',format='fits')
+    t12 = table.join(t1, t2, keys='JOIN_ID_'+filter_name2)
+    print (t12)
+    t12.write(output_cat,overwrite=True)
+    #print(t12)
+
+    #cat2.writeto(output_cat,overwrite=True)
+
+############################################################
+
+def crossmatch_left_wing(cat1,cat2,ra_param1,dec_param1,ra_param2,dec_param2,max_sep_arcsec,filter_name2,output_cat):
+
+    cat = fits.open(cat1, ignore_missing_end=True)
+    cat1_data = cat[1].data
+    ra1 = cat1_data[ra_param1]
+    dec1 = cat1_data[dec_param1]
+
+    cat = fits.open(cat2, ignore_missing_end=True)
+    cat2_data = cat[1].data
+
+    if (ra_param2 == ra_param1) and (dec_param2 == dec_param1):
+        cat[1].columns[ra_param2].name = ra_param2+'_'
+        cat[1].columns[dec_param2].name = dec_param2+'_'
+        ra_param2 = ra_param2+'_'
+        dec_param2 = dec_param2+'_'
+        cat2 = temp_dir+'temp0.fits'
+        cat.writeto(cat2 ,overwrite=True)
+        cat = fits.open(cat2, ignore_missing_end=True)
+        cat2_data = cat[1].data
+        
+    ra2 = cat2_data[ra_param2]
+    dec2 = cat2_data[dec_param2]
+    #print (ra2,dec2)
+    #print (ra_param2,dec_param2)
+
+    c1 = SkyCoord(ra=ra1*u.degree, dec=dec1*u.degree)
+    c2 = SkyCoord(ra=ra2*u.degree, dec=dec2*u.degree)
+    join_func = join_skycoord(max_sep_arcsec * u.arcsec)
+    j = join_func(c1, c2)
+
+    os.system('cp '+cat1+' '+temp_dir+'temp1.fits')
+    os.system('cp '+cat2+' '+temp_dir+'temp2.fits')
+
+    #print (len(ra1))
+    #print (len(j[0]))
+    #print (j[0])
+
+    expand_fits_table(temp_dir+'temp1.fits','JOIN_ID_'+filter_name2,j[0])
+    expand_fits_table(temp_dir+'temp2.fits','JOIN_ID_'+filter_name2,j[1])
+
+    t1 = Table.read(temp_dir+'temp1.fits',format='fits')
+    t2 = Table.read(temp_dir+'temp2.fits',format='fits')
+    t12 = table.join(t1, t2, keys='JOIN_ID_'+filter_name2, join_type='left')
+    print (t12)
+    t12.write(output_cat,overwrite=True)
+    

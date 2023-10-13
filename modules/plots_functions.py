@@ -208,11 +208,25 @@ def assess_GC_simulations_compactness(gal_id):
 
     acsfcs_table = source_cat+'.+ACSFCS.fits'
     crossmatch(source_cat,TABLES['acsfcs'],'RA','DEC','RAJ2000','DEJ2000',2.*PIXEL_SCALES[fn_det],'',acsfcs_table)
+    
+    try :
+        cat = acsfcs_table
+        make_cat_topcat_friendly(cat,cat[:len(cat)-5]+'+.fits')
+    except :
+        donothing = 1
+
     acsfcs = (fits.open(acsfcs_table))[1].data
     acsfcs = acsfcs[acsfcs['pGC']>0.95]
 
     specgcs_table = source_cat+'.+SPECGCs.fits'
     crossmatch(source_cat,TABLES['fornax-spec-gcs'],'RA','DEC','RA','DEC',2.*PIXEL_SCALES[fn_det],'',specgcs_table)
+
+    try :
+        cat = specgcs_table
+        make_cat_topcat_friendly(cat,cat[:len(cat)-5]+'+.fits')
+    except :
+        donothing = 1
+
     specgcs = (fits.open(specgcs_table))[1].data
 
     PHOTOM_APERS_ = PHOTOM_APERS.split(',')

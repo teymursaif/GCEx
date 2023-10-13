@@ -39,7 +39,10 @@ class bcolors:
 def make_source_cat_full(gal_id):
     print (f"{bcolors.OKCYAN}- making source catalogs and photometry"+ bcolors.ENDC)
     make_source_cat(gal_id)
-    make_multiwavelength_cat(gal_id, mode='forced-photometry-gc-lsb')
+    if EXTRACT_DWARFS == True:
+        make_multiwavelength_cat(gal_id, mode='forced-photometry-all')
+    else :
+        make_multiwavelength_cat(gal_id, mode='forced-photometry-point-sources')
 
 ############################################################
 
@@ -274,8 +277,8 @@ def make_detection_frame(gal_id, input_frame, weight_frame, fn, output_frame, ba
             img1.writeto(temp_dir+gal_name+'.temp_seg'+str(i)+'.fits',overwrite=True)
 
         command = SE_executable+' '+temp_dir+gal_name+'.temp_det.fits'+' -c '+str(external_dir)+'default.sex -CATALOG_NAME '+temp_dir+gal_name+'.temp_sex_cat.fits'+str(i)+'.fits '+ \
-        '-PARAMETERS_NAME '+str(external_dir)+'sex_default.param -DETECT_MINAREA 5 -DETECT_MAXAREA 200 -DETECT_THRESH 1.5 -ANALYSIS_THRESH 1.5 ' + \
-        '-DEBLEND_NTHRESH 16 -DEBLEND_MINCONT 0.005 ' + weight_command + \
+        '-PARAMETERS_NAME '+str(external_dir)+'sex_default.param -DETECT_MINAREA 4 -DETECT_MAXAREA 200 -DETECT_THRESH 1.5 -ANALYSIS_THRESH 1.5 ' + \
+        '-DEBLEND_NTHRESH 32 -DEBLEND_MINCONT 0.0005 ' + weight_command + \
         '-FILTER_NAME  '+str(external_dir)+'default.conv -STARNNW_NAME '+str(external_dir)+'default.nnw -PIXEL_SCALE ' + str(PIXEL_SCALES[filters[0]]) + ' ' \
         '-BACK_SIZE '+ str(backsize)+' -BACK_FILTERSIZE '+ str(backfiltersize)+' -CHECKIMAGE_TYPE BACKGROUND,-BACKGROUND,APERTURES ' +  \
         '-CHECKIMAGE_NAME '+temp_dir+gal_name+'.temp_back'+str(i)+'.fits,'+temp_dir+gal_name+'.temp_-back'+str(i)+'.fits,'+temp_dir+gal_name+'.temp_aper'+str(i)+'.fits'+' -VERBOSE_TYPE NORMAL'
@@ -362,8 +365,8 @@ def make_source_cat(gal_id):
         psf_dia_ref_pixel = int(psf_dia_ref_pixel*100+0.4999)/100
         apertures = (str(psf_dia_ref_pixel)+','+PHOTOM_APERS).split(',')
         n = len(apertures)
-        shutil.copy(external_dir+'sex_default.param',external_dir+'default.param')
-        params = open(external_dir+'default.param','a')
+        shutil.copy(external_dir+'sex_default.param',external_dir+gal_name+'_default.param')
+        params = open(external_dir+gal_name+'_default.param','a')
         params.write('MAG_APER('+str(n)+') #Fixed aperture magnitude vector [mag]\n')
         params.write('MAGERR_APER('+str(n)+') #RMS error vector for fixed aperture mag [mag]\n')
         params.write('FLUX_APER('+str(n)+') # Flux within a Kron-like elliptical aperture [count]\n')
@@ -380,7 +383,7 @@ def make_source_cat(gal_id):
         ####
         print (f"{bcolors.OKCYAN}- making source catalogs for point-sources"+ bcolors.ENDC)
         command = SE_executable+' '+detection_frame+','+frame+' -c '+external_dir+'default.sex -CATALOG_NAME '+source_cat_name+' '+ \
-        '-PARAMETERS_NAME '+external_dir+'default.param -DETECT_MINAREA 4 -DETECT_THRESH 1.5 -ANALYSIS_THRESH 1.5 ' + \
+        '-PARAMETERS_NAME '+external_dir+gal_name+'_default.param -DETECT_MINAREA 4 -DETECT_THRESH 1.5 -ANALYSIS_THRESH 1.5 ' + \
         '-DEBLEND_NTHRESH 32 -DEBLEND_MINCONT 0.0005 ' + weight_command + ' -PHOT_APERTURES '+str(psf_dia_ref_pixel)+','+str(PHOTOM_APERS)+' -GAIN ' + str(gain) + ' ' \
         '-MAG_ZEROPOINT ' +str(zp) + ' -BACKPHOTO_TYPE GLOBAL '+\
         '-FILTER Y -FILTER_NAME  '+external_dir+'tophat_1.5_3x3.conv -STARNNW_NAME '+external_dir+'default.nnw -PIXEL_SCALE ' + str(pix_size) + ' ' \
@@ -393,15 +396,17 @@ def make_source_cat(gal_id):
         ### galaxy mode
         print (f"{bcolors.OKCYAN}- making source catalogs for extended sources and LSBs"+ bcolors.ENDC)
         command_lsb = SE_executable+' '+frame+' -c '+external_dir+'default.sex -CATALOG_NAME '+source_cat_name_lsb+' '+ \
-        '-PARAMETERS_NAME '+external_dir+'default.param -DETECT_MINAREA 100 -DETECT_THRESH 1.5 -ANALYSIS_THRESH 1.5 ' + \
-        '-DEBLEND_NTHRESH 8 -DEBLEND_MINCONT 0.005 ' + weight_command + ' -PHOT_APERTURES '+str(psf_dia_ref_pixel)+','+str(PHOTOM_APERS)+' -GAIN ' + str(gain) + ' ' \
+        '-PARAMETERS_NAME '+external_dir+gal_name+'_default.param -DETECT_MINAREA 400 -DETECT_THRESH 1.0 -ANALYSIS_THRESH 1.0 ' + \
+        '-DEBLEND_NTHRESH 8 -DEBLEND_MINCONT 0.001 ' + weight_command + ' -PHOT_APERTURES '+str(psf_dia_ref_pixel)+','+str(PHOTOM_APERS)+' -GAIN ' + str(gain) + ' ' \
         '-MAG_ZEROPOINT ' +str(zp) + ' -BACKPHOTO_TYPE GLOBAL '+\
         '-FILTER Y -FILTER_NAME  '+external_dir+'tophat_1.5_3x3.conv -STARNNW_NAME '+external_dir+'default.nnw -PIXEL_SCALE ' + str(pix_size) + ' ' \
-        '-BACK_SIZE 256 -BACK_FILTERSIZE 3 -CHECKIMAGE_TYPE APERTURES,FILTERED,BACKGROUND,-BACKGROUND,SEGMENTATION,BACKGROUND_RMS ' +  \
+        '-BACK_SIZE 512 -BACK_FILTERSIZE 3 -CHECKIMAGE_TYPE APERTURES,FILTERED,BACKGROUND,-BACKGROUND,SEGMENTATION,BACKGROUND_RMS ' +  \
         '-CHECKIMAGE_NAME '+check_image_aper_lsb+','+check_image_filtered_lsb+','+check_image_back_lsb+','+check_image_noback_lsb+','+check_image_segm_lsb+\
         ','+check_image_back_rms_lsb+' -VERBOSE_TYPE NORMAL'+' -PSF_NAME '+psf_frame
         #print (command)
-        os.system(command_lsb)
+
+        if EXTRACT_DWARFS == True:
+            os.system(command_lsb)
 
         ####
 
@@ -411,43 +416,9 @@ def make_source_cat(gal_id):
         #make_fancy_png(check_image_segm,check_image_segm+'.jpg',zoom=2)
 
         prepare_sex_cat(source_cat_name,source_cat_name_proc,gal_name,fn,distance,mode='gc')
-        prepare_sex_cat(source_cat_name_lsb,source_cat_name_proc_lsb,gal_name,fn,distance,mode='lsb')
 
-
-############################################################
-
-def crossmatch(cat1,cat2,ra_param1,dec_param1,ra_param2,dec_param2,max_sep_arcsec,filter_name2,output_cat):
-
-    cat = fits.open(cat1, ignore_missing_end=True)
-    cat1_data = cat[1].data
-    ra1 = cat1_data[ra_param1]
-    dec1 = cat1_data[dec_param1]
-
-
-    cat = fits.open(cat2, ignore_missing_end=True)
-    cat2_data = cat[1].data
-    ra2 = cat2_data[ra_param2]
-    dec2 = cat2_data[dec_param2]
-
-    c1 = SkyCoord(ra=ra1*u.degree, dec=dec1*u.degree)
-    c2 = SkyCoord(ra=ra2*u.degree, dec=dec2*u.degree)
-    join_func = join_skycoord(max_sep_arcsec * u.arcsec)
-    j = join_func(c1, c2)
-
-    os.system('cp '+cat1+' '+temp_dir+'temp1.fits')
-    os.system('cp '+cat2+' '+temp_dir+'temp2.fits')
-
-    expand_fits_table(temp_dir+'temp1.fits','JOIN_ID_'+filter_name2,j[0])
-    expand_fits_table(temp_dir+'temp2.fits','JOIN_ID_'+filter_name2,j[1])
-
-    t1 = Table.read(temp_dir+'temp1.fits',format='fits')
-    t2 = Table.read(temp_dir+'temp2.fits',format='fits')
-    t12 = table.join(t1, t2, keys='JOIN_ID_'+filter_name2)
-    print (t12)
-    t12.write(output_cat,overwrite=True)
-    #print(t12)
-
-    #cat2.writeto(output_cat,overwrite=True)
+        if EXTRACT_DWARFS == True:
+            prepare_sex_cat(source_cat_name_lsb,source_cat_name_proc_lsb,gal_name,fn,distance,mode='lsb')
 
 ############################################################
 
@@ -467,7 +438,7 @@ def make_multiwavelength_cat(gal_id, mode='forced-photometry'):
 
         os.system('mv join.fits '+cats_dir+gal_name+'_master_cat.fits')
 
-    if (mode=='forced-photometry-gc-lsb') or (mode=='forced-photometry-gc'):
+    if (mode=='forced-photometry-point-sources'):
         det_cat = sex_dir+gal_name+'_'+filters[0]+'_source_cat_proc.fits'
         #det_cat = cats_dir+gal_name+'_master_cat.fits'
         output = temp_dir+gal_name+'_join.fits'
@@ -488,7 +459,7 @@ def make_multiwavelength_cat(gal_id, mode='forced-photometry'):
         os.system('mv '+output+' '+cats_dir+gal_name+'_master_cat_forced.fits')
 
         ####### lsb
-    if (mode=='forced-photometry-gc-lsb') or (mode=='forced-photometry-lsb'):
+    if (mode=='forced-photometry-all') or (mode=='forced-photometry-dwarf-galaxies'):
         det_cat = sex_dir+gal_name+'_'+filters[0]+'_source_cat_proc_lsb.fits'
         #det_cat = cats_dir+gal_name+'_master_cat.fits'
         output = temp_dir+data_name+'join.fits'
@@ -501,7 +472,7 @@ def make_multiwavelength_cat(gal_id, mode='forced-photometry'):
             print ("- Force photometry of frame in filter "+fn)
             #forced_photometry(output, photom_frame, mask_frame, back_rms_frame, fn,  fn_det, output, mode='circular-aperture', aper_size_arcsec=0.5) #radius
             #forced_photometry(output, photom_frame, mask_frame, back_rms_frame, fn,  fn_det, output, mode='circular-aperture', aper_size_arcsec=1)
-            forced_photometry(output, photom_frame, mask_frame, back_rms_frame, fn,  fn_det, output, mode='circular-flux-radius')
+            #forced_photometry(output, photom_frame, mask_frame, back_rms_frame, fn,  fn_det, output, mode='circular-flux-radius')
             forced_photometry(output, photom_frame, mask_frame, back_rms_frame, fn,  fn_det, output, mode='circular-aperture', aper_size_arcsec=2)
             forced_photometry(output, photom_frame, mask_frame, back_rms_frame, fn,  fn_det, output, mode='circular-aperture', aper_size_arcsec=5)
             forced_photometry(output, photom_frame, mask_frame, back_rms_frame, fn,  fn_det, output, mode='circular-aperture', aper_size_arcsec=10)
@@ -795,7 +766,7 @@ def make_source_cat_for_sim(gal_id):
         (gal_params[gal_id])[0] = gal_name
 
         make_source_cat(gal_id)
-        make_multiwavelength_cat(gal_id, mode='forced-photometry-gc')
+        make_multiwavelength_cat(gal_id, mode='forced-photometry-point-sources')
 
         fn_det = filters[0]
         art_cat_name_csv = art_dir+gal_name_orig+'_'+fn_det+'_ART'+str(n)+'_'+str(N_ART_GCS)+'GCs.full_info.csv'
