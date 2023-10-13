@@ -128,7 +128,7 @@ def initialize_params() :
     for coord in coords:
         i = i+1
         ra, dec = coord
-        if i < 30:
+        if i <= 20:
             target_str = str(i) +' ERO-FORNAX FORNAX-DWARF-'+str(i)+' '+str(ra)+' '+str(dec)+' 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_CAT,SIM_GC,MAKE_GC_CAT DWARF,LSB'
             TARGETS.append([target_str])
             print (target_str)

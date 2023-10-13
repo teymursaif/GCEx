@@ -128,7 +128,7 @@ def initialize_params() :
     BACKGROUND_ANNULUS_START = 3 #The size of background annulus for forced photoemtry as a factor of FWHM
     BACKGROUND_ANNULUS_TICKNESS = 20 # the thickness of the background annulus in pixels
     CROSS_MATCH_RADIUS_ARCSEC = 0.25
-    MAG_LIMIT_CAT = 25
+    MAG_LIMIT_CAT = 24
     EXTRACT_DWARFS = False
 
     # -------------------------------- PSF MODELING -------------------------------

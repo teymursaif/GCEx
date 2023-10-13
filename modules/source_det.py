@@ -452,8 +452,8 @@ def make_multiwavelength_cat(gal_id, mode='forced-photometry'):
             forced_photometry(det_cat, photom_frame, mask_frame, back_rms_frame, fn,  fn_det, output, mode='aperture-corr')
             #forced_photometry(output, photom_frame, mask_frame, back_rms_frame, fn,  fn_det, output, mode='circular-flux-radius')
             forced_photometry(output, photom_frame, mask_frame, back_rms_frame, fn,  fn_det, output, mode='circular-aperture', aper_size_arcsec=1) #radius
-            forced_photometry(output, photom_frame, mask_frame, back_rms_frame, fn,  fn_det, output, mode='circular-aperture', aper_size_arcsec=2)
-            forced_photometry(output, photom_frame, mask_frame, back_rms_frame, fn,  fn_det, output, mode='circular-aperture', aper_size_arcsec=3)
+            #forced_photometry(output, photom_frame, mask_frame, back_rms_frame, fn,  fn_det, output, mode='circular-aperture', aper_size_arcsec=2)
+            #forced_photometry(output, photom_frame, mask_frame, back_rms_frame, fn,  fn_det, output, mode='circular-aperture', aper_size_arcsec=3)
             #forced_photometry(output, photom_frame, mask_frame, back_rms_frame, fn,  fn_det, output, mode='circular-aperture', aper_size_arcsec=4)
 
         os.system('mv '+output+' '+cats_dir+gal_name+'_master_cat_forced.fits')
