@@ -445,7 +445,8 @@ def make_multiwavelength_cat(gal_id, mode='forced-photometry'):
         os.system('rm '+output)
         shutil.copy(det_cat,output)
         for fn in filters:
-            photom_frame = data_dir+gal_name+'_'+fn+'_cropped.fits'
+            #photom_frame = data_dir+gal_name+'_'+fn+'_cropped.fits'
+            photom_frame = sex_dir+gal_name+'_'+fn+'_check_image_-background.fits'
             mask_frame = sex_dir+gal_name+'_'+fn+'_'+'mask'+'_cropped.fits'
             back_rms_frame = sex_dir+gal_name+'_'+fn+'_check_image_back_rms.fits'
             print ("- Force photometry of frame in filter "+fn)
@@ -466,7 +467,8 @@ def make_multiwavelength_cat(gal_id, mode='forced-photometry'):
         os.system('rm '+output)
         shutil.copy(det_cat,output)
         for fn in filters:
-            photom_frame = data_dir+gal_name+'_'+fn+'_cropped.fits'
+            #photom_frame = data_dir+gal_name+'_'+fn+'_cropped.fits'
+            photom_frame = sex_dir+gal_name+'_'+fn+'_check_image_-background.fits'
             mask_frame = sex_dir+gal_name+'_'+fn+'_'+'mask'+'_cropped.fits'
             back_rms_frame = sex_dir+gal_name+'_'+fn+'_check_image_back_rms.fits'
             print ("- Force photometry of frame in filter "+fn)
@@ -546,7 +548,7 @@ def forced_photometry(det_cat, photom_frame, mask_frame, back_rms_frame, fn, fn_
     #zp = zp - 2.5*np.log10(exptime)
     error_data = (back_rms_data**2+fits_data/GAIN[fn])
     #error_data[error_data<=0] = 99999
-    error_data = np.sqrt(error_data)/np.sqrt(exptime)
+    error_data = np.sqrt(error_data)#/np.sqrt(exptime)
     #(np.sqrt((flux_err**2)*exptime+(flux_sky_sub*exptime / GAIN[fn] / (PSF_REF_RAD_FRAC[fn]))))/exptime
 
     RA = cat_data['RA']

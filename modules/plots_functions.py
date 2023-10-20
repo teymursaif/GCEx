@@ -153,8 +153,14 @@ def assess_GC_simulations_general(gal_id):
 
         #5. completness of detection in mag in DET filter
         #if fn == fn_det:
+        mask = (art_gcs['ART_GC_FLAG_'+fn]>0)
+        art_gcs = art_gcs[mask]
         mag_source_sim = art_gcs['GC_MAG_'+fn]
+
+        mask = ( (det_art_gcs['F_MAG_APER_CORR_'+fn]>0) & (det_art_gcs['F_MAG_APER_CORR_'+fn]< 50) )
+        det_art_gcs = det_art_gcs[mask]
         mag_source_obs = det_art_gcs['GC_MAG_'+fn]
+
         ax[4][n_filter].hist(mag_source_sim,bins=np.arange(10,30,0.2),color='black',alpha=1,label='ALL simulated GCs')
         ax[4][n_filter].hist(mag_source_obs,bins=np.arange(10,30,0.2),color=colors[n_filter],alpha=1,label='Detected simulated GCs')
         mag1 = GC_MAG_RANGE[0]+5*np.log10(distance*1e+5)-0.25+color(fn,fn_det)
@@ -169,7 +175,14 @@ def assess_GC_simulations_general(gal_id):
         #r_source_sim = np.sqrt((art_gcs['RA_'+fn]-ra)**2 + (art_gcs['DEC_'+fn]-dec)**2)
         #r_source_obs = np.sqrt((det_art_gcs['RA_'+fn]-ra)**2 + (det_art_gcs['DEC_'+fn]-dec)**2)
 
+        mask = (art_gcs['ART_GC_FLAG_'+fn]>0)
+        art_gcs = art_gcs[mask]
         mag_source_sim = art_gcs['GC_MAG_'+fn]
+
+        mask = ( (det_art_gcs['F_MAG_APER_CORR_'+fn]>0) & (det_art_gcs['F_MAG_APER_CORR_'+fn]< 50) )
+        det_art_gcs = det_art_gcs[mask]
+        mag_source_obs = det_art_gcs['GC_MAG_'+fn]
+
         r_source_sim = np.sqrt((art_gcs['RA_GC']-ra)**2 + (art_gcs['DEC_GC']-dec)**2)*3600
         r_source_obs = np.sqrt((det_art_gcs['RA_GC']-ra)**2 + (det_art_gcs['DEC_GC']-dec)**2)*3600
 

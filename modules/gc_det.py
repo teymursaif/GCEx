@@ -49,8 +49,8 @@ def select_gcs_for_param(param_sources,mag_sources,param_det_art_gcs,mag_det_art
 
         param_median = np.nanmedian(param_det_art_gcs_in_mag_range)
         param_std = np.nanstd(param_det_art_gcs_in_mag_range)
-        param_lower_limit = param_median-1.5*param_std-0.05
-        param_upper_limit = param_median+1.5*param_std+0.05
+        param_lower_limit = param_median-1.5*param_std-0.1
+        param_upper_limit = param_median+1.5*param_std+0.1
 
 
         if (param > param_lower_limit) and (param < param_upper_limit) :

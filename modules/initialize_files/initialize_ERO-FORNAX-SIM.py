@@ -147,13 +147,13 @@ def initialize_params() :
 
     #------------------------------ GC SELECTION -------------------------------
 
-    GC_SEL_PARAMS = ['CI_2_4','CI_4_8','CI_8_12','CI_12_16']#,'CI_2_4','CI_4_6','CI_6_8','CI_8_10','CI_10_12','ELLIPTICITY']
+    GC_SEL_PARAMS = ['CI_2_4','CI_4_8','CI_8_12']#,'CI_2_4','CI_4_6','CI_6_8','CI_8_10','CI_10_12','ELLIPTICITY']
     EXTERNAL_CROSSMATCH = True
     EXTERNAL_CROSSMATCH_CAT = './archival_tables/ERO-FDS-ugriJKs.fits'
 
     PARAM_SEL_METHOD = 'MANUAL'
-    PARAM_SEL_RANGE = {'color1':['VIS','NISP-Y',-0.1,0.7],'color2':['VIS','NISP-J',-0.1,0.8],'color3':['VIS','NISP-H',-0.4,1.2], \
-        'color5':['u','i',1,3.5], 'color6':['g','i',0.6,1.4], 'color7':['r','i',0,0.6], 'color8':['i','k',1,3.5], \
+    PARAM_SEL_RANGE = {'color1':['VIS','NISP-Y',-0.1,0.7],'color2':['NISP-Y','NISP-J',-0.1,0.5],'color3':['NISP-J','NISP-H',-0.1,0.5], \
+        'color5':['u','i',1.5,3.5], 'color6':['g','i',0.6,1.4], 'color7':['r','i',0,0.6], 'color8':['i','k',1,3.5], \
         'ELLIPTICITY':[0,0.5],'F_MAG_APER_CORR':[15,30]}
 
     #PARAM_SEL_RANGE = {'color1':['VIS','NISP-Y',-0.4,1.2],'color2':['NISP-Y','NISP-J',-0.5,0.5],'color3':['NISP-J','NISP-H',-0.3,0.4], \

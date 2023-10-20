@@ -99,7 +99,7 @@ def initialize_params() :
             xc =  (i) * (X/N) + (X/N)/2.
             yc =  (j) * (Y/N) + (Y/N)/2.
             ra, dec = w.all_pix2world(yc,xc,0)
-            target_str = str(m)+' ERO-IC10 ERO-IC10-'+str(m)+' '+str(ra)+' '+str(dec)+' 0.64 VIS,NISP-Y,NISP-J,NISP-H MAKE_CAT ---'
+            target_str = str(m)+' ERO-IC10 ERO-IC10-'+str(m)+' '+str(ra)+' '+str(dec)+' 0.64 VIS,NISP-Y,NISP-J,NISP-H --- ---'
             TARGETS.append([target_str])
             print (target_str)
 

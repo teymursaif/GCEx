@@ -475,11 +475,11 @@ def make_fancy_png(fitsfile,pngfile,text='',zoom=1, mode='lsb', cmap='gist_gray'
     ax.invert_yaxis()
     #fig.tight_layout()
     #[0., 0., 1., 1.]
-    ax.text(int(X*0.05),int(Y*0.90),text,color='red',fontsize=50)
+    #ax.text(int(X*0.05),int(Y*0.90),text,color='red',fontsize=50)
     fig.savefig(pngfile+'.zscale.png',dpi=150)
 
     image0 = sigma_clip(image,3, masked=False)
-    min_g = np.nanmedian(image0)-0.1*np.nanstd(image0)
+    min_g = np.nanmedian(image0)-0.05*np.nanstd(image0)
     max_g = np.nanmedian(image0)+5*np.nanstd(image)
     image0 = image - min_g
     image0 = image0 / (max_g - min_g)
@@ -491,8 +491,32 @@ def make_fancy_png(fitsfile,pngfile,text='',zoom=1, mode='lsb', cmap='gist_gray'
     #print (min_g,max_g)
     ax.imshow((image0),cmap=cmap)
     ax.invert_yaxis()
-    ax.text(int(X*0.05),int(Y*0.90),text,color='red',fontsize=50)
-    fig.savefig(pngfile+'.log.png',dpi=150)
+    #ax.text(int(X*0.05),int(Y*0.90),text,color='red',fontsize=50)
+    fig.savefig(pngfile+'.log.png',dpi=100)
+
+    zoom = 6
+    x1 = int(X/2 - X/2/zoom)
+    x2 = int(X/2 + X/2/zoom)
+    y1 = int(Y/2 - Y/2/zoom)
+    y2 = int(Y/2 + Y/2/zoom)
+    dx = x2-x1
+    dy = y2-y1
+    image0z = image0[y1:y2,x1:x2]
+
+    image0 = sigma_clip(image,3, masked=False)
+    min_g = np.nanmedian(image0)-0.1*np.nanstd(image0)
+    max_g = np.nanmedian(image0z)+5*np.nanstd(image0)
+    image0 = image - min_g
+    image0 = image0 / (max_g - min_g)
+    image0[image0>1]=1
+    image0[image0<0]=0
+    image0 = image0*255
+    image0 = np.log(image0**0.5+10)
+
+    ax.imshow((image0z),cmap=cmap)
+    ax.invert_yaxis()
+    #ax.text(int(X*0.05),int(Y*0.90),text,color='red',fontsize=50)
+    fig.savefig(pngfile+'.log.zoom.png',dpi=150)
 
     ###
 

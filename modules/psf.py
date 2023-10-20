@@ -126,7 +126,7 @@ def estimate_fwhm(gal_id):
             #print (FWHM_x,FWHM_y)
             #print (FWHM_x*psf_pixel_scale ,FWHM_y*psf_pixel_scale)
             FWHMS_ARCSEC[fn] = np.mean([FWHM_x*psf_pixel_scale ,FWHM_y*psf_pixel_scale])
-            APERTURE_SIZE[fn] = 1.0*FWHMS_ARCSEC[fn]
+            APERTURE_SIZE[fn] = 2.0*FWHMS_ARCSEC[fn]
             print ('- FWHM in filter', fn, 'is', FWHMS_ARCSEC[fn], 'arcsec')
 
         else:
@@ -316,17 +316,17 @@ def simualte_GCs(gal_id,n):
         df.to_csv(art_coords_cat_name, header=True, sep=',', index=False)
         print (df)
 
-    plt.plot(GC_RA,GC_DEC,'r.')
-    plt.savefig(check_plots_dir+gal_name+'_ART_GCs_RA_DEC_'+str(n)+'.png')
-    plt.close()
+    #plt.plot(GC_RA,GC_DEC,'r.')
+    #plt.savefig(check_plots_dir+gal_name+'_ART_GCs_RA_DEC_'+str(n)+'.png')
+    #plt.close()
 
-    plt.hist(GC_X)
-    plt.savefig(check_plots_dir+gal_name+'_ART_GCs_X_HIST_'+str(n)+'.png')
-    plt.close()
+    #plt.hist(GC_X)
+    #plt.savefig(check_plots_dir+gal_name+'_ART_GCs_X_HIST_'+str(n)+'.png')
+    #plt.close()
 
-    plt.hist(GC_Y)
-    plt.savefig(check_plots_dir+gal_name+'_ART_GCs_Y_HIST_'+str(n)+'.png')
-    plt.close()
+    #plt.hist(GC_Y)
+    #plt.savefig(check_plots_dir+gal_name+'_ART_GCs_Y_HIST_'+str(n)+'.png')
+    #plt.close()
 
     df = pd.read_csv(art_coords_cat_name)
     art_cat_name = art_dir+gal_name+'_'+fn_det+'_ART'+str(n)+'_'+str(N_ART_GCS)+'GCs.full_info.csv'
@@ -486,6 +486,11 @@ def simualte_GCs(gal_id,n):
         print ('')
 
     df.to_csv(art_cat_name, index=False)
+
+    os.system('rm '+art_dir+'*resampled.fits')
+    os.system('rm '+art_dir+'*noise.fits')
+    os.system('rm '+art_dir+'*king.fits')
+    os.system('rm '+art_dir+'*conv.fits')
 
 ############################################################
 
