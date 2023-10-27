@@ -145,7 +145,7 @@ def initialize_params() :
 
     input_dir = working_directory+'inputs/'
     output_dir = working_directory+'outputs/'
-    main_data_dir = '/data/users/saifollahi/Euclid/ERO/ERO-data/ERO-PERSEUS/'
+    main_data_dir = working_directory+'ERO-data/ERO-PERSEUS/'
 
     data_dir = input_dir+'data/'
     psf_dir = input_dir+'psf/'

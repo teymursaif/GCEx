@@ -99,14 +99,16 @@ def initialize_params() :
             xc =  (i) * (X/N) + (X/N)/2.
             yc =  (j) * (Y/N) + (Y/N)/2.
             ra, dec = w.all_pix2world(yc,xc,0)
-            target_str = str(m)+' ERO-PERSEUS ERO-PERSEUS-'+str(m)+' '+str(ra)+' '+str(dec)+' 70 VIS,NISP-Y,NISP-J,NISP-H MAKE_CAT,SIM_GC,MAKE_GC_CAT ---'
+            target_str = str(m)+' ERO-PERSEUS ERO-PERSEUS-'+str(m)+' '+str(ra)+' '+str(dec)+' 70 VIS,NISP-Y,NISP-J,NISP-H MAKE_CAT,SIM_GC,MAKE_GC_CAT ---' #MAKE_CAT,SIM_GC,
+            #if m in [3,4,5,7,0,2,6,8] : #[1,3,4,5,7]  [0,2,6,8] 
             TARGETS.append([target_str])
-            print (target_str)
+            #print (target_str)
 
-    #print (TARGETS)
+    print (TARGETS)
 
     MERGE_CATS = True
-    MERGE_SIM_GC_CATS = False
+    MERGE_SIM_GC_CATS = True
+    MERGE_GC_CATS = True
 
     # NOTE: possible methods -> RESAMPLE_DATA, MODEL_PSF, FIT_GAL, USE_SUB_GAL, MAKE_CAT, MAKE_GC_CAT
     # NOTE: possible comments -> MASSIVE,DWARF,LSB
@@ -127,7 +129,8 @@ def initialize_params() :
     BACKGROUND_ANNULUS_START = 3 #The size of background annulus for forced photoemtry as a factor of FWHM
     BACKGROUND_ANNULUS_TICKNESS = 20 # the thickness of the background annulus in pixels
     CROSS_MATCH_RADIUS_ARCSEC = 0.25
-    MAG_LIMIT_CAT = 25
+    MAG_LIMIT_CAT = 27
+    EXTRACT_DWARFS = False
 
     # -------------------------------- PSF MODELING -------------------------------
 
@@ -149,9 +152,9 @@ def initialize_params() :
     N_ART_GCS = 250
     N_SIM_GCS = 1
     COSMIC_CLEAN = False #does not work at the moment anyways...
-    GC_SIZE_RANGE = [2,5] #lower value should be small enough to make some point-sources for performance check, in pc
+    GC_SIZE_RANGE = [2,6] #lower value should be small enough to make some point-sources for performance check, in pc
     GC_MAG_RANGE = [-11,-5]
-    GC_REF_MAG = {'VIS':-8, 'NISP-Y':-8.5,'NISP-J':-8.5,'NISP-H':-8.5 } #magnitude of a typical GC in the given filters should be defined here.
+    GC_REF_MAG = {'VIS':-8, 'NISP-Y':-8.3,'NISP-J':-8.3,'NISP-H':-8.3 } #magnitude of a typical GC in the given filters should be defined here.
     GC_SIM_MODE = 'UNIFORM' # 'UNIFORM' or 'CONCENTRATED'
 
     #------------------------------ GC SELECTION -------------------------------
@@ -161,9 +164,8 @@ def initialize_params() :
     EXTERNAL_CROSSMATCH_CAT = None #'./archival_tables/ERO-FDS-ugriJKs.fits'
 
     PARAM_SEL_METHOD = 'MANUAL'
-    PARAM_SEL_RANGE = {'ELLIPTICITY':[0,0.6],'F_MAG_APER_CORR':[18,26],'F_MAG_APER_CORR':[18,26],'CI_2_4':[0.,1.1],'CI_4_8':[0.,0.6]}
-    #'color1':['VIS','NISP-Y',-0.1,0.7],'color2':['NISP-Y','NISP-J',-0.1,0.5],'color3':['NISP-J','NISP-H',-0.1,0.5], \
-        #'color5':['u','i',1.5,3.5], 'color6':['g','i',0.6,1.4], 'color7':['r','i',0,0.6], 'color8':['i','k',1,3.5]}
+    PARAM_SEL_RANGE = {'ELLIPTICITY':[0,0.5],'MAG_APER_CORR':[21,28],'F_MAG_APER_CORR':[22,28],'F_MAG_APER_CORR_NISP-Y':[15,30],\
+    'color0':['VIS','VIS',-0.1,0.1],'color1':['VIS','NISP-Y',-0.1,0.7],'color2':['NISP-Y','NISP-J',-0.3,0.5],'color3':['NISP-J','NISP-H',-0.3,0.5]} #\
 
     ####################################################################################################
     ####################################################################################################

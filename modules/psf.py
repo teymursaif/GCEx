@@ -462,8 +462,8 @@ def simualte_GCs(gal_id,n):
                 ART_GC_FLAG.append(1)
             
             #print (X,Y)
-            print (x,y)
-            print (x1,x2,y1,y2)
+            #print (x,y)
+            #print (x1,x2,y1,y2)
             #print (x_psf,y_psf)
             x1_psf = 0
             x2_psf = x_psf

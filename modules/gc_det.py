@@ -14,6 +14,7 @@ from astropy.visualization import *
 from astropy.visualization import make_lupton_rgb
 from astropy.table import Table, join_skycoord
 from astropy import table
+from astropy.stats import sigma_clip
 import photutils
 from photutils.aperture import CircularAperture
 from photutils.aperture import CircularAnnulus
@@ -44,19 +45,28 @@ def select_gcs_for_param(param_sources,mag_sources,param_det_art_gcs,mag_det_art
         mag = mag_sources[i]
         param = param_sources[i]
 
-        mag_range_mask = (abs(mag_det_art_gcs-mag)<0.5)
+        mag0 = int(mag*2+0.5)/2.
+
+        mag_range_mask = ((abs(mag_det_art_gcs-mag0)<1))
         param_det_art_gcs_in_mag_range = param_det_art_gcs[mag_range_mask]
 
+        #param_det_art_gcs_in_mag_rang = sigma_clip(param_det_art_gcs_in_mag_range,3, masked=False)
         param_median = np.nanmedian(param_det_art_gcs_in_mag_range)
         param_std = np.nanstd(param_det_art_gcs_in_mag_range)
-        param_lower_limit = param_median-1.5*param_std-0.1
-        param_upper_limit = param_median+1.5*param_std+0.1
+        #print (param_std)
+        param_lower_limit = param_median-1*param_std-0.05
+        param_upper_limit = param_median+1*param_std+0.05
 
-
-        if (param > param_lower_limit) and (param < param_upper_limit) :
+        if (param > param_lower_limit) and (param < param_upper_limit) and (mag>20.5) :
             mask.append(1)
         else :
-            mask.append(0)
+            mask.append(0) #0
+
+        #plt.plot(param_lower_limit,mag,'k.')
+        #plt.plot(param_upper_limit,mag,'k.')
+
+    #plt.savefig(check_plots_dir+'compactness_range.png')
+    #plt.close()
 
     mask = np.array(mask)
     return mask
@@ -68,13 +78,20 @@ def select_GC_candidadates(gal_id):
     fn_det = filters[0]
     #ART_GCs_cat = art_dir+gal_name+'_'+fn_det+'_ALL_ART_GCs.fits'
     
-    DET_ART_GCs_cat = art_dir+gal_name+'_'+fn_det+'_ALL_DET_ART_GCs.fits'
+    try :
+        DET_ART_GCs_cat = art_dir+gal_name+'_'+fn_det+'_ALL_DET_ART_GCs.fits' #_random
+        det_art_gcs = (fits.open(DET_ART_GCs_cat))[1].data
+    except:
+        print ('*** GC simulations are not found. Pipeline try to use some older simulated data that seems relevant, if available ... ')
+        DET_ART_GCs_cat = cats_dir+data_name+'_ALL_DET_ART_GCs_merged.fits'
+        det_art_gcs = (fits.open(DET_ART_GCs_cat))[1].data
+
+
     source_cat = cats_dir+gal_name+'_master_cat_forced.fits'
     selected_gcs_cat = final_cats_dir+gal_name+'_selected_GCs.fits'
     shutil.copy(source_cat,selected_gcs_cat)
 
     #art_gcs = (fits.open(ART_GCs_cat))[1].data
-    det_art_gcs = (fits.open(DET_ART_GCs_cat))[1].data
     sources = (fits.open(source_cat))[1].data
 
     mag_param = 'MAG_APER_CORR_'+fn_det
@@ -84,7 +101,7 @@ def select_GC_candidadates(gal_id):
     selected_gcs_mask = np.ones(len(sources))
 
     for param in GC_SEL_PARAMS:
-        #print (param)
+        print (param)
         param = param + '_' + fn_det
         #param_art_gcs = art_gcs[param]
         param_det_art_gcs = det_art_gcs[param]
@@ -127,15 +144,28 @@ def select_GC_candidadates(gal_id):
             if 'color' in str(param):
                 f1 = (PARAM_SEL_RANGE[param])[0]
                 f2 = (PARAM_SEL_RANGE[param])[1]
-                param_f1 = 'F_MAG_APER_CORR_'+f1
-                param_f2 = 'F_MAG_APER_CORR_'+f2
-                param_min = (PARAM_SEL_RANGE[param])[2]
-                param_max = (PARAM_SEL_RANGE[param])[3]
 
-                try : m1 = sources[param_f1]
-                except: m1 = sources[f1]
-                try : m2 = sources[param_f2]
-                except: m2 = sources[f2]
+                try:
+                    param_f1 = 'MAG_APER_CORR_'+f1
+                    param_f2 = 'F_MAG_APER_CORR_'+f2
+                    param_min = (PARAM_SEL_RANGE[param])[2]
+                    param_max = (PARAM_SEL_RANGE[param])[3]
+
+                    try : m1 = sources[param_f1]
+                    except: m1 = sources[f1]
+                    try : m2 = sources[param_f2]
+                    except: m2 = sources[f2]
+
+                except:
+                    param_f1 = 'F_MAG_APER_CORR_'+f1
+                    param_f2 = 'F_MAG_APER_CORR_'+f2
+                    param_min = (PARAM_SEL_RANGE[param])[2]
+                    param_max = (PARAM_SEL_RANGE[param])[3]
+
+                    try : m1 = sources[param_f1]
+                    except: m1 = sources[f1]
+                    try : m2 = sources[param_f2]
+                    except: m2 = sources[f2]
 
                 color = m1 - m2
 
@@ -154,10 +184,18 @@ def select_GC_candidadates(gal_id):
             else :
                 param_min = (PARAM_SEL_RANGE[param])[0]
                 param_max = (PARAM_SEL_RANGE[param])[1]
-                param = param + '_' + fn_det
-                param_mask = ((sources[param]>=param_min) & (sources[param]<=param_max))
-                sources = sources[param_mask]
-                print ('--- number of selected GCs after filter in ', param, ' is: ', len(sources))
+                try:
+                    param = param
+                    param_mask = ((sources[param]>=param_min) & (sources[param]<=param_max))
+                    sources = sources[param_mask]
+                    print ('--- number of selected GCs after filter in ', param, ' is: ', len(sources))
+                    
+                except:
+                    
+                    param = param + '_' + fn_det
+                    param_mask = ((sources[param]>=param_min) & (sources[param]<=param_max))
+                    sources = sources[param_mask]
+                    print ('--- number of selected GCs after filter in ', param, ' is: ', len(sources))
 
         selected_gcs_data = sources
         selected_gcs = fits.open(selected_gcs_cat)

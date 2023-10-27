@@ -805,7 +805,7 @@ def merge_gc_cats(): #gcs, sim_gcs
 
     print ('- Merging the catalogs produced in this run...')
 
-    # source catalogues
+    # gc-cat
     source_cats = []
     for gal_id in gal_params.keys():
         gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
@@ -816,6 +816,22 @@ def merge_gc_cats(): #gcs, sim_gcs
     data_name = gal_data_name[id]
     output_cat = final_cats_dir+data_name+'_selected_GCs_merged.fits'
     topcat_friendly_output_cat = final_cats_dir+data_name+'_selected_GCs_merged+.fits'
+    attach_sex_tables(source_cats,output_cat)
+    clean_cat = clean_dublicates_in_cat(output_cat)
+    make_cat_topcat_friendly(clean_cat,topcat_friendly_output_cat)
+
+
+    ### selected-source 
+    source_cats = []
+    for gal_id in gal_params.keys():
+        gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
+        cat_name = final_cats_dir+gal_name+'_selected_GCs+.size-selected.fits'
+        source_cats.append(cat_name)
+        id = gal_id
+
+    data_name = gal_data_name[id]
+    output_cat = final_cats_dir+data_name+'_selected_GCs+.size-selected_merged+.fits'
+    topcat_friendly_output_cat = final_cats_dir+data_name+'_selected_GCs+.size-selected_merged+.fits'
     attach_sex_tables(source_cats,output_cat)
     clean_cat = clean_dublicates_in_cat(output_cat)
     make_cat_topcat_friendly(clean_cat,topcat_friendly_output_cat)

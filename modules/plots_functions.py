@@ -35,7 +35,7 @@ def assess_GC_simulations(gal_id):
 
     # for fornax ERO
     assess_GC_simulations_general(gal_id)
-    assess_GC_simulations_compactness(gal_id)
+    #assess_GC_simulations_compactness(gal_id)
 
 ############################################################
 
@@ -221,7 +221,7 @@ def assess_GC_simulations_compactness(gal_id):
 
     acsfcs_table = source_cat+'.+ACSFCS.fits'
     crossmatch(source_cat,TABLES['acsfcs'],'RA','DEC','RAJ2000','DEJ2000',2.*PIXEL_SCALES[fn_det],'',acsfcs_table)
-    
+
     try :
         cat = acsfcs_table
         make_cat_topcat_friendly(cat,cat[:len(cat)-5]+'+.fits')
