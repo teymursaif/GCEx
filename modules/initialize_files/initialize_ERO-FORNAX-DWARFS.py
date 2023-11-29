@@ -40,8 +40,8 @@ def initialize_params() :
     ### (if ZP, EXPTIME and GAIN are missing from the header, define them for a given filter)
 
     WORKING_DIR = './'
-    PRIMARY_FRAME_SIZE_ARCSEC = 240 #arcsec
-    FRAME_SIZE_ARCSEC = 240 #cut-out size from the original frame for the general anlaysis (arcsec)
+    PRIMARY_FRAME_SIZE_ARCSEC = 480 #arcsec
+    FRAME_SIZE_ARCSEC = 480 #cut-out size from the original frame for the general anlaysis (arcsec)
 
     # defining the executables (what you type in the command-line that executes the program)
     SE_executable = 'sex'
@@ -111,41 +111,41 @@ def initialize_params() :
                 [54.2494010925293, -35.137298583984375],\
                 [53.74, -35.2235],\
                 #[53.5507, -35.2285],\
-                #[54.4107, -35.3854],\
-                #[53.7727, -35.4506],\
+                [54.4107, -35.3854],\
+                [53.7727, -35.4506],\
                 #[53.75279998779297, -35.42210006713867],\
-                #[53.7167, -35.6233],\
+                [53.7167, -35.6233],\
                 #[54.16120147705078, -35.61140060424805],\
                 #[53.635398864746094, -35.04359817504883],\
                 #[54.31629943847656, -35.357398986816406],\
                 #[53.74290084838867, -35.258399963378906],\
-                #[53.8001, -35.4342],\
-                #[53.9048, -34.9795],\
-                #[53.680999755859375, -35.52109909057617],\
-                #[53.94729995727539, -35.361900329589844],\
-                #[54.00740051269531, -35.310699462890625],\
+                [53.8001, -35.4342],\
+                [53.9048, -34.9795],\
+                [53.680999755859375, -35.52109909057617],\
+                [53.94729995727539, -35.361900329589844],\
+                [54.00740051269531, -35.310699462890625],\
                 #[54.36289978027344, -35.30580139160156],\
                 #[53.672000885009766, -35.506900787353516],\
                 #[53.69160079956055, -34.89250183105469],\
                 #[53.618900299072266, -34.94409942626953]   
-                ]
+                ] #35 objects
     i = -1
     for coord in coords:
         i = i+1
         ra, dec = coord
-        if (i>-1):
+        if ((i>2) and (i<=40)):
             #target_str = str(i) +' ERO-FORNAX FORNAX-DWARF-'+str(i)+' '+str(ra)+' '+str(dec)+' 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_GC_CAT DWARF,LSB'
-            target_str = str(i) +' ERO-FORNAX FORNAX-DWARF-'+str(i)+' '+str(ra)+' '+str(dec)+' 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_GC_CAT DWARF,LSB' #,NISP-Y,NISP-J,NISP-H
+            target_str = str(i) +' ERO-FORNAX FORNAX-DWARF-'+str(i)+' '+str(ra)+' '+str(dec)+' 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_CAT DWARF,LSB' #,NISP-Y,NISP-J,NISP-H
             TARGETS.append([target_str])
             #print (target_str)
 
-    TARGETS.append(['100 ERO-FORNAX FORNAX-DWARF-100 054.23864 -35.50702 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_GC_CAT MASSIVE']) #FCC184
-    TARGETS.append(['101 ERO-FORNAX FORNAX-DWARF-101 054.13133 -35.29561 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_GC_CAT MASSIVE']) #FCC170
-    TARGETS.append(['102 ERO-FORNAX FORNAX-DWARF-102 054.28715 -35.19500 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_GC_CAT MASSIVE']) #FCC190
+    #TARGETS.append(['100 ERO-FORNAX FORNAX-DWARF-100 054.23864 -35.50702 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_GC_CAT MASSIVE']) #FCC184
+    #TARGETS.append(['101 ERO-FORNAX FORNAX-DWARF-101 054.13133 -35.29561 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_GC_CAT MASSIVE']) #FCC170
+    #TARGETS.append(['102 ERO-FORNAX FORNAX-DWARF-102 054.28715 -35.19500 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_GC_CAT MASSIVE']) #FCC190
 
-    TARGETS.append(['103 ERO-FORNAX FORNAX-DWARF-103 054.11516 -34.97445 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_GC_CAT MASSIVE']) #FCC167
-    TARGETS.append(['104 ERO-FORNAX FORNAX-DWARF-104 053.81938 -35.22624 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_GC_CAT MASSIVE']) #FCC147
-    TARGETS.append(['105 ERO-FORNAX FORNAX-DWARF-105 054.01621 -35.44146 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_GC_CAT MASSIVE']) #FCC161
+    #TARGETS.append(['103 ERO-FORNAX FORNAX-DWARF-103 054.11516 -34.97445 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_GC_CAT MASSIVE']) #FCC167
+    #TARGETS.append(['104 ERO-FORNAX FORNAX-DWARF-104 053.81938 -35.22624 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_GC_CAT MASSIVE']) #FCC147-148
+    #TARGETS.append(['105 ERO-FORNAX FORNAX-DWARF-105 054.01621 -35.44146 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_GC_CAT MASSIVE']) #FCC161
 
     # NOTE: possible methods -> RESAMPLE_DATA, MODEL_PSF, FIT_GAL, USE_SUB_GAL, MAKE_CAT, MAKE_GC_CAT
     # NOTE: possible comments -> MASSIVE,DWARF,LSB
@@ -153,7 +153,7 @@ def initialize_params() :
  
     MERGE_CATS = False
     MERGE_SIM_GC_CATS = False
-    MERGE_GC_CATS = False
+    MERGE_GC_CATS = True
 
     global TABLES
     TABLES = {}
@@ -174,7 +174,7 @@ def initialize_params() :
     BACKGROUND_ANNULUS_START = 3 #The size of background annulus for forced photoemtry as a factor of FWHM
     BACKGROUND_ANNULUS_TICKNESS = 20 # the thickness of the background annulus in pixels
     CROSS_MATCH_RADIUS_ARCSEC = 0.25
-    MAG_LIMIT_CAT = 26
+    MAG_LIMIT_CAT = 27
     EXTRACT_DWARFS = False
 
     # -------------------------------- PSF MODELING -------------------------------
@@ -210,9 +210,9 @@ def initialize_params() :
     EXTERNAL_CROSSMATCH_CAT = './archival_tables/ERO-FDS-ugriJKs.fits'
 
     PARAM_SEL_METHOD = 'MANUAL'
-    PARAM_SEL_RANGE = {'ELLIPTICITY':[0,0.5],'MAG_APER_CORR':[21,25],'F_MAG_APER_CORR':[20,25],'F_MAG_APER_CORR_NISP-Y':[15,30],\
-    'color0':['VIS','VIS',-0.2,0.2],'color1':['VIS','NISP-Y',-0.5,1],'color2':['NISP-Y','NISP-J',-0.5,0.5],'color3':['NISP-J','NISP-H',-1,1]} #\
-    #'color5':['u','i',1.5,3.5], 'color6':['g','i',0.6,1.4], 'color7':['r','i',0,0.6], 'color8':['i','k',1,3.5]}   # clean selection
+    PARAM_SEL_RANGE = {'ELLIPTICITY':[-0.01,0.4],'F_MAG_APER_CORR':[19,26],'F_MAG_APER_CORR_VIS':[15,30],'F_MAG_APER_CORR_NISP-Y':[15,30],\
+    'color0':['VIS','VIS',-0.5,0.5],'color1':['VIS','NISP-Y',-1.5,1.2],'color2':['NISP-Y','NISP-J',-1,1],'color3':['NISP-J','NISP-H',-1,1]}#,\
+    #'color5':['u','i',1.5,3.5], 'color6':['g','i',0.5,1.5], 'color7':['r','i',0,0.6], 'color8':['i','k',1,3.5]}   # clean selection
 
 
     ####################################################################################################

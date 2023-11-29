@@ -99,9 +99,10 @@ def initialize_params() :
             xc =  (i) * (X/N) + (X/N)/2.
             yc =  (j) * (Y/N) + (Y/N)/2.
             ra, dec = w.all_pix2world(yc,xc,0)
-            target_str = str(m)+' ERO-PERSEUS ERO-PERSEUS-'+str(m)+' '+str(ra)+' '+str(dec)+' 70 VIS,NISP-Y,NISP-J,NISP-H MAKE_CAT,SIM_GC,MAKE_GC_CAT ---' #MAKE_CAT,SIM_GC,
             #if m in [3,4,5,7,0,2,6,8] : #[1,3,4,5,7]  [0,2,6,8] 
-            TARGETS.append([target_str])
+            if m in [0,1,3,4,5,7,0,2,6,8]:
+                target_str = str(m)+' ERO-PERSEUS ERO-PERSEUS-'+str(m)+' '+str(ra)+' '+str(dec)+' 70 VIS,NISP-Y,NISP-J,NISP-H MAKE_CAT,SIM_GC,MAKE_GC_CAT ---' #MAKE_CAT,SIM_GC, ,NISP-Y,NISP-J,NISP-H
+                TARGETS.append([target_str])
             #print (target_str)
 
     print (TARGETS)
@@ -152,8 +153,8 @@ def initialize_params() :
     N_ART_GCS = 250
     N_SIM_GCS = 1
     COSMIC_CLEAN = False #does not work at the moment anyways...
-    GC_SIZE_RANGE = [2,6] #lower value should be small enough to make some point-sources for performance check, in pc
-    GC_MAG_RANGE = [-11,-5]
+    GC_SIZE_RANGE = [2,2.001] #lower value should be small enough to make some point-sources for performance check, in pc
+    GC_MAG_RANGE = [-12,-5]
     GC_REF_MAG = {'VIS':-8, 'NISP-Y':-8.3,'NISP-J':-8.3,'NISP-H':-8.3 } #magnitude of a typical GC in the given filters should be defined here.
     GC_SIM_MODE = 'UNIFORM' # 'UNIFORM' or 'CONCENTRATED'
 
@@ -164,8 +165,8 @@ def initialize_params() :
     EXTERNAL_CROSSMATCH_CAT = None #'./archival_tables/ERO-FDS-ugriJKs.fits'
 
     PARAM_SEL_METHOD = 'MANUAL'
-    PARAM_SEL_RANGE = {'ELLIPTICITY':[0,0.5],'MAG_APER_CORR':[21,28],'F_MAG_APER_CORR':[22,28],'F_MAG_APER_CORR_NISP-Y':[15,30],\
-    'color0':['VIS','VIS',-0.1,0.1],'color1':['VIS','NISP-Y',-0.1,0.7],'color2':['NISP-Y','NISP-J',-0.3,0.5],'color3':['NISP-J','NISP-H',-0.3,0.5]} #\
+    PARAM_SEL_RANGE = {'ELLIPTICITY':[0,0.4],'F_MAG_APER_CORR':[23,28],'F_MAG_APER_CORR_NISP-Y':[15,30],\
+    'color0':['VIS','VIS',-0.5,0.5],'color1':['VIS','NISP-Y',-0.1,0.7],'color2':['NISP-Y','NISP-J',-1,1],'color3':['NISP-J','NISP-H',-1,1]} #\
 
     ####################################################################################################
     ####################################################################################################

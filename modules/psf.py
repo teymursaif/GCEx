@@ -126,7 +126,7 @@ def estimate_fwhm(gal_id):
             #print (FWHM_x,FWHM_y)
             #print (FWHM_x*psf_pixel_scale ,FWHM_y*psf_pixel_scale)
             FWHMS_ARCSEC[fn] = np.mean([FWHM_x*psf_pixel_scale ,FWHM_y*psf_pixel_scale])
-            APERTURE_SIZE[fn] = 2.0*FWHMS_ARCSEC[fn]
+            APERTURE_SIZE[fn] = 2.0*FWHMS_ARCSEC[fn] #1.0*FWHMS_ARCSEC[fn]
             print ('- FWHM in filter', fn, 'is', FWHMS_ARCSEC[fn], 'arcsec')
 
         else:
@@ -421,7 +421,7 @@ def simualte_GCs(gal_id,n):
 
             swarp_cmd = swarp_executable+' '+gc_file+' -c '+external_dir+'default.swarp -IMAGEOUT_NAME '+gc_file+'.resampled.fits'+\
                 ' -RESAMPLING_TYPE LANCZOS4 -IMAGE_SIZE 0 -PIXELSCALE_TYPE MANUAL -PIXEL_SCALE '+str(RATIO_OVERSAMPLE_PSF)+\
-                ' -RESAMPLE Y -CENTER_TYPE ALL -SUBTRACT_BACK N -VERBOSE_TYPE QUIET'
+                ' -RESAMPLE Y -CENTER_TYPE ALL -SUBTRACT_BACK N -VERBOSE_TYPE FULL'
             #print (swarp_cmd)
             os.system(swarp_cmd)
 
@@ -646,8 +646,8 @@ def makeKing2D(cc, rc, mag, zeropoint, exptime, pixel_size):
             for ii in range(n):
                 for jj in range(n):
 
-                    xi = (i+ii/n) * pixel_size + 0.5 * pixel_size
-                    yi = (j+jj/n) * pixel_size + 0.5 * pixel_size
+                    xi = (i+ii/n) * pixel_size + 0.5 * pixel_size/n
+                    yi = (j+jj/n) * pixel_size + 0.5 * pixel_size/n
 
                     r2 = (xi - xc) ** 2 + (yi - yc) ** 2
                     if r2 < trunc_radius ** 2:
@@ -676,7 +676,7 @@ def makeKing2D(cc, rc, mag, zeropoint, exptime, pixel_size):
     elif final_flux_ratio < 0.99:
         print (f"{bcolors.WARNING}*** Warning: the simulated GCs are missing a fraction of the light between 1% to 2%."+ bcolors.ENDC)
 
-    #print (final_flux_ratio)
+    print (final_flux_ratio)
 
     return stamp
 
@@ -707,10 +707,10 @@ def make_psf_all_filters(gal_id):
 
         # run SE
         command = SE_executable+' '+main_frame+' -c '+external_dir+'default.sex -CATALOG_NAME '+source_cat+' '+ \
-        '-PARAMETERS_NAME '+external_dir+'default_psf.param -DETECT_MINAREA 8 -DETECT_THRESH 5.0 -ANALYSIS_THRESH 5.0 ' + \
+        '-PARAMETERS_NAME '+external_dir+'default_psf.param -DETECT_MINAREA 20 -DETECT_THRESH 10.0 -ANALYSIS_THRESH 10.0 ' + \
         '-DEBLEND_NTHRESH 1 -DEBLEND_MINCONT 1 -MAG_ZEROPOINT ' +str(zp) + ' -BACKPHOTO_TYPE GLOBAL '+\
         '-FILTER Y -FILTER_NAME  '+external_dir+'default.conv -STARNNW_NAME '+external_dir+'default.nnw -PIXEL_SCALE ' + \
-        str(pix_size)+ ' -BACK_SIZE 128 -BACK_FILTERSIZE 3 -PHOT_APERTURES 10'
+        str(pix_size)+ ' -BACK_SIZE 128 -BACK_FILTERSIZE 3 -PHOT_APERTURES 10 -VERBOSE_TYPE NORMAL'
 
         shutil.copy(external_dir+'sex_default.param',external_dir+'default_psf.param')
         params = open(external_dir+'default_psf.param','a')
@@ -745,7 +745,7 @@ def make_psf_all_filters(gal_id):
         #make_radial_profile_for_psf([psf_frame_inst],0,zp,\
         #    output_png=check_plots_dir+data_name+'_'+fn+'_psf_inst_radial_profiles.png')
 
-        os.system('rm '+psfs_dir+'*star*.fits')
+        #os.system('rm '+psfs_dir+'*star*.fits')
 
 ############################################################
 
@@ -785,7 +785,7 @@ def make_psf_for_frame(main_frame,weight_frame,source_cat,filtername,psf_frame,m
     fwhm = sex_cat_data['FWHM_IMAGE']
 
     if mode == 'auto':
-        fwhm = sigma_clip(fwhm,sigma=2, maxiters=5, masked=False)
+        fwhm = sigma_clip(fwhm,sigma=2.0, maxiters=5, masked=False)
         fwhm_max = np.nanmax(fwhm)
         fwhm_min = np.nanmin(fwhm)
 
@@ -797,6 +797,10 @@ def make_psf_for_frame(main_frame,weight_frame,source_cat,filtername,psf_frame,m
 
     mag = sex_cat_data ['MAG_AUTO']
     fwhm = sex_cat_data['FWHM_IMAGE']
+
+    table_main[1].data = sex_cat_data
+    table_main.writeto(source_cat+'.FWHM-MAG-selected.fits',overwrite=True)
+
     ax.plot(mag,fwhm,'ro',alpha=0.2,label='Selected for PSF modeling')
 
     ax.set_xlim([MAG_LIMIT_SAT-1,MAG_LIMIT_PSF+2])
@@ -831,9 +835,16 @@ def make_psf_for_frame(main_frame,weight_frame,source_cat,filtername,psf_frame,m
 
     psfs = list()
     #for i in range(N) :
-    if N > 500 :
-        N = 500
-    for i in range(N):
+    #if N > 100 :
+    #    N = 100
+
+    indices= np.arange(0,N,1)
+    np.random.shuffle(indices)
+
+    M = 500
+    for i in indices[:M-1]:
+
+        print (i)
 
         XC = list()
         YC = list()
@@ -878,6 +889,7 @@ def make_psf_for_frame(main_frame,weight_frame,source_cat,filtername,psf_frame,m
 
             os.system(command)
 
+            print (output)
             psf_data = fits.open(output)
             X_psf = psf_data[0].header['NAXIS1']
             Y_psf = psf_data[0].header['NAXIS2']
@@ -947,7 +959,7 @@ def make_psf_for_frame(main_frame,weight_frame,source_cat,filtername,psf_frame,m
                 output_png=check_plots_dir+gal_name+'_'+fn+'_star_'+str(i)+'.cropped-back_radial_profile_'+str(fwhm_flag)+\
                 '_'+str(ra0)[:9]+'_'+str(dec0)[:9]+'.png')
 
-        #print ('*****', i, fwhm, fwhm_, fwhm_flag)
+        print ('*****', i, fwhm, fwhm_, fwhm_flag)
 
         if (det_flag == 1) and (fwhm_flag == 1):
             star_frames = star_frames+output_back_sub+','

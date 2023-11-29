@@ -35,7 +35,7 @@ class bcolors:
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
 
-def select_gcs_for_param(param_sources,mag_sources,param_det_art_gcs,mag_det_art_gcs):
+def select_gcs_for_param(param_sources,mag_sources,param_det_art_gcs,mag_det_art_gcs,label=''):
 
     N = len(param_sources)
     mask = []
@@ -47,26 +47,28 @@ def select_gcs_for_param(param_sources,mag_sources,param_det_art_gcs,mag_det_art
 
         mag0 = int(mag*2+0.5)/2.
 
-        mag_range_mask = ((abs(mag_det_art_gcs-mag0)<1))
+        mag_range_mask = ((abs(mag_det_art_gcs-mag0)<2.5))
         param_det_art_gcs_in_mag_range = param_det_art_gcs[mag_range_mask]
 
         #param_det_art_gcs_in_mag_rang = sigma_clip(param_det_art_gcs_in_mag_range,3, masked=False)
         param_median = np.nanmedian(param_det_art_gcs_in_mag_range)
         param_std = np.nanstd(param_det_art_gcs_in_mag_range)
         #print (param_std)
-        param_lower_limit = param_median-1*param_std-0.05
-        param_upper_limit = param_median+1*param_std+0.05
+        #param_lower_limit = param_median-2.0*param_std-0.05
+        #param_upper_limit = param_median+2.0*param_std+0.05
+        param_lower_limit = np.percentile(param_det_art_gcs_in_mag_range, 1)-0.05
+        param_upper_limit = np.percentile(param_det_art_gcs_in_mag_range, 99)+0.05
 
-        if (param > param_lower_limit) and (param < param_upper_limit) and (mag>20.5) :
+        if (param > param_lower_limit) and (param < param_upper_limit) :
             mask.append(1)
         else :
             mask.append(0) #0
 
-        #plt.plot(param_lower_limit,mag,'k.')
-        #plt.plot(param_upper_limit,mag,'k.')
+        plt.plot(param_lower_limit,mag,'k.')
+        plt.plot(param_upper_limit,mag,'k.')
 
-    #plt.savefig(check_plots_dir+'compactness_range.png')
-    #plt.close()
+    plt.savefig(check_plots_dir+'compactness_range_'+label+'.png')
+    plt.close()
 
     mask = np.array(mask)
     return mask
@@ -94,7 +96,7 @@ def select_GC_candidadates(gal_id):
     #art_gcs = (fits.open(ART_GCs_cat))[1].data
     sources = (fits.open(source_cat))[1].data
 
-    mag_param = 'MAG_APER_CORR_'+fn_det
+    mag_param = 'F_MAG_APER_CORR_'+fn_det
     mag_mask = (sources[mag_param] < GC_MAG_RANGE[1]+5*np.log10(distance*1e+5))
     sources = sources[mag_mask]
 
@@ -109,7 +111,7 @@ def select_GC_candidadates(gal_id):
         #mag_art_gcs = art_gcs[mag_param]
         mag_det_art_gcs = det_art_gcs[mag_param]
         mag_sources = sources[mag_param]
-        mask = select_gcs_for_param(param_sources,mag_sources,param_det_art_gcs,mag_det_art_gcs)
+        mask = select_gcs_for_param(param_sources,mag_sources,param_det_art_gcs,mag_det_art_gcs,label=param+'+')
         selected_gcs_mask = selected_gcs_mask * mask
 
     selected_gcs_mask = selected_gcs_mask.astype(np.bool_)
@@ -146,7 +148,7 @@ def select_GC_candidadates(gal_id):
                 f2 = (PARAM_SEL_RANGE[param])[1]
 
                 try:
-                    param_f1 = 'MAG_APER_CORR_'+f1
+                    param_f1 = 'F_MAG_APER_CORR_'+f1
                     param_f2 = 'F_MAG_APER_CORR_'+f2
                     param_min = (PARAM_SEL_RANGE[param])[2]
                     param_max = (PARAM_SEL_RANGE[param])[3]
@@ -157,7 +159,7 @@ def select_GC_candidadates(gal_id):
                     except: m2 = sources[f2]
 
                 except:
-                    param_f1 = 'F_MAG_APER_CORR_'+f1
+                    param_f1 = 'MAG_APER_CORR_'+f1
                     param_f2 = 'F_MAG_APER_CORR_'+f2
                     param_min = (PARAM_SEL_RANGE[param])[2]
                     param_max = (PARAM_SEL_RANGE[param])[3]
@@ -184,6 +186,7 @@ def select_GC_candidadates(gal_id):
             else :
                 param_min = (PARAM_SEL_RANGE[param])[0]
                 param_max = (PARAM_SEL_RANGE[param])[1]
+
                 try:
                     param = param
                     param_mask = ((sources[param]>=param_min) & (sources[param]<=param_max))

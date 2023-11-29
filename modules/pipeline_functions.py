@@ -285,7 +285,7 @@ def add_fits_files(fits1, fits2, out_fits):
 def attach_sex_tables(tables,output_table) :
     os.system('rm '+output_table)
     out_table = fits.open(tables[0])
-    out_table.writeto(output_table)
+    out_table.writeto(output_table,overwrite=True)
 
     for i in range(len(tables)-1) :
         #print (i, len(tables))
@@ -309,7 +309,7 @@ def attach_sex_tables(tables,output_table) :
         os.system('rm '+output_table)
         out_table[1] = hdu1
         out_table[1] = hdu2
-        out_table.writeto(output_table)
+        out_table.writeto(output_table,overwrite=True)
 
 ############################################################
 

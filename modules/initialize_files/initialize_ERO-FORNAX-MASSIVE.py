@@ -40,8 +40,8 @@ def initialize_params() :
     ### (if ZP, EXPTIME and GAIN are missing from the header, define them for a given filter)
 
     WORKING_DIR = './'
-    PRIMARY_FRAME_SIZE_ARCSEC = 60 #arcsec
-    FRAME_SIZE_ARCSEC = 60 #cut-out size from the original frame for the general anlaysis (arcsec)
+    PRIMARY_FRAME_SIZE_ARCSEC = 480 #arcsec
+    FRAME_SIZE_ARCSEC = 480 #cut-out size from the original frame for the general anlaysis (arcsec)
 
     # defining the executables (what you type in the command-line that executes the program)
     SE_executable = 'sex'
@@ -80,107 +80,89 @@ def initialize_params() :
     TARGETS = []
 
     
-    coords = [  [49.85203041666667, 42.10677777777777],\
-                [49.71799875, 42.02483250000001],\
-                [49.54738749999999, 42.031305833333334],\
-                [49.62074041666666, 42.0425675],\
-                [49.52060708333333, 42.009254444444444],\
-                [49.81803624999999, 41.92738388888888],\
-                [49.50566208333334, 41.826798333333336],\
-                [49.468284583333336, 41.92698194444444],\
-                [49.44762458333334, 41.79328111111111],\
-                [49.53191166666667, 41.79473555555556],\
-                [49.931839583333335, 41.713005555555554],\
-                [49.88220708333333, 41.74505666666666],\
-                [49.957474999999995, 41.66903194444444],\
-                [49.96710958333333, 41.648158888888894],\
-                [50.18777666666667, 41.71359027777777],\
-                [50.029556666666664, 41.80436194444445],\
-                [49.99816916666667, 41.81075222222222],\
-                [49.353784999999995, 41.73928361111111],\
-                [49.477501249999996, 41.71769166666666],\
-                [49.18420208333333, 41.77249083333333],\
-                [50.11558791666666, 41.62373361111111],\
-                [50.004912499999996, 41.618896944444444],\
-                [50.32273375, 41.59031944444445],\
-                [50.32323291666666, 41.579314999999994],\
-                [50.33499916666668, 41.54946555555556],\
-                [50.235469583333334, 41.48937138888889],\
-                [50.107512083333326, 41.51985694444445],\
-                [50.10502291666667, 41.48415527777778],\
-                [50.05839999999999, 41.50322694444444],\
-                [49.60850583333333, 41.58960388888889],\
-                [49.564410833333326, 41.476661666666665],\
-                [49.56311791666667, 41.47668222222223],\
-                [49.61458833333334, 41.49648277777778],\
-                [49.74901291666667, 41.51044611111111],\
-                [49.8025775, 41.51052111111111],\
-                [49.94685125, 41.4814713888889],\
-                [49.72702291666666, 41.22264166666667],\
-                [49.740249999999996, 41.35898666666667],\
-                [49.623790416666665, 41.30263027777778],\
-                [49.452315, 41.4084075],\
-                [49.331235, 41.677952222222224],\
-                [49.176267083333336, 41.694655],\
-                [49.09025458333333, 41.621990555555556],\
-                [49.52851458333334, 41.640724444444444],\
-                [50.101828749999996, 41.54338527777778],\
-                [49.978704166666674, 41.61796138888889],\
-                [50.010654166666676, 41.61427055555555],\
-                [50.07407791666667, 41.60098444444444],\
-                [50.083259583333344, 41.59210222222223],\
-                [50.137605833333325, 41.55683611111111],\
-                [50.09706916666666, 41.465561666666666],\
-                [49.65419083333333, 41.29229722222222],\
-                [49.70098291666667, 41.187785833333336],\
-                [50.29034416666666, 41.61803638888889],\
-                [49.88211458333333, 41.91444333333334],\
-                [49.62916208333333, 41.632711111111114],\
-                [50.032653333333336, 41.89375638888889],\
-                [50.059477083333334, 41.73036333333334],\
-                [50.042787916666676, 41.52692388888889],\
-                [49.872615833333334, 41.620336944444446],\
-                [49.69296583333334, 41.268159999999995],\
-                [49.66474583333333, 41.51727305555556],\
-                [49.723105, 41.530585],\
-                [49.60768333333334, 41.54533472222222],\
-                [49.77149708333333, 41.58009805555555],\
-                [49.77935916666667, 41.710310555555566],\
-                [49.618425833333326, 41.84444166666667],\
-                [49.56439333333333, 41.406349999999996],\
-                [49.47159666666666, 41.99441444444445],\
-                [49.45511666666666, 41.81292638888889],\
-                [49.49092041666667, 41.684511388888886],\
-                [49.46139250000001, 41.40080527777778],\
-                [49.32788291666667, 41.4788225],\
-                [49.373932499999995, 41.71793638888889],\
-                [49.37223416666667, 41.79393194444445],\
-                [49.07775000000001, 41.597478611111114]]
-
-
-    #coords = [[049.95896,+41.41584],[049.14865,+41.60580],[049.73977,+41.35899],[049.44806,+41.79297],[049.35376,+41.73917],[050.27769,+41.53715],[049.50575,+41.82677]]
-    
-    
+    coords = [  [53.7467, -35.1711],\
+                [54.2263, -35.3747],\
+                [53.6228, -35.5465],\
+                [54.2689, -35.5901],\
+                [54.3472, -34.9001],\
+                [054.15532, -35.38590],\
+                [53.9282, -35.3383],\
+                [54.2219, -34.9384],\
+                [54.0169, -35.3889],\
+                [53.584, -35.3624],\
+                [54.1553, -35.3859],\
+                [54.1792, -35.4356],\
+                [53.9283, -35.5141],\
+                [54.2492, -35.3432],\
+                [54.1165, -35.2107],\
+                [53.7354, -35.1909],\
+                [53.7426, -35.0427],\
+                [54.4213, -35.2962],\
+                [53.7728, -35.2184],\
+                [53.876800537109375, -35.251800537109375],\
+                [53.751, -35.3224],\
+                #[54.2917, -35.3865],\
+                [54.2611, -34.8755],\
+                [53.798, -35.3229],\
+                #[54.0011, -34.8781],\
+                [53.7195, -35.5694],\
+                #[53.7197, -35.5695],\
+                [53.9912, -35.348],\
+                [54.2494010925293, -35.137298583984375],\
+                [53.74, -35.2235],\
+                #[53.5507, -35.2285],\
+                [54.4107, -35.3854],\
+                [53.7727, -35.4506],\
+                #[53.75279998779297, -35.42210006713867],\
+                [53.7167, -35.6233],\
+                #[54.16120147705078, -35.61140060424805],\
+                #[53.635398864746094, -35.04359817504883],\
+                #[54.31629943847656, -35.357398986816406],\
+                #[53.74290084838867, -35.258399963378906],\
+                [53.8001, -35.4342],\
+                [53.9048, -34.9795],\
+                [53.680999755859375, -35.52109909057617],\
+                [53.94729995727539, -35.361900329589844],\
+                [54.00740051269531, -35.310699462890625],\
+                #[54.36289978027344, -35.30580139160156],\
+                #[53.672000885009766, -35.506900787353516],\
+                #[53.69160079956055, -34.89250183105469],\
+                #[53.618900299072266, -34.94409942626953]   
+                ] #35 objects
     i = -1
     for coord in coords:
         i = i+1
         ra, dec = coord
-        if (i>-1):
+        if ((i<3)):
             #target_str = str(i) +' ERO-FORNAX FORNAX-DWARF-'+str(i)+' '+str(ra)+' '+str(dec)+' 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_GC_CAT DWARF,LSB'
-            target_str = str(i) +' ERO-PERSEUS PERSEUS-DWARF-'+str(i)+' '+str(ra)+' '+str(dec)+' 70 VIS,NISP-Y,NISP-J,NISP-H MAKE_CAT,MAKE_GC_CAT DWARF,LSB' #,NISP-Y,NISP-J,NISP-H
+            target_str = str(i) +' ERO-FORNAX FORNAX-DWARF-'+str(i)+' '+str(ra)+' '+str(dec)+' 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_CAT DWARF,LSB' #,NISP-Y,NISP-J,NISP-H
             TARGETS.append([target_str])
             #print (target_str)
+
+    TARGETS.append(['100 ERO-FORNAX FORNAX-DWARF-100 054.23864 -35.50702 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_GC_CAT MASSIVE']) #FCC184
+    TARGETS.append(['101 ERO-FORNAX FORNAX-DWARF-101 054.13133 -35.29561 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_GC_CAT MASSIVE']) #FCC170
+    TARGETS.append(['102 ERO-FORNAX FORNAX-DWARF-102 054.28715 -35.19500 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_GC_CAT MASSIVE']) #FCC190
+
+    TARGETS.append(['103 ERO-FORNAX FORNAX-DWARF-103 054.11516 -34.97445 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_GC_CAT MASSIVE']) #FCC167
+    TARGETS.append(['104 ERO-FORNAX FORNAX-DWARF-104 053.81938 -35.22624 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_GC_CAT MASSIVE']) #FCC147-148
+    TARGETS.append(['105 ERO-FORNAX FORNAX-DWARF-105 054.01621 -35.44146 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_GC_CAT MASSIVE']) #FCC161
 
     # NOTE: possible methods -> RESAMPLE_DATA, MODEL_PSF, FIT_GAL, USE_SUB_GAL, MAKE_CAT, MAKE_GC_CAT
     # NOTE: possible comments -> MASSIVE,DWARF,LSB
 
  
-    MERGE_CATS = True
+    MERGE_CATS = False
     MERGE_SIM_GC_CATS = False
     MERGE_GC_CATS = True
 
     global TABLES
     TABLES = {}
+    TABLES['acsfcs']='./archival_tables/ACS-FCS-GCs.fits'
+    TABLES['fornax-spec-gcs']='./archival_tables/Fornax_spec_UCDs_and_GCs.fits' #only Saifollahi+2021b
+    TABLES['fornax-spec-gcs-all']='./archival_tables/Fornax_spec_UCDs_and_GCs_all.fits'
+    TABLES['fornax-spec-stars']='./archival_tables/Fornax_spec_foreground_stars.fits'
+    TABLES['fornax-spec-galaxies']='./archival_tables/Fornax_spec_background_galaxies.fits'
+    TABLES['gaia-stars']='./archival_tables/gaia_dr3_sources.fits'
 
     # ------------------------------  GALAXY FITTING ------------------------------
 
@@ -192,7 +174,7 @@ def initialize_params() :
     BACKGROUND_ANNULUS_START = 3 #The size of background annulus for forced photoemtry as a factor of FWHM
     BACKGROUND_ANNULUS_TICKNESS = 20 # the thickness of the background annulus in pixels
     CROSS_MATCH_RADIUS_ARCSEC = 0.25
-    MAG_LIMIT_CAT = 27.5
+    MAG_LIMIT_CAT = 26
     EXTRACT_DWARFS = False
 
     # -------------------------------- PSF MODELING -------------------------------
@@ -224,12 +206,12 @@ def initialize_params() :
     #------------------------------ GC SELECTION -------------------------------
 
     GC_SEL_PARAMS = ['CI_2_4','CI_4_8','CI_8_12']#,'CI_2_4','CI_4_6','CI_6_8','CI_8_10','CI_10_12','ELLIPTICITY']
-    EXTERNAL_CROSSMATCH = False
+    EXTERNAL_CROSSMATCH = True
     EXTERNAL_CROSSMATCH_CAT = './archival_tables/ERO-FDS-ugriJKs.fits'
 
     PARAM_SEL_METHOD = 'MANUAL'
-    PARAM_SEL_RANGE = {'ELLIPTICITY':[-0.01,0.4],'F_MAG_APER_CORR_VIS':[15,30],'F_MAG_APER_CORR_NISP-Y':[15,30],\
-    'color0':['VIS','VIS',-0.5,0.5],'color1':['VIS','NISP-Y',-1.5,1.2],'color2':['NISP-Y','NISP-J',-1,1],'color3':['NISP-J','NISP-H',-1,1]}#,\
+    PARAM_SEL_RANGE = {'ELLIPTICITY':[-0.01,0.4],'F_MAG_APER_CORR':[19,26],'F_MAG_APER_CORR_VIS':[15,30],'F_MAG_APER_CORR_NISP-Y':[15,30],\
+    'color0':['VIS','VIS',-0.5,0.5],'color1':['VIS','NISP-Y',-2,1.2],'color2':['NISP-Y','NISP-J',-1,1],'color3':['NISP-J','NISP-H',-1,1]}#,\
     #'color5':['u','i',1.5,3.5], 'color6':['g','i',0.5,1.5], 'color7':['r','i',0,0.6], 'color8':['i','k',1,3.5]}   # clean selection
 
 
@@ -243,7 +225,7 @@ def initialize_params() :
 
     input_dir = working_directory+'inputs_dwarfs/'
     output_dir = working_directory+'outputs_dwarfs/'
-    main_data_dir = working_directory+'ERO-data/ERO-PERSEUS/'#input_dir+'main_data/'
+    main_data_dir = working_directory+'ERO-data/ERO-FORNAX/'#input_dir+'main_data/'
 
     data_dir = input_dir+'data/'
     psf_dir = input_dir+'psf/'
