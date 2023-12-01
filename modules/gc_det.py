@@ -40,35 +40,73 @@ def select_gcs_for_param(param_sources,mag_sources,param_det_art_gcs,mag_det_art
     N = len(param_sources)
     mask = []
 
+    #cat1 = open(cats_dir+'compactness_range_lower_limit_'+label+'.csv', 'w')
+    #cat2 = open(cats_dir+'compactness_range_upper_limit_'+label+'.csv', 'w')
+
+    mag_range = np.arange(18,28,0.1)
+    upper_limits = np.zeros(len(mag_range))-99
+    lower_limits = np.zeros(len(mag_range))-99
+
+    for mag in mag_range:
+
+        j = int((mag-np.min(mag_range))/0.1+0.5)
+
+        #print (mag,j)
+
+        m = mag_det_art_gcs[abs(mag_det_art_gcs-mag)<4]
+        p = param_det_art_gcs[abs(mag_det_art_gcs-mag)<4]
+
+        p = sigma_clip(p, 3, masked=False)
+
+        if len(p) < 20:
+            lower_limits[j] = -99
+            upper_limits[j] = -99
+        else: 
+            lower_limits[j] = (np.percentile(p, 0.05))
+            upper_limits[j] = (np.percentile(p, 99.))+0.05
+
+    
+        plt.plot(lower_limits,mag_range,'k.')
+        plt.plot(upper_limits,mag_range,'k.')
+        plt.xlim([-0.5,1.5])
+
+
     for i in range(N):
 
         mag = mag_sources[i]
         param = param_sources[i]
 
-        mag0 = int(mag*2+0.5)/2.
+        j = int((mag-np.min(mag_range))/0.1+0.5)
 
-        mag_range_mask = ((abs(mag_det_art_gcs-mag0)<2.5))
-        param_det_art_gcs_in_mag_range = param_det_art_gcs[mag_range_mask]
+        if (j<0) or (j>=len(mag_range)):
+            mask.append(0)
+            continue
 
-        #param_det_art_gcs_in_mag_rang = sigma_clip(param_det_art_gcs_in_mag_range,3, masked=False)
-        param_median = np.nanmedian(param_det_art_gcs_in_mag_range)
-        param_std = np.nanstd(param_det_art_gcs_in_mag_range)
-        #print (param_std)
-        #param_lower_limit = param_median-2.0*param_std-0.05
-        #param_upper_limit = param_median+2.0*param_std+0.05
-        param_lower_limit = np.percentile(param_det_art_gcs_in_mag_range, 1)-0.05
-        param_upper_limit = np.percentile(param_det_art_gcs_in_mag_range, 99)+0.05
+        #if (mag>MAG_LIMIT_CAT) or (mag<MAG_LIMIT_SAT):
+        #    mask.append(0)
+        #    continue
+
+        #mag0 = mag #int(mag*2+0.5)/2.
+
+        #mag_range_mask = ((abs(mag_det_art_gcs-mag0)<2.0))
+        #param_det_art_gcs_in_mag_range = param_det_art_gcs[mag_range_mask]
+
+        param_lower_limit = lower_limits[j] #param_median-2.0*param_std-0.05
+        param_upper_limit = upper_limits[j] #param_median+2.0*param_std+0.05
 
         if (param > param_lower_limit) and (param < param_upper_limit) :
             mask.append(1)
+            plt.plot(param,mag,'r.',alpha=0.2)
         else :
             mask.append(0) #0
+            plt.plot(param,mag,'k.',alpha=0.2)
 
-        plt.plot(param_lower_limit,mag,'k.')
-        plt.plot(param_upper_limit,mag,'k.')
 
     plt.savefig(check_plots_dir+'compactness_range_'+label+'.png')
     plt.close()
+
+    #cat1.close()
+    #cat2.close()
 
     mask = np.array(mask)
     return mask
@@ -81,7 +119,7 @@ def select_GC_candidadates(gal_id):
     #ART_GCs_cat = art_dir+gal_name+'_'+fn_det+'_ALL_ART_GCs.fits'
     
     try :
-        DET_ART_GCs_cat = art_dir+gal_name+'_'+fn_det+'_ALL_DET_ART_GCs.fits' #_random
+        DET_ART_GCs_cat = art_dir+gal_name+'_'+fn_det+'_ALL_DET_ART_GCs.fits_' #_random
         det_art_gcs = (fits.open(DET_ART_GCs_cat))[1].data
     except:
         print ('*** GC simulations are not found. Pipeline try to use some older simulated data that seems relevant, if available ... ')

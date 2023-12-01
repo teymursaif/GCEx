@@ -14,7 +14,7 @@ def initialize_params() :
     MAG_LIMIT_CAT, CROSS_MATCH_RADIUS_ARCSEC, GC_SIZE_RANGE, GC_MAG_RANGE, RATIO_OVERSAMPLE_PSF, PSF_PIXEL_SCALE, PSF_SIZE, MODEL_PSF, \
     PIXEL_SCALES, ZPS, PRIMARY_FRAME_SIZE, FRAME_SIZE, GAL_FRAME_SIZE, EXPTIME, GAIN, GC_REF_MAG, PSF_PIXELSCL_KEY, FWHM_LIMIT, INPUT_ZP, INPUT_EXPTIME, \
     MAG_LIMIT_SAT, MAG_LIMIT_PSF, GC_SEL_PARAMS, ELL_LIMIT_PSF, GC_SIM_MODE, MERGE_CATS, MERGE_SIM_GC_CATS, MERGE_GC_CATS, EXTRACT_DWARFS,\
-    PARAM_SEL_METHOD, PARAM_SEL_RANGE, EXTERNAL_CROSSMATCH, EXTERNAL_CROSSMATCH_CAT
+    PARAM_SEL_METHOD, PARAM_SEL_RANGE, EXTERNAL_CROSSMATCH, EXTERNAL_CROSSMATCH_CAT, MAG_LIMIT_FILTER 
     global SE_executable,galfit_executable,swarp_executable
 
     FWHMS_ARCSEC = {}
@@ -40,8 +40,8 @@ def initialize_params() :
     ### (if ZP, EXPTIME and GAIN are missing from the header, define them for a given filter)
 
     WORKING_DIR = './'
-    PRIMARY_FRAME_SIZE_ARCSEC = 480 #arcsec
-    FRAME_SIZE_ARCSEC = 480 #cut-out size from the original frame for the general anlaysis (arcsec)
+    PRIMARY_FRAME_SIZE_ARCSEC = 1200 #arcsec
+    FRAME_SIZE_ARCSEC = 1200 #cut-out size from the original frame for the general anlaysis (arcsec)
 
     # defining the executables (what you type in the command-line that executes the program)
     SE_executable = 'sex'
@@ -51,7 +51,7 @@ def initialize_params() :
 
     ### (if ZP, EXPTIME and GAIN are missing from the header, define them for a given filter)
     INPUT_ZP = {'VIS':30,'NISP-Y':30,'NISP-J':30,'NISP-H':30}
-    INPUT_EXPTIME = {'VIS':565,'NISP-Y':121,'NISP-J':116,'NISP-H':81}
+    INPUT_EXPTIME = {'VIS':565,'NISP-Y':81,'NISP-J':81,'NISP-H':81}
     INPUT_GAIN = {'VIS':2,'NISP-Y':1,'NISP-J':1,'NISP-H':1}
 
     # ------------------------------ GALAXIES/TARGETS ------------------------------
@@ -79,81 +79,24 @@ def initialize_params() :
     #Euclid ERO
     TARGETS = []
 
-    
-    coords = [  [53.7467, -35.1711],\
-                [54.2263, -35.3747],\
-                [53.6228, -35.5465],\
-                [54.2689, -35.5901],\
-                [54.3472, -34.9001],\
-                [054.15532, -35.38590],\
-                [53.9282, -35.3383],\
-                [54.2219, -34.9384],\
-                [54.0169, -35.3889],\
-                [53.584, -35.3624],\
-                [54.1553, -35.3859],\
-                [54.1792, -35.4356],\
-                [53.9283, -35.5141],\
-                [54.2492, -35.3432],\
-                [54.1165, -35.2107],\
-                [53.7354, -35.1909],\
-                [53.7426, -35.0427],\
-                [54.4213, -35.2962],\
-                [53.7728, -35.2184],\
-                [53.876800537109375, -35.251800537109375],\
-                [53.751, -35.3224],\
-                #[54.2917, -35.3865],\
-                [54.2611, -34.8755],\
-                [53.798, -35.3229],\
-                #[54.0011, -34.8781],\
-                [53.7195, -35.5694],\
-                #[53.7197, -35.5695],\
-                [53.9912, -35.348],\
-                [54.2494010925293, -35.137298583984375],\
-                [53.74, -35.2235],\
-                #[53.5507, -35.2285],\
-                [54.4107, -35.3854],\
-                [53.7727, -35.4506],\
-                #[53.75279998779297, -35.42210006713867],\
-                [53.7167, -35.6233],\
-                #[54.16120147705078, -35.61140060424805],\
-                #[53.635398864746094, -35.04359817504883],\
-                #[54.31629943847656, -35.357398986816406],\
-                #[53.74290084838867, -35.258399963378906],\
-                [53.8001, -35.4342],\
-                [53.9048, -34.9795],\
-                [53.680999755859375, -35.52109909057617],\
-                [53.94729995727539, -35.361900329589844],\
-                [54.00740051269531, -35.310699462890625],\
-                #[54.36289978027344, -35.30580139160156],\
-                #[53.672000885009766, -35.506900787353516],\
-                #[53.69160079956055, -34.89250183105469],\
-                #[53.618900299072266, -34.94409942626953]   
-                ] #35 objects
-    i = -1
-    for coord in coords:
-        i = i+1
-        ra, dec = coord
-        if ((i>2) and (i<=40)):
-            #target_str = str(i) +' ERO-FORNAX FORNAX-DWARF-'+str(i)+' '+str(ra)+' '+str(dec)+' 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_GC_CAT DWARF,LSB'
-            target_str = str(i) +' ERO-FORNAX FORNAX-DWARF-'+str(i)+' '+str(ra)+' '+str(dec)+' 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_CAT DWARF,LSB' #,NISP-Y,NISP-J,NISP-H
-            TARGETS.append([target_str])
-            #print (target_str)
+    TARGETS.append(['1 ERO-FORNAX ERO-FORNAX-1 54.41498968710675 -35.58635104214481 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_GC_CAT ---']) 
+    TARGETS.append(['2 ERO-FORNAX ERO-FORNAX-2 54.020110517026325 -35.58700320641283 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_GC_CAT ---'])
+    TARGETS.append(['3 ERO-FORNAX ERO-FORNAX-3 53.625231108456134 -35.58636741821876 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_GC_CAT ---'])
+    TARGETS.append(['4 ERO-FORNAX ERO-FORNAX-4 54.41340800663024 -35.2638620852018 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_GC_CAT ---'])
 
-    #TARGETS.append(['100 ERO-FORNAX FORNAX-DWARF-100 054.23864 -35.50702 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_GC_CAT MASSIVE']) #FCC184
-    #TARGETS.append(['101 ERO-FORNAX FORNAX-DWARF-101 054.13133 -35.29561 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_GC_CAT MASSIVE']) #FCC170
-    #TARGETS.append(['102 ERO-FORNAX FORNAX-DWARF-102 054.28715 -35.19500 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_GC_CAT MASSIVE']) #FCC190
+    TARGETS.append(['5 ERO-FORNAX ERO-FORNAX-5 54.02010052441082 -35.26450654419051 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_GC_CAT ---'])
+    TARGETS.append(['6 ERO-FORNAX ERO-FORNAX-6 53.62679280653799 -35.263878267794965 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_GC_CAT ---'])
+    TARGETS.append(['7 ERO-FORNAX ERO-FORNAX-7 54.41183879946199 -34.94135934996358 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_GC_CAT ---'])
+    TARGETS.append(['8 ERO-FORNAX ERO-FORNAX-8 54.020090610601954 -34.9419961237686 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_GC_CAT ---'])
 
-    #TARGETS.append(['103 ERO-FORNAX FORNAX-DWARF-103 054.11516 -34.97445 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_GC_CAT MASSIVE']) #FCC167
-    #TARGETS.append(['104 ERO-FORNAX FORNAX-DWARF-104 053.81938 -35.22624 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_GC_CAT MASSIVE']) #FCC147-148
-    #TARGETS.append(['105 ERO-FORNAX FORNAX-DWARF-105 054.01621 -35.44146 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_GC_CAT MASSIVE']) #FCC161
+    TARGETS.append(['9 ERO-FORNAX ERO-FORNAX-9 53.62834218888022 -34.94137533958052 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_GC_CAT ---'])
 
-    # NOTE: possible methods -> RESAMPLE_DATA, MODEL_PSF, FIT_GAL, USE_SUB_GAL, MAKE_CAT, MAKE_GC_CAT
-    # NOTE: possible comments -> MASSIVE,DWARF,LSB
-
- 
     MERGE_CATS = False
     MERGE_SIM_GC_CATS = False
     MERGE_GC_CATS = True
+
+    # NOTE: possible methods -> RESAMPLE_DATA, MODEL_PSF, FIT_GAL, USE_SUB_GAL, MAKE_CAT, MAKE_GC_CAT
+    # NOTE: possible comments -> MASSIVE,DWARF,LSB
 
     global TABLES
     TABLES = {}
@@ -171,10 +114,10 @@ def initialize_params() :
     # ---------------------- SOURCE DETECTION AND PHOTOMETRY ----------------------
 
     PHOTOM_APERS = '1,2,4,8,12,16,20,30,40' #aperture-sizes (diameters) in pixels for aperture photometry with Sextractor
-    BACKGROUND_ANNULUS_START = 3 #The size of background annulus for forced photoemtry as a factor of FWHM
+    BACKGROUND_ANNULUS_START = 4 #The size of background annulus for forced photoemtry as a factor of FWHM
     BACKGROUND_ANNULUS_TICKNESS = 20 # the thickness of the background annulus in pixels
     CROSS_MATCH_RADIUS_ARCSEC = 0.25
-    MAG_LIMIT_CAT = 27
+    MAG_LIMIT_CAT = 26 #25
     EXTRACT_DWARFS = False
 
     # -------------------------------- PSF MODELING -------------------------------
@@ -186,21 +129,20 @@ def initialize_params() :
     MODEL_PSF = True
     RATIO_OVERSAMPLE_PSF = 10 #do not go beyond 10, this will have consequences for undersampling later
     PSF_IMAGE_SIZE = 40 #PSF size in the instruments pixel-scale
-    MAG_LIMIT_PSF = 21
-    MAG_LIMIT_SAT = 19
+    MAG_LIMIT_PSF = 21 #19 for NISP
+    MAG_LIMIT_SAT = 19 #17 for NISP #saturation limit
     ELL_LIMIT_PSF = 0.1
     #FWHM_UPPER_LIMIT_PSF =
     #FWHM_LOWER_LIMIT_PSF =
 
 
     #------------------------------ GC SIMULATION ------------------------------
-    
     N_ART_GCS = 250
     N_SIM_GCS = 1
     COSMIC_CLEAN = False #does not work at the moment anyways...
     GC_SIZE_RANGE = [2,6] #lower value should be small enough to make some point-sources for performance check, in pc
     GC_MAG_RANGE = [-11,-5]
-    GC_REF_MAG = {'VIS':-8, 'NISP-Y':-8.3,'NISP-J':-8.3,'NISP-H':-8.3} #magnitude of a typical GC in the given filters should be defined here.
+    GC_REF_MAG = {'VIS':-8, 'NISP-Y':-8.3,'NISP-J':-8.3,'NISP-H':-8.3 } #magnitude of a typical GC in the given filters should be defined here.
     GC_SIM_MODE = 'UNIFORM' # 'UNIFORM' or 'CONCENTRATED'
 
     #------------------------------ GC SELECTION -------------------------------
@@ -210,10 +152,14 @@ def initialize_params() :
     EXTERNAL_CROSSMATCH_CAT = './archival_tables/ERO-FDS-ugriJKs.fits'
 
     PARAM_SEL_METHOD = 'MANUAL'
-    PARAM_SEL_RANGE = {'ELLIPTICITY':[-0.01,0.4],'F_MAG_APER_CORR':[19,26],'F_MAG_APER_CORR_VIS':[15,30],'F_MAG_APER_CORR_NISP-Y':[15,30],\
-    'color0':['VIS','VIS',-0.5,0.5],'color1':['VIS','NISP-Y',-1.5,1.2],'color2':['NISP-Y','NISP-J',-1,1],'color3':['NISP-J','NISP-H',-1,1]}#,\
-    #'color5':['u','i',1.5,3.5], 'color6':['g','i',0.5,1.5], 'color7':['r','i',0,0.6], 'color8':['i','k',1,3.5]}   # clean selection
+    PARAM_SEL_RANGE = {'ELLIPTICITY':[0,0.5],'F_MAG_APER_CORR':[21,26],'F_MAG_APER_CORR_NISP-Y':[15,30],\
+    'color0':['VIS','VIS',-0.25,0.25],'color1':['VIS','NISP-Y',-0.1,0.7],'color2':['NISP-Y','NISP-J',-0.3,0.5],'color3':['NISP-J','NISP-H',-0.3,0.5]} #\
+    #'color5':['u','i',1.5,3.5], 'color6':['g','i',0.6,1.4], 'color7':['r','i',0,0.6], 'color8':['i','k',1,3.5]}   # clean selection
 
+    #PARAM_SEL_RANGE = {'color1':['VIS','NISP-Y',-0.4,1.2],'color2':['NISP-Y','NISP-J',-0.5,0.5],'color3':['NISP-J','NISP-H',-0.3,0.4], \
+    #    'color4':['u','NISP-Y',1,4.5], 'color5':['g','NISP-Y',0,2.5], 'color6':['r','NISP-Y',-0.5,1.5], 'color7':['i','NISP-Y',-0.7,1], \
+    #    'color8':['u','i',1,4.0], 'color9':['i','k',0.5,3.5], \
+    #    'ELLIPTICITY':[0,0.5]}
 
     ####################################################################################################
     ####################################################################################################
@@ -223,8 +169,8 @@ def initialize_params() :
 
     working_directory = WORKING_DIR
 
-    input_dir = working_directory+'inputs_dwarfs/'
-    output_dir = working_directory+'outputs_dwarfs/'
+    input_dir = working_directory+'inputs/'
+    output_dir = working_directory+'outputs/'
     main_data_dir = working_directory+'ERO-data/ERO-FORNAX/'#input_dir+'main_data/'
 
     data_dir = input_dir+'data/'
@@ -300,3 +246,9 @@ def finalize(gal_id):
 
 welcome()
 initialize_params()
+
+#export PATH="/net/cannon/data/users/saifollahi/miniconda3/bin:
+#/net/cannon/data/users/saifollahi/miniconda3/condabin:
+#/net/cannon/usr/lib64/qt-3.3/bin:/net/cannon/usr/local/bin:
+#/net/cannon/usr/local/sbin:/net/cannon/usr/bin:/net/cannon/usr/sbin
+#:/net/cannon/bin:/sbin:$PATH"
