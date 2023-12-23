@@ -63,7 +63,7 @@ def select_gcs_for_param(param_sources,mag_sources,param_det_art_gcs,mag_det_art
             upper_limits[j] = -99
         else: 
             lower_limits[j] = (np.percentile(p, 0.05))
-            upper_limits[j] = (np.percentile(p, 99.))+0.05
+            upper_limits[j] = (np.percentile(p, 99.))+0.1
 
     
         plt.plot(lower_limits,mag_range,'k.')

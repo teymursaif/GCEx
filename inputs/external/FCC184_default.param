@@ -426,3 +426,7 @@ FLUX_RADIUS              #Fraction-of-light radii                               
 #FLUXERR_DETMODEL         RMS error on detection model-fitting flux                 [count]
 #MAG_DETMODEL             Magnitude from detection model-fitting                    [mag]
 #MAGERR_DETMODEL          RMS error on detection model-fitting magnitude            [mag]
+MAG_APER(10) #Fixed aperture magnitude vector [mag]
+MAGERR_APER(10) #RMS error vector for fixed aperture mag [mag]
+FLUX_APER(10) # Flux within a Kron-like elliptical aperture [count]
+FLUXERR_APER(10) #RMS error for AUTO flux [count]

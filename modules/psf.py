@@ -126,7 +126,7 @@ def estimate_fwhm(gal_id):
             #print (FWHM_x,FWHM_y)
             #print (FWHM_x*psf_pixel_scale ,FWHM_y*psf_pixel_scale)
             FWHMS_ARCSEC[fn] = np.mean([FWHM_x*psf_pixel_scale ,FWHM_y*psf_pixel_scale])
-            APERTURE_SIZE[fn] = 2.0*FWHMS_ARCSEC[fn] #1.0*FWHMS_ARCSEC[fn]
+            APERTURE_SIZE[fn] = 1.5*FWHMS_ARCSEC[fn] #1.0*FWHMS_ARCSEC[fn]
             print ('- FWHM in filter', fn, 'is', FWHMS_ARCSEC[fn], 'arcsec')
 
         else:

@@ -192,7 +192,7 @@ def initialize_params() :
     BACKGROUND_ANNULUS_START = 3 #The size of background annulus for forced photoemtry as a factor of FWHM
     BACKGROUND_ANNULUS_TICKNESS = 20 # the thickness of the background annulus in pixels
     CROSS_MATCH_RADIUS_ARCSEC = 0.25
-    MAG_LIMIT_CAT = 27.5
+    MAG_LIMIT_CAT = 28.0
     EXTRACT_DWARFS = False
 
     # -------------------------------- PSF MODELING -------------------------------
@@ -228,7 +228,7 @@ def initialize_params() :
     EXTERNAL_CROSSMATCH_CAT = './archival_tables/ERO-FDS-ugriJKs.fits'
 
     PARAM_SEL_METHOD = 'MANUAL'
-    PARAM_SEL_RANGE = {'ELLIPTICITY':[-0.01,0.4],'F_MAG_APER_CORR_VIS':[15,30],'F_MAG_APER_CORR_NISP-Y':[15,30],\
+    PARAM_SEL_RANGE = {'ELLIPTICITY':[-0.01,0.5],'F_MAG_APER_CORR_VIS':[15,30],'F_MAG_APER_CORR_NISP-Y':[15,30],\
     'color0':['VIS','VIS',-0.5,0.5],'color1':['VIS','NISP-Y',-1.5,1.2],'color2':['NISP-Y','NISP-J',-1,1],'color3':['NISP-J','NISP-H',-1,1]}#,\
     #'color5':['u','i',1.5,3.5], 'color6':['g','i',0.5,1.5], 'color7':['r','i',0,0.6], 'color8':['i','k',1,3.5]}   # clean selection
 

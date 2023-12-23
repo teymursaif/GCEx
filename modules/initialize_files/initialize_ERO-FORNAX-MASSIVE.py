@@ -135,7 +135,7 @@ def initialize_params() :
         ra, dec = coord
         if ((i<3)):
             #target_str = str(i) +' ERO-FORNAX FORNAX-DWARF-'+str(i)+' '+str(ra)+' '+str(dec)+' 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_GC_CAT DWARF,LSB'
-            target_str = str(i) +' ERO-FORNAX FORNAX-DWARF-'+str(i)+' '+str(ra)+' '+str(dec)+' 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_CAT DWARF,LSB' #,NISP-Y,NISP-J,NISP-H
+            target_str = str(i) +' ERO-FORNAX FORNAX-DWARF-'+str(i)+' '+str(ra)+' '+str(dec)+' 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_GC_CAT DWARF,LSB' #,NISP-Y,NISP-J,NISP-H
             TARGETS.append([target_str])
             #print (target_str)
 
@@ -210,7 +210,7 @@ def initialize_params() :
     EXTERNAL_CROSSMATCH_CAT = './archival_tables/ERO-FDS-ugriJKs.fits'
 
     PARAM_SEL_METHOD = 'MANUAL'
-    PARAM_SEL_RANGE = {'ELLIPTICITY':[-0.01,0.4],'F_MAG_APER_CORR':[19,26],'F_MAG_APER_CORR_VIS':[15,30],'F_MAG_APER_CORR_NISP-Y':[15,30],\
+    PARAM_SEL_RANGE = {'ELLIPTICITY':[-0.01,0.5],'F_MAG_APER_CORR':[19,26],'F_MAG_APER_CORR_VIS':[15,30],'F_MAG_APER_CORR_NISP-Y':[15,30],\
     'color0':['VIS','VIS',-0.5,0.5],'color1':['VIS','NISP-Y',-2,1.2],'color2':['NISP-Y','NISP-J',-1,1],'color3':['NISP-J','NISP-H',-1,1]}#,\
     #'color5':['u','i',1.5,3.5], 'color6':['g','i',0.5,1.5], 'color7':['r','i',0,0.6], 'color8':['i','k',1,3.5]}   # clean selection
 
