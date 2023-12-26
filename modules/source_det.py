@@ -383,7 +383,7 @@ def make_source_cat(gal_id):
         ####
         print (f"{bcolors.OKCYAN}- making source catalogs for point-sources"+ bcolors.ENDC)
         command = SE_executable+' '+detection_frame+','+frame+' -c '+external_dir+'default.sex -CATALOG_NAME '+source_cat_name+' '+ \
-        '-PARAMETERS_NAME '+external_dir+gal_name+'_default.param -DETECT_MINAREA 3 -DETECT_THRESH 1.0 -ANALYSIS_THRESH 1.0 ' + \
+        '-PARAMETERS_NAME '+external_dir+gal_name+'_default.param -DETECT_MINAREA 4 -DETECT_THRESH 1.5 -ANALYSIS_THRESH 1.5 ' + \
         '-DEBLEND_NTHRESH 32 -DEBLEND_MINCONT 0.00001 ' + weight_command + ' -PHOT_APERTURES '+str(psf_dia_ref_pixel)+','+str(PHOTOM_APERS)+' -GAIN ' + str(gain) + ' ' \
         '-MAG_ZEROPOINT ' +str(zp) + ' -BACKPHOTO_TYPE GLOBAL '+\
         '-FILTER Y -FILTER_NAME  '+external_dir+'tophat_1.5_3x3.conv -STARNNW_NAME '+external_dir+'default.nnw -PIXEL_SCALE ' + str(pix_size) + ' ' \
@@ -639,19 +639,19 @@ def forced_photometry(det_cat, photom_frame, mask_frame, back_rms_frame, fn, fn_
 
         #print (np.shape(fits_data_cropped))
 
-        #N_check = 0
-        #if (mag_det) < 22 and (mag_det > 18) :
-        #    N_check = N_check + 1
-        #    if N_check <= 10 :
-        #        fig, ax = plt.subplots(1, 3, figsize=(10,3))
-        #        ax[0].imshow(fits_data_cropped)
-        #        ax[1].imshow(error_data_cropped)
-        #        mask_data_bool_cropped_int = mask_data_bool_cropped
-        #        mask_data_bool_cropped_int[mask_data_bool_cropped_int==True]=1
-        #        mask_data_bool_cropped_int[mask_data_bool_cropped_int==False]=0
-        #        ax[2].imshow(mask_data_bool_cropped_int)
-        #        plt.savefig(check_plots_dir+'object_'+str(i)+'_'+fn+'.png')
-        #        plt.close()
+        N_check = 0
+        if (mag_det) < 25 and (mag_det > 18) :
+            N_check = N_check + 1
+            if N_check <= 1 :
+                fig, ax = plt.subplots(1, 3, figsize=(10,3))
+                ax[0].imshow(fits_data_cropped)
+                ax[1].imshow(error_data_cropped)
+                mask_data_bool_cropped_int = mask_data_bool_cropped
+                mask_data_bool_cropped_int[mask_data_bool_cropped_int==True]=1
+                mask_data_bool_cropped_int[mask_data_bool_cropped_int==False]=0
+                ax[2].imshow(mask_data_bool_cropped_int)
+                plt.savefig(check_plots_dir+'object_'+str(i)+'_'+fn+'.png')
+                plt.close()
 
         aper = CircularAperture((x, y), aper_size)
         sky_aper = CircularAnnulus((x, y), sky_aper_size_1, sky_aper_size_2)
@@ -661,14 +661,13 @@ def forced_photometry(det_cat, photom_frame, mask_frame, back_rms_frame, fn, fn_
         #print (error_data_cropped)
 
         flux, flux_err = aper.do_photometry(data=fits_data_cropped,error=error_data_cropped,method=photom_method)
-        sky_flux, sky_flux_err = sky_aper.do_photometry(data=fits_data_cropped,mask=mask_data_bool_cropped,error=error_data_cropped,method=photom_method) #mask=mask_data_bool_cropped,
-        #print (flux, sky_flux)
-        #print (flux_err, sky_flux_err)
+        
+        sky_flux, sky_flux_err = sky_aper.do_photometry(data=fits_data_cropped,mask=mask_data_bool_cropped,error=error_data_cropped,method=photom_method)
         flux = flux[0]
         flux_err = flux_err[0]
         sky_flux = sky_flux[0]
         sky_flux_err = sky_flux_err[0]
-        flux_sky_sub = float(flux)-float(sky_flux)/(sky_area/aper_area)
+        flux_sky_sub = float(flux) #-float(sky_flux)/(sky_area/aper_area)
         if mode == 'aperture-corr':
             flux_total = ((flux_sky_sub) / (PSF_REF_RAD_FRAC[fn]))[0]
         elif mode == 'circular-aperture':
@@ -679,11 +678,11 @@ def forced_photometry(det_cat, photom_frame, mask_frame, back_rms_frame, fn, fn_
         #print (flux, sky_flux)
         #print (flux_total)
         if flux_total <= 0 :
-            FLUX.append(-99)
+            FLUX.append(flux_total)
             FLUX_ERR.append(-99)
             MAG.append(-99)
             MAG_ERR.append(-99)
-            BACK_FLUX.append(-99)
+            BACK_FLUX.append(float(sky_flux))
             BACK_FLUX_ERR.append(-99)
         else:
             mag = -2.5*np.log10((flux_total))+zp
@@ -707,12 +706,12 @@ def forced_photometry(det_cat, photom_frame, mask_frame, back_rms_frame, fn, fn_
 
     #print (N_objects,len(MAG))
     if mode=='aperture-corr':
-        #expand_fits_table(output, 'F_FLUX_APER_CORR_'+fn,np.array(FLUX))
-        #expand_fits_table(output, 'F_FLUXERR_APER_CORR_'+fn,np.array(FLUX_ERR))
+        expand_fits_table(output, 'F_FLUX_APER_CORR_'+fn,np.array(FLUX))
+        expand_fits_table(output, 'F_FLUXERR_APER_CORR_'+fn,np.array(FLUX_ERR))
         expand_fits_table(output, 'F_MAG_APER_CORR_'+fn,np.array(MAG))
         expand_fits_table(output, 'F_MAGERR_APER_CORR_'+fn,np.array(MAG_ERR))
-        #expand_fits_table(output, 'F_BACK_FLUX_'+fn,np.array(BACK_FLUX))
-        #expand_fits_table(output, 'F_BACK_FLUX_ERR_'+fn,np.array(BACK_FLUX_ERR))
+        expand_fits_table(output, 'F_BACK_FLUX_'+fn,np.array(BACK_FLUX))
+        expand_fits_table(output, 'F_BACK_FLUX_ERR_'+fn,np.array(BACK_FLUX_ERR))
 
     elif mode=='circular-flux-radius':
         #expand_fits_table(output, 'F_FLUX_APER_R12_'+fn,np.array(FLUX))
