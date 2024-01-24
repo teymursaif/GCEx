@@ -77,19 +77,19 @@ def fit_galaxy_sersic_all_filters(gal_id):
         update_header(weight_data,'GAIN',gain)
 
         scale = 0.005*distance #arcsec/kpc
-        try :\
-        #if True:
+        #try :\
+        if True:
             ra_, dec_, Re_, mag_, n_, PA_, q_ = fit_galaxy_sersic(main_data,weight_data,ra,dec,gal_name,fn,pix_size,fit_dir,zp,plotting=True,\
             r_cut=GAL_FRAME_SIZE[fn], r_cut_fit=GAL_FRAME_SIZE[fn], scale=scale, constraint=constraint, data_name=data_name)
             ra_ = float(ra_)
             dec_ = float(dec_)
             #if USE_GAL_SUB_IMG == True:
 
-        except Exception as error:
-            # handle the exception
-            print("An exception occurred:", error)
-            print (f"{bcolors.FAIL}*** Fitting failed."+ bcolors.ENDC)
-            ra_, dec_, Re_, mag_, n_, PA_, q_ = -99, -99, -99, -99, -99, -99, -99
+        #except Exception as error:
+        #    # handle the exception
+        #    print("An exception occurred:", error)
+        #    print (f"{bcolors.FAIL}*** Fitting failed."+ bcolors.ENDC)
+        #    ra_, dec_, Re_, mag_, n_, PA_, q_ = -99, -99, -99, -99, -99, -99, -99
 
         Re_ = round(Re_, 2)
         mag_ = round(mag_,2)
@@ -214,40 +214,46 @@ def mask_stars (frame, weight_frame, ra, dec, objname, filtername, zp, q=1, pa=0
 
     os.system('rm '+fit_dir+objname+'_'+filtername+'.sex_cat.fits')
 
-    """
+    
     os.system(SE_executable+' '+frame+' -c '+external_dir+'default.sex -PARAMETERS_NAME '+external_dir+'sex_default.param -CATALOG_NAME '+\
-    fit_dir+objname+'_'+filtername+'.sex_cat.fits -DETECT_MINAREA 20 -DETECT_THRESH 1.5 -ANALYSIS_THRESH 1.5 -MAG_ZEROPOINT '+str(zp)+' '+\
-    '-DEBLEND_NTHRESH 8 -DEBLEND_MINCONT 0.005 -FILTER_NAME '+external_dir+'default.conv '+' -STARNNW_NAME '+external_dir+'default.nnw '+\
-    '-BACK_SIZE 256 -BACK_FILTERSIZE 3  -CHECKIMAGE_TYPE APERTURES,SEGMENTATION -CHECKIMAGE_NAME '+\
+    fit_dir+objname+'_'+filtername+'.sex_cat.fits -DETECT_MINAREA 10 -DETECT_THRESH 2.0 -ANALYSIS_THRESH 2.0 -MAG_ZEROPOINT '+str(zp)+' '+\
+    '-DEBLEND_NTHRESH 8 -DEBLEND_MINCONT 0.0005 -FILTER_NAME '+external_dir+'default.conv '+' -STARNNW_NAME '+external_dir+'default.nnw '+\
+    '-BACK_SIZE 256 -BACK_FILTERSIZE 1  -CHECKIMAGE_TYPE APERTURES,SEGMENTATION -CHECKIMAGE_NAME '+\
     fit_dir+objname+'_'+filtername+'.check_aper_2.fits,'+fit_dir+objname+'_'+filtername+'_galfit_seg_map_1.fits')
-    """
 
     os.system(SE_executable+' '+frame+' -c '+external_dir+'default.sex -PARAMETERS_NAME '+external_dir+'sex_default.param -CATALOG_NAME '+\
-    fit_dir+objname+'_'+filtername+'.sex_cat.fits -DETECT_MINAREA 8 -DETECT_MAXAREA 10000 -DETECT_THRESH 1.5 -ANALYSIS_THRESH 1.5 -MAG_ZEROPOINT '+str(zp)+' '+\
-    '-DEBLEND_NTHRESH 16 -DEBLEND_MINCONT 0.005 -FILTER_NAME '+external_dir+'default.conv '+' -STARNNW_NAME '+external_dir+'default.nnw '+\
-    '-BACK_SIZE 32 -CHECKIMAGE_TYPE APERTURES,SEGMENTATION -CHECKIMAGE_NAME '+\
+    fit_dir+objname+'_'+filtername+'.sex_cat.fits -DETECT_MINAREA 5 -DETECT_MAXAREA 1000000 -DETECT_THRESH 2.0 -ANALYSIS_THRESH 2.0 -MAG_ZEROPOINT '+str(zp)+' '+\
+    '-DEBLEND_NTHRESH 8 -DEBLEND_MINCONT 0.0005 -FILTER_NAME '+external_dir+'default.conv '+' -STARNNW_NAME '+external_dir+'default.nnw '+\
+    '-BACK_SIZE 32 -BACK_FILTERSIZE 1 -CHECKIMAGE_TYPE APERTURES,SEGMENTATION -CHECKIMAGE_NAME '+\
     fit_dir+objname+'_'+filtername+'.check_aper_2.fits,'+fit_dir+objname+'_'+filtername+'_galfit_seg_map.fits')
 
-    """
-    img1 = fits.open(fit_dir+objname+'_'+filtername+'_galfit_seg_map_1.fits')
-    img2 = fits.open(fit_dir+objname+'_'+filtername+'_galfit_seg_map_2.fits')
-    data1 = img1[0].data
-    data2 = img2[0].data
-    data1 = data1+data2
-    img1[0].data = data1
-    img1.writeto(fit_dir+objname+'_'+filtername+'_galfit_seg_map.fits',overwrite=True)
-    """
+    #img1 = fits.open(fit_dir+objname+'_'+filtername+'_galfit_seg_map_1.fits')
+    #img2 = fits.open(fit_dir+objname+'_'+filtername+'_galfit_seg_map_2.fits')
+    #data1 = img1[0].data
+    #data2 = img2[0].data
+    #data1 = data1+data2
+    #img1[0].data = data1
+    #img1.writeto(fit_dir+objname+'_'+filtername+'_galfit_seg_map+.fits',overwrite=True)
 
     cat = fits.open(fit_dir+objname+'_'+filtername+'.sex_cat.fits')
     img = fits.open(frame)
     weight = fits.open(weight_frame)
-    img2 = fits.open(fit_dir+objname+'_'+filtername+'_galfit_seg_map.fits')
+    img2 = fits.open(fit_dir+objname+'_'+filtername+'_galfit_seg_map_1.fits')
     table = cat[1].data
     data = img[0].data
     data2 = img2[0].data
+    l = len(data2)
+    print (l)
+    seg_ids_center = (data2[int(l/2-2.5):int(l/2+2.5),int(l/2-2.5):int(l/2+2.5)])
+    seg_ids_center = seg_ids_center.flatten()
+    print (seg_ids_center)
+    for seg_id_center in seg_ids_center:
+        data2[data2==seg_id_center]=0
     weight_data = weight[0].data
     #data = data*0
     N = len(table)
+
+    
 
     #print (image)
     for i in range (0,N) :
@@ -263,7 +269,7 @@ def mask_stars (frame, weight_frame, ra, dec, objname, filtername, zp, q=1, pa=0
         B = params['B_IMAGE']
         #print (ra_star, dec_star, mag)
         r = math.sqrt((ra-ra_star)**2+(dec-dec_star)**2)
-        if flag <= 9999 and r >= -0.01/3600. and mag < 18:
+        if (flag <= 9999 and r < 99999/3600. and mag < 27):
             #print (r*3600., ra_star, dec_star, mag)
             if x >= X or y >= Y :
                 continue
@@ -274,10 +280,19 @@ def mask_stars (frame, weight_frame, ra, dec, objname, filtername, zp, q=1, pa=0
             #if blurred==0 :
             #    mask_size = int(15*B)**1
             #if blurred==1 :
-            mask_size = int(2*(26-mag)*B)
+            mask_size = int(1.5*(27-mag)*B+1)
 
-            if mask_size > 20:
-                mask_size = 20
+            if mask_size > 40:
+                mask_size = 40
+
+            #if r < 3/3600.:
+            #    mask_size = 4
+
+            #mask_size=2
+
+            if (r < 3/3600.):
+                if mask_size > 4:
+                    mask_size = 4
 
             for i in range(0,mask_size+1) :
                 for j in range(0,mask_size+1) :
@@ -801,6 +816,8 @@ def fit_galaxy_sersic(main_data,weight_data,ra,dec,obj_name,filter_name,pix_size
 
     mask_frame, masked_frame, check_frame, sigma_frame = mask_stars(cropped_frame, weight_frame, ra, dec, obj_name, filter_name, zp, type=fit_type)
     #sigma_frame='None'
+    
+    return -99, -99, -99, -99, -99, -99, -99
 
     print ('- fitting ')
     #running galfit

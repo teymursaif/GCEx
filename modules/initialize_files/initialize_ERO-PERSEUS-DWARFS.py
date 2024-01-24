@@ -1,5 +1,6 @@
 import os, sys
 import numpy as np
+from astropy.io import fits
 
 def initialize_params() :
     print (f"{bcolors.OKCYAN}- Initializing the pipeline ... "+ bcolors.ENDC)
@@ -12,7 +13,7 @@ def initialize_params() :
     global PRIMARY_FRAME_SIZE_ARCSEC, FRAME_SIZE_ARCSEC, GAL_FRAME_SIZE_ARCSEC, N_ART_GCS, N_SIM_GCS, PSF_IMAGE_SIZE, INSTR_FOV, COSMIC_CLEAN, \
     PHOTOM_APERS, FWHMS_ARCSEC, APERTURE_SIZE, PSF_REF_RAD_FRAC, BACKGROUND_ANNULUS_START, BACKGROUND_ANNULUS_TICKNESS, TARGETS, APERTURE_SIZE, \
     MAG_LIMIT_CAT, CROSS_MATCH_RADIUS_ARCSEC, GC_SIZE_RANGE, GC_MAG_RANGE, RATIO_OVERSAMPLE_PSF, PSF_PIXEL_SCALE, PSF_SIZE, MODEL_PSF, \
-    PIXEL_SCALES, ZPS, PRIMARY_FRAME_SIZE, FRAME_SIZE, GAL_FRAME_SIZE, EXPTIME, GAIN, GC_REF_MAG, PSF_PIXELSCL_KEY, FWHM_LIMIT, INPUT_ZP, INPUT_EXPTIME, \
+    PIXEL_SCALES, ZPS, PRIMARY_FRAME_SIZE, FRAME_SIZE, GAL_FRAME_SIZE, EXPTIME, GAIN, GC_REF_MAG, PSF_PIXELSCL_KEY, FWHM_LIMIT, INPUT_ZP, INPUT_EXPTIME, INPUT_GAIN, \
     MAG_LIMIT_SAT, MAG_LIMIT_PSF, GC_SEL_PARAMS, ELL_LIMIT_PSF, GC_SIM_MODE, MERGE_CATS, MERGE_SIM_GC_CATS, MERGE_GC_CATS, EXTRACT_DWARFS,\
     PARAM_SEL_METHOD, PARAM_SEL_RANGE, EXTERNAL_CROSSMATCH, EXTERNAL_CROSSMATCH_CAT
     global SE_executable,galfit_executable,swarp_executable
@@ -44,14 +45,14 @@ def initialize_params() :
     FRAME_SIZE_ARCSEC = 60 #cut-out size from the original frame for the general anlaysis (arcsec)
 
     # defining the executables (what you type in the command-line that executes the program)
-    SE_executable = 'sex'
-    swarp_executable = 'swarp'
-    #SE_executable = 'sextractor'
-    #swarp_executable = 'SWarp'
+    #SE_executable = 'sex'
+    #swarp_executable = 'swarp'
+    SE_executable = 'sextractor'
+    swarp_executable = 'SWarp'
 
     ### (if ZP, EXPTIME and GAIN are missing from the header, define them for a given filter)
     INPUT_ZP = {'VIS':30,'NISP-Y':30,'NISP-J':30,'NISP-H':30}
-    INPUT_EXPTIME = {'VIS':565,'NISP-Y':121,'NISP-J':116,'NISP-H':81}
+    INPUT_EXPTIME = {'VIS':565,'NISP-Y':112,'NISP-J':112,'NISP-H':112}
     INPUT_GAIN = {'VIS':2,'NISP-Y':1,'NISP-J':1,'NISP-H':1}
 
     # ------------------------------ GALAXIES/TARGETS ------------------------------
@@ -160,6 +161,21 @@ def initialize_params() :
 
     #coords = [[049.95896,+41.41584],[049.14865,+41.60580],[049.73977,+41.35899],[049.44806,+41.79297],[049.35376,+41.73917],[050.27769,+41.53715],[049.50575,+41.82677]]
     
+    table_fits = fits.open('./archival_tables/Perseus_ERO_dwarf_candidate_catalog_dup_removed_vote_0.7.fits')
+    table_data = table_fits[1].data
+    id_list = table_data['id']
+    ra_list = table_data['ra']
+    dec_list = table_data['dec']
+
+
+    i = -1
+    for id in id_list:
+        i = i+1
+        ra = ra_list[i]
+        dec = dec_list[i]
+        target_str = str(id) +' ERO-PERSEUS PERSEUS-DWARF-ID'+str(id)+' '+str(ra)+' '+str(dec)+' 70 VIS FIT_GAL DWARF,LSB' #,NISP-Y,NISP-J,NISP-H
+        if id > 1069 :
+            TARGETS.append([target_str])
     
     i = -1
     for coord in coords:
@@ -167,17 +183,17 @@ def initialize_params() :
         ra, dec = coord
         if (i>-1):
             #target_str = str(i) +' ERO-FORNAX FORNAX-DWARF-'+str(i)+' '+str(ra)+' '+str(dec)+' 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_GC_CAT DWARF,LSB'
-            target_str = str(i) +' ERO-PERSEUS PERSEUS-DWARF-'+str(i)+' '+str(ra)+' '+str(dec)+' 70 VIS,NISP-Y,NISP-J,NISP-H MAKE_CAT,MAKE_GC_CAT DWARF,LSB' #,NISP-Y,NISP-J,NISP-H
-            TARGETS.append([target_str])
+            target_str = str(i) +' ERO-PERSEUS PERSEUS-DWARF-'+str(i)+' '+str(ra)+' '+str(dec)+' 70 VIS MAKE_CAT DWARF,LSB' #,NISP-Y,NISP-J,NISP-H
+            #TARGETS.append([target_str])
             #print (target_str)
 
     # NOTE: possible methods -> RESAMPLE_DATA, MODEL_PSF, FIT_GAL, USE_SUB_GAL, MAKE_CAT, MAKE_GC_CAT
     # NOTE: possible comments -> MASSIVE,DWARF,LSB
 
  
-    MERGE_CATS = True
+    MERGE_CATS = False
     MERGE_SIM_GC_CATS = False
-    MERGE_GC_CATS = True
+    MERGE_GC_CATS = False
 
     global TABLES
     TABLES = {}
@@ -189,10 +205,10 @@ def initialize_params() :
     # ---------------------- SOURCE DETECTION AND PHOTOMETRY ----------------------
 
     PHOTOM_APERS = '1,2,4,8,12,16,20,30,40' #aperture-sizes (diameters) in pixels for aperture photometry with Sextractor
-    BACKGROUND_ANNULUS_START = 3 #The size of background annulus for forced photoemtry as a factor of FWHM
-    BACKGROUND_ANNULUS_TICKNESS = 20 # the thickness of the background annulus in pixels
+    BACKGROUND_ANNULUS_START = 5 #The size of background annulus for forced photoemtry as a factor of FWHM
+    BACKGROUND_ANNULUS_TICKNESS = 40 # the thickness of the background annulus in pixels
     CROSS_MATCH_RADIUS_ARCSEC = 0.25
-    MAG_LIMIT_CAT = 28.0
+    MAG_LIMIT_CAT = 29.0
     EXTRACT_DWARFS = False
 
     # -------------------------------- PSF MODELING -------------------------------
@@ -223,13 +239,13 @@ def initialize_params() :
 
     #------------------------------ GC SELECTION -------------------------------
 
-    GC_SEL_PARAMS = ['CI_2_4','CI_4_8','CI_8_12']#,'CI_2_4','CI_4_6','CI_6_8','CI_8_10','CI_10_12','ELLIPTICITY']
+    GC_SEL_PARAMS = ['CI_2_4']#,'CI_4_8','CI_8_12']#,'CI_2_4','CI_4_6','CI_6_8','CI_8_10','CI_10_12','ELLIPTICITY']
     EXTERNAL_CROSSMATCH = False
     EXTERNAL_CROSSMATCH_CAT = './archival_tables/ERO-FDS-ugriJKs.fits'
 
     PARAM_SEL_METHOD = 'MANUAL'
-    PARAM_SEL_RANGE = {'ELLIPTICITY':[-0.01,0.5],'F_MAG_APER_CORR_VIS':[15,30],'F_MAG_APER_CORR_NISP-Y':[15,30],\
-    'color0':['VIS','VIS',-0.5,0.5],'color1':['VIS','NISP-Y',-1.5,1.2],'color2':['NISP-Y','NISP-J',-1,1],'color3':['NISP-J','NISP-H',-1,1]}#,\
+    PARAM_SEL_RANGE = {'ELLIPTICITY':[-0.01,0.5],'F_MAG_APER_CORR_VIS':[23,28],'color0':['VIS','VIS',-0.5,0.5]}
+    #,'color1':['VIS','NISP-Y',-1.5,1.2],'color2':['NISP-Y','NISP-J',-1,1],'color3':['NISP-J','NISP-H',-1,1]}#,\
     #'color5':['u','i',1.5,3.5], 'color6':['g','i',0.5,1.5], 'color7':['r','i',0,0.6], 'color8':['i','k',1,3.5]}   # clean selection
 
 
@@ -243,7 +259,7 @@ def initialize_params() :
 
     input_dir = working_directory+'inputs_dwarfs/'
     output_dir = working_directory+'outputs_dwarfs/'
-    main_data_dir = working_directory+'ERO-data/ERO-PERSEUS/'#input_dir+'main_data/'
+    main_data_dir = input_dir+'main_data/'
 
     data_dir = input_dir+'data/'
     psf_dir = input_dir+'psf/'
