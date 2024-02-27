@@ -241,7 +241,7 @@ def make_mask(frame, sex_source_cat, weight_frame, seg_map, mask_out, mask_out2,
 
 ############################################################
 
-def make_detection_frame(gal_id, input_frame, weight_frame, fn, output_frame, backsize=16, backfiltersize=1, iteration=2):
+def make_detection_frame(gal_id, input_frame, weight_frame, fn, output_frame, backsize=16, backfiltersize=1, iteration=1):
     print ('- Making the detection frame for filter ', fn)
     gal_name, ra, dec, distance, filters, comments = gal_params[gal_id]
     data_name = gal_data_name[gal_id]
@@ -301,7 +301,7 @@ def make_detection_frame(gal_id, input_frame, weight_frame, fn, output_frame, ba
     img1.writeto(output_frame,overwrite=True)
 
     #os.system('rm temp*.fits')
-    os.system('cp '+temp_dir+gal_name+'.temp_mask'+str(iteration-1)+'.fits'+' '+sex_dir+gal_name+'_'+fn+'_'+'mask'+'_cropped.fits')
+    os.system('cp '+temp_dir+gal_name+'.temp_mask'+str(iteration)+'.fits'+' '+sex_dir+gal_name+'_'+fn+'_'+'mask'+'_cropped.fits')
 
 ############################################################
 
@@ -459,8 +459,8 @@ def make_multiwavelength_cat(gal_id, mode='forced-photometry'):
         os.system('rm '+output)
         shutil.copy(det_cat,output)
         for fn in filters:
-            #photom_frame = data_dir+gal_name+'_'+fn+'_cropped.fits'
-            photom_frame = sex_dir+gal_name+'_'+fn+'_check_image_-background.fits'
+            photom_frame = data_dir+gal_name+'_'+fn+'_cropped.fits'
+            #photom_frame = sex_dir+gal_name+'_'+fn+'_check_image_-background.fits'
             mask_frame = sex_dir+gal_name+'_'+fn+'_'+'mask'+'_cropped.fits'
             back_rms_frame = sex_dir+gal_name+'_'+fn+'_check_image_back_rms.fits'
             print ("- Force photometry of frame in filter "+fn)
@@ -482,8 +482,8 @@ def make_multiwavelength_cat(gal_id, mode='forced-photometry'):
         os.system('rm '+output)
         shutil.copy(det_cat,output)
         for fn in filters:
-            #photom_frame = data_dir+gal_name+'_'+fn+'_cropped.fits'
-            photom_frame = sex_dir+gal_name+'_'+fn+'_check_image_-background.fits'
+            photom_frame = data_dir+gal_name+'_'+fn+'_cropped.fits'
+            #photom_frame = sex_dir+gal_name+'_'+fn+'_check_image_-background.fits'
             mask_frame = sex_dir+gal_name+'_'+fn+'_'+'mask'+'_cropped.fits'
             back_rms_frame = sex_dir+gal_name+'_'+fn+'_check_image_back_rms.fits'
             print ("- Force photometry of frame in filter "+fn)
@@ -513,12 +513,19 @@ def crop_fits_data(fits_file,ra,dec,crop_size):
     urx = int(x_center + radius_pix)
     ury = int(y_center + radius_pix)
     #print (np.shape(hdu[0].data))
-    dimx,dimy= np.shape(fits_data)[0],np.shape(fits_data)[1]
+    dimy,dimx= np.shape(fits_data)[0],np.shape(fits_data)[1] #2-1
     #print (dimx,dimy)
     if llx<0:llx=0
     if lly<0:lly=0
     if urx>=dimx:urx=dimx-1
     if ury>=dimy:ury=dimy-1
+
+    if ((urx-llx)  < 2*radius_pix) and (llx > 2*radius_pix):
+        llx = urx - 2*radius_pix
+
+    if ((ury-lly) < 2*radius_pix) and (lly > 2*radius_pix):
+        lly = ury - 2*radius_pix
+
     fits_header['NAXIS1'] = urx - llx
     fits_header['NAXIS2'] = ury - lly
     fits_header['CRPIX1'] = fits_header['CRPIX1']-llx
@@ -600,6 +607,10 @@ def forced_photometry(det_cat, photom_frame, mask_frame, back_rms_frame, fn, fn_
 
 
     a = 0
+    N_check = 0
+    N_NAN = 0
+    N_GOOD = 0
+    N_BAD = 0
     for i in range(N_objects):
         ra = RA[i]
         dec = DEC[i]
@@ -617,7 +628,7 @@ def forced_photometry(det_cat, photom_frame, mask_frame, back_rms_frame, fn, fn_
         if mode=='circular-flux-radius':
             flux_radius = FLUX_RADIUS[i]
             try :
-                if flux_radius <=0 :
+                if flux_radius <= 0 :
                     flux_radius = 5.0/PIXEL_SCALES[fn]
             except:
                 flux_radius = 5.0/PIXEL_SCALES[fn]
@@ -626,7 +637,7 @@ def forced_photometry(det_cat, photom_frame, mask_frame, back_rms_frame, fn, fn_
             sky_aper_size_2 = int(sky_aper_size_1+sky_aper_size_1)
             photom_method = 'subpixel'
 
-        #y, x, = w.all_world2pix(ra, dec, 0)
+        y0, x0, = w.all_world2pix(ra, dec, 0)
 
         crop_size = 2*sky_aper_size_2+10
         fits_file = fits.open(photom_frame)
@@ -639,19 +650,18 @@ def forced_photometry(det_cat, photom_frame, mask_frame, back_rms_frame, fn, fn_
 
         #print (np.shape(fits_data_cropped))
 
-        N_check = 0
-        if (mag_det) < 25 and (mag_det > 18) :
-            N_check = N_check + 1
-            if N_check <= 1 :
-                fig, ax = plt.subplots(1, 3, figsize=(10,3))
-                ax[0].imshow(fits_data_cropped)
-                ax[1].imshow(error_data_cropped)
-                mask_data_bool_cropped_int = mask_data_bool_cropped
-                mask_data_bool_cropped_int[mask_data_bool_cropped_int==True]=1
-                mask_data_bool_cropped_int[mask_data_bool_cropped_int==False]=0
-                ax[2].imshow(mask_data_bool_cropped_int)
-                plt.savefig(check_plots_dir+'object_'+str(i)+'_'+fn+'.png')
-                plt.close()
+        #if (mag_det) < 25 and (mag_det > 18) :
+        #    N_check = N_check + 1
+        #    if N_check <= 10 :
+        #        fig, ax = plt.subplots(1, 3, figsize=(10,3))
+        #        ax[0].imshow(fits_data_cropped)
+        #        ax[1].imshow(error_data_cropped)
+        #        mask_data_bool_cropped_int = mask_data_bool_cropped
+        #        mask_data_bool_cropped_int[mask_data_bool_cropped_int==True]=1
+        #        mask_data_bool_cropped_int[mask_data_bool_cropped_int==False]=0
+        #        ax[2].imshow(mask_data_bool_cropped_int)
+        #        plt.savefig(check_plots_dir+'object_'+str(i)+'_'+fn+'.png')
+        #        plt.close()
 
         aper = CircularAperture((x, y), aper_size)
         sky_aper = CircularAnnulus((x, y), sky_aper_size_1, sky_aper_size_2)
@@ -667,7 +677,7 @@ def forced_photometry(det_cat, photom_frame, mask_frame, back_rms_frame, fn, fn_
         flux_err = flux_err[0]
         sky_flux = sky_flux[0]
         sky_flux_err = sky_flux_err[0]
-        flux_sky_sub = float(flux) #-float(sky_flux)/(sky_area/aper_area)
+        flux_sky_sub = float(flux)-float(sky_flux)/(sky_area/aper_area)
         if mode == 'aperture-corr':
             flux_total = ((flux_sky_sub) / (PSF_REF_RAD_FRAC[fn]))[0]
         elif mode == 'circular-aperture':
@@ -684,7 +694,30 @@ def forced_photometry(det_cat, photom_frame, mask_frame, back_rms_frame, fn, fn_
             MAG_ERR.append(-99)
             BACK_FLUX.append(float(sky_flux))
             BACK_FLUX_ERR.append(-99)
-        else:
+            
+            N_BAD = N_BAD + 1
+            #if N_BAD <= 100 :
+            #    fig, ax = plt.subplots(1, 3, figsize=(10,5))
+            #    ax[0].imshow(fits_data_cropped)
+            #    ax[1].imshow(error_data_cropped)
+            #    mask_data_bool_cropped_int = mask_data_bool_cropped
+            #    mask_data_bool_cropped_int[mask_data_bool_cropped_int==True]=1
+            #    mask_data_bool_cropped_int[mask_data_bool_cropped_int==False]=0
+            #    ax[2].imshow(mask_data_bool_cropped_int)
+            #    ax[1].set_title('coords: '+str(ra)[:8]+', '+str(dec)[:8]+'\n'+str([y0, x0])+'\n'+str([lly, ury, llx, urx]),fontsize=16)
+            #    plt.savefig(check_plots_dir+'BAD-object_'+str(i)+'_'+fn+'.png')
+            #    plt.close()
+
+                #n = np.arange(100.0)
+                #hdu = fits.PrimaryHDU(n)
+                #hdul = fits.HDUList([hdu])
+                #hdul[0].data = fits_data_cropped
+                #hdul[0].header = data_header_cropped
+                #hdul.writeto(check_plots_dir+'BAD-object_'+str(i)+'_'+fn+'.fits',overwrite=True)
+
+
+        elif flux_total > 0 :
+            
             mag = -2.5*np.log10((flux_total))+zp
             mag_err = 2.5*np.log10(((flux_total+flux_err)/flux_total))
             #print (flux, sky_flux, mag)
@@ -694,7 +727,50 @@ def forced_photometry(det_cat, photom_frame, mask_frame, back_rms_frame, fn, fn_
             MAG_ERR.append(mag_err)
             BACK_FLUX.append(float(sky_flux))
             BACK_FLUX_ERR.append(float(sky_flux_err))
-            #print ('- flux, sky-flux and magnitude for object are:', flux_err, sky_flux_err, mag_err)
+            #print ('- flux, flux and magnitude for object are:', flux_total, mag)
+
+            N_GOOD = N_GOOD + 1
+            #if N_GOOD <= 10 :
+            #    fig, ax = plt.subplots(1, 3, figsize=(10,5))
+            #ax[0].imshow(fits_data_cropped)
+            #ax[1].imshow(error_data_cropped)
+            #mask_data_bool_cropped_int = mask_data_bool_cropped
+            #mask_data_bool_cropped_int[mask_data_bool_cropped_int==True]=1
+            #mask_data_bool_cropped_int[mask_data_bool_cropped_int==False]=0
+            #ax[2].imshow(mask_data_bool_cropped_int)
+            #ax[1].set_title('coords: '+str(ra)[:8]+', '+str(dec)[:8]+'\n'+str([y0, x0])+'\n'+str([lly, ury, llx, urx]),fontsize=16)
+            #plt.savefig(check_plots_dir+'GOOD-object_'+str(i)+'_'+fn+'.png')
+            #plt.close()
+
+        else:
+            FLUX.append(-99999)
+            FLUX_ERR.append(-99999)
+            MAG.append(-99999)
+            MAG_ERR.append(-99999)
+            BACK_FLUX.append(float(-99999))
+            BACK_FLUX_ERR.append(float(-99999))
+            
+            N_NAN = N_NAN + 1
+            #if N_NAN <= 10 :
+                #fig, ax = plt.subplots(1, 3, figsize=(10,5))
+                #ax[0].imshow(fits_data_cropped)
+                #ax[1].imshow(error_data_cropped)
+                #mask_data_bool_cropped_int = mask_data_bool_cropped
+                #mask_data_bool_cropped_int[mask_data_bool_cropped_int==True]=1
+                #mask_data_bool_cropped_int[mask_data_bool_cropped_int==False]=0
+                #ax[2].imshow(mask_data_bool_cropped_int)
+                #ax[1].set_title('coords: '+str(ra)[:8]+', '+str(dec)[:8]+'\n'+str([y0, x0])+'\n'+str([lly, ury, llx, urx]),fontsize=16)
+                #plt.savefig(check_plots_dir+'NAN-object_'+str(i)+'_'+fn+'.png')
+                #plt.close()
+
+                #n = np.arange(100.0)
+                #hdu = fits.PrimaryHDU(n)
+                #hdul = fits.HDUList([hdu])
+                #hdul[0].data = fits_data_cropped
+                #hdul[0].header = data_header_cropped
+                #hdul.writeto(check_plots_dir+'NAN-object_'+str(i)+'_'+fn+'.fits',overwrite=True)
+
+                #print (lly, ury, llx, urx)
 
         text = "+ Photometry for " + str(N_objects) + " sources in filter "+\
             fn+" in progress: " + str(int((i+1)*100/N_objects)) + "%"
@@ -791,7 +867,7 @@ def make_source_cat_for_sim(gal_id):
         csv_to_fits(art_cat_name_csv,art_cat_name)
 
         source_cat_with_art = cats_dir+gal_name+'_master_cat_forced.fits'
-        crossmatch(art_cat_name,source_cat_with_art,'RA_GC','DEC_GC','RA','DEC',2.*PIXEL_SCALES[fn_det],fn_det,\
+        crossmatch(art_cat_name,source_cat_with_art,'RA_GC','DEC_GC','RA','DEC',5.*PIXEL_SCALES[fn_det],fn_det,\
             art_dir+'temp'+str(n)+'.fits')
         tables.append(art_dir+'temp'+str(n)+'.fits')
         tables2.append(art_cat_name)

@@ -286,9 +286,9 @@ def simualte_GCs(gal_id,n):
             #print ()
 
             if weight_data[y,x] > 0:
-                dx = np.arange(-0.5,0.51,0.1)
+                dx = np.arange(-0.5,0.501,0.01)
                 dx = random.sample(list(dx),1)
-                dy = np.arange(-0.5,0.51,0.1)
+                dy = np.arange(-0.5,0.501,0.01)
                 dy = random.sample(list(dy),1)
                 dx = dx[0]
                 dy = dy[0]
@@ -418,10 +418,15 @@ def simualte_GCs(gal_id,n):
             yc = (gc_fits_file[0].header['NAXIS2']+0.5)/2
             xos = xc #+ (x-x0)
             yos = yc #+ (y-y0)
-
+            dx0 = (x-int(x))*RATIO_OVERSAMPLE_PSF
+            dy0 = (y-int(y))*RATIO_OVERSAMPLE_PSF
+            print (dx0,dy0)
+            x1 = xc+dx0
+            y1 = yc+dy0
+            #center = str(xc+dx0)+','+str(yc+dy0)
             swarp_cmd = swarp_executable+' '+gc_file+' -c '+external_dir+'default.swarp -IMAGEOUT_NAME '+gc_file+'.resampled.fits'+\
-                ' -RESAMPLING_TYPE LANCZOS4 -IMAGE_SIZE 0 -PIXELSCALE_TYPE MANUAL -PIXEL_SCALE '+str(RATIO_OVERSAMPLE_PSF)+\
-                ' -RESAMPLE Y -CENTER_TYPE ALL -SUBTRACT_BACK N -VERBOSE_TYPE FULL'
+                ' -RESAMPLING_TYPE LANCZOS4 -CELESTIAL_TYPE PIXEL -IMAGE_SIZE 0 -PIXELSCALE_TYPE MANUAL -PIXEL_SCALE '+str(RATIO_OVERSAMPLE_PSF)+\
+                ' -RESAMPLE Y -CENTER_TYPE MANUAL -CENTER '+str(x1)+','+str(y1)+' -SUBTRACT_BACK N -VERBOSE_TYPE FULL'
             #print (swarp_cmd)
             os.system(swarp_cmd)
 
@@ -487,7 +492,7 @@ def simualte_GCs(gal_id,n):
 
     df.to_csv(art_cat_name, index=False)
 
-    os.system('rm '+art_dir+'*resampled.fits')
+    #os.system('rm '+art_dir+'*resampled.fits')
     os.system('rm '+art_dir+'*noise.fits')
     os.system('rm '+art_dir+'*king.fits')
     os.system('rm '+art_dir+'*conv.fits')

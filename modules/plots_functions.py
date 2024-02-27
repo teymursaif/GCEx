@@ -132,9 +132,9 @@ def assess_GC_simulations_general(gal_id):
                 if i == len(filters):
                     break
 
-                param1 = det_art_gcs[GC_SEL_PARAMS[i]+'_'+fn]
+                param1 = det_art_gcs[GC_SEL_PARAMS[i]] #+'_'+fn
                 param2 = det_art_gcs['MAG_AUTO_'+fn]
-                param3 = sources[GC_SEL_PARAMS[i]+'_'+fn]
+                param3 = sources[GC_SEL_PARAMS[i]] #+'_'+fn
                 param4 = sources['F_MAG_APER_CORR_'+fn]
                 ax[3][i].scatter(param3,param4,s=20,color='grey',alpha=0.2,marker='o',label='Detected Sources')
                 ax[3][i].scatter(param1,param2,s=50,color=colors[n_filter],alpha=0.2,marker='o',label='Detected Artificial GCs')

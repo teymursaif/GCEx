@@ -40,6 +40,7 @@ def initialize_params() :
     ### (if ZP, EXPTIME and GAIN are missing from the header, define them for a given filter)
 
     WORKING_DIR = './'
+    main_data_dir = WORKING_DIR+'ERO-data/ERO-FORNAX-DEC/'#input_dir+'main_data/'
     PRIMARY_FRAME_SIZE_ARCSEC = 1200 #arcsec
     FRAME_SIZE_ARCSEC = 1200 #cut-out size from the original frame for the general anlaysis (arcsec)
 
@@ -50,9 +51,9 @@ def initialize_params() :
     #swarp_executable = 'SWarp'
 
     ### (if ZP, EXPTIME and GAIN are missing from the header, define them for a given filter)
-    INPUT_ZP = {'VIS':30,'NISP-Y':30,'NISP-J':30,'NISP-H':30}
-    INPUT_EXPTIME = {'VIS':565,'NISP-Y':81,'NISP-J':81,'NISP-H':81}
-    INPUT_GAIN = {'VIS':2,'NISP-Y':1,'NISP-J':1,'NISP-H':1}
+    INPUT_ZP = {'VIS-DET':30.1,'VIS':30.1,'NISP-Y':30,'NISP-J':30,'NISP-H':30}
+    INPUT_EXPTIME = {'VIS-DET':565,'VIS':565,'NISP-Y':81,'NISP-J':81,'NISP-H':81}
+    INPUT_GAIN = {'VIS-DET':2,'VIS':2,'NISP-Y':1,'NISP-J':1,'NISP-H':1}
 
     # ------------------------------ GALAXIES/TARGETS ------------------------------
 
@@ -79,21 +80,37 @@ def initialize_params() :
     #Euclid ERO
     TARGETS = []
 
-    TARGETS.append(['1 ERO-FORNAX ERO-FORNAX-1 54.41498968710675 -35.58635104214481 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_GC_CAT ---']) 
-    TARGETS.append(['2 ERO-FORNAX ERO-FORNAX-2 54.020110517026325 -35.58700320641283 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_GC_CAT ---'])
-    TARGETS.append(['3 ERO-FORNAX ERO-FORNAX-3 53.625231108456134 -35.58636741821876 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_GC_CAT ---'])
-    TARGETS.append(['4 ERO-FORNAX ERO-FORNAX-4 54.41340800663024 -35.2638620852018 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_GC_CAT ---'])
+    from astropy.wcs import WCS
+    from astropy.io import fits
+    frame = main_data_dir+'/ERO-FORNAX_VIS.fits'
+    main = fits.open(frame)
+    hdr = main[0].header
+    X = hdr['NAXIS1']
+    Y = hdr['NAXIS2']
+    S = np.max([X,Y])
+    w=WCS(frame)
+    N = 3
+    PRIMARY_FRAME_SIZE_ARCSEC = int(S/N/10)+2
+    FRAME_SIZE_ARCSEC = int(S/N/10)+2
+    print (FRAME_SIZE_ARCSEC)
+    for j in range(N):
+        for i in range(N):
+            m = (j*N+i)
+            xc =  (i) * (X/N) + (X/N)/2.
+            yc =  (j) * (Y/N) + (Y/N)/2.
+            ra, dec = w.all_pix2world(yc,xc,0)
+            #if m in [3,4,5,7,0,2,6,8] : #[1,3,4,5,7]  [0,2,6,8] 
+            if m in [0,1,2,3,4,5,6,7,8]: #0,1,2,3,4,5,6,7,8
+                target_str = str(m)+' ERO-FORNAX ERO-FORNAX-'+str(m)+' '+str(ra)+' '+str(dec)+' 20 VIS-DET,VIS,NISP-Y,NISP-J,NISP-H SIM_GC ---' #MAKE_CAT,SIM_GC, ,NISP-Y,NISP-J,NISP-H
+                #VIS-DET,VIS,NISP-Y,NISP-J,NISP-H
+                TARGETS.append([target_str])
+            #print (target_str)
 
-    TARGETS.append(['5 ERO-FORNAX ERO-FORNAX-5 54.02010052441082 -35.26450654419051 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_GC_CAT ---'])
-    TARGETS.append(['6 ERO-FORNAX ERO-FORNAX-6 53.62679280653799 -35.263878267794965 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_GC_CAT ---'])
-    TARGETS.append(['7 ERO-FORNAX ERO-FORNAX-7 54.41183879946199 -34.94135934996358 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_GC_CAT ---'])
-    TARGETS.append(['8 ERO-FORNAX ERO-FORNAX-8 54.020090610601954 -34.9419961237686 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_GC_CAT ---'])
-
-    TARGETS.append(['9 ERO-FORNAX ERO-FORNAX-9 53.62834218888022 -34.94137533958052 20 VIS,NISP-Y,NISP-J,NISP-H MAKE_GC_CAT ---'])
+    print (TARGETS)
 
     MERGE_CATS = False
-    MERGE_SIM_GC_CATS = False
-    MERGE_GC_CATS = True
+    MERGE_SIM_GC_CATS = True
+    MERGE_GC_CATS = False
 
     # NOTE: possible methods -> RESAMPLE_DATA, MODEL_PSF, FIT_GAL, USE_SUB_GAL, MAKE_CAT, MAKE_GC_CAT
     # NOTE: possible comments -> MASSIVE,DWARF,LSB
@@ -114,10 +131,10 @@ def initialize_params() :
     # ---------------------- SOURCE DETECTION AND PHOTOMETRY ----------------------
 
     PHOTOM_APERS = '1,2,4,8,12,16,20,30,40' #aperture-sizes (diameters) in pixels for aperture photometry with Sextractor
-    BACKGROUND_ANNULUS_START = 4 #The size of background annulus for forced photoemtry as a factor of FWHM
+    BACKGROUND_ANNULUS_START = 5 #The size of background annulus for forced photoemtry as a factor of FWHM
     BACKGROUND_ANNULUS_TICKNESS = 20 # the thickness of the background annulus in pixels
     CROSS_MATCH_RADIUS_ARCSEC = 0.25
-    MAG_LIMIT_CAT = 26 #25
+    MAG_LIMIT_CAT = 27 #25
     EXTRACT_DWARFS = False
 
     # -------------------------------- PSF MODELING -------------------------------
@@ -137,17 +154,17 @@ def initialize_params() :
 
 
     #------------------------------ GC SIMULATION ------------------------------
-    N_ART_GCS = 250
+    N_ART_GCS = 340
     N_SIM_GCS = 1
     COSMIC_CLEAN = False #does not work at the moment anyways...
     GC_SIZE_RANGE = [2,6] #lower value should be small enough to make some point-sources for performance check, in pc
     GC_MAG_RANGE = [-11,-5]
-    GC_REF_MAG = {'VIS':-8, 'NISP-Y':-8.3,'NISP-J':-8.3,'NISP-H':-8.3 } #magnitude of a typical GC in the given filters should be defined here.
+    GC_REF_MAG = {'VIS-DET':-8,'VIS':-8, 'NISP-Y':-8.45,'NISP-J':-8.45,'NISP-H':-8.45} #magnitude of a typical GC in the given filters should be defined here.
     GC_SIM_MODE = 'UNIFORM' # 'UNIFORM' or 'CONCENTRATED'
 
     #------------------------------ GC SELECTION -------------------------------
 
-    GC_SEL_PARAMS = ['CI_2_4','CI_4_8','CI_8_12']#,'CI_2_4','CI_4_6','CI_6_8','CI_8_10','CI_10_12','ELLIPTICITY']
+    GC_SEL_PARAMS = ['CI_2_4_VIS','CI_4_8_VIS']#,'CI_2_4','CI_4_6','CI_6_8','CI_8_10','CI_10_12','ELLIPTICITY']
     EXTERNAL_CROSSMATCH = True
     EXTERNAL_CROSSMATCH_CAT = './archival_tables/ERO-FDS-ugriJKs.fits'
 
@@ -171,7 +188,6 @@ def initialize_params() :
 
     input_dir = working_directory+'inputs/'
     output_dir = working_directory+'outputs/'
-    main_data_dir = working_directory+'ERO-data/ERO-FORNAX/'#input_dir+'main_data/'
 
     data_dir = input_dir+'data/'
     psf_dir = input_dir+'psf/'

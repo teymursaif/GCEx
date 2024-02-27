@@ -134,7 +134,11 @@ def select_GC_candidadates(gal_id):
     #art_gcs = (fits.open(ART_GCs_cat))[1].data
     sources = (fits.open(source_cat))[1].data
 
-    mag_param = 'F_MAG_APER_CORR_'+fn_det
+    if 'DET' in fn_det:
+        mag_param = 'F_MAG_APER_CORR_'+filters[1]
+    else:
+        mag_param = 'F_MAG_APER_CORR_'+fn_det
+        
     mag_mask = (sources[mag_param] < GC_MAG_RANGE[1]+5*np.log10(distance*1e+5))
     sources = sources[mag_mask]
 
@@ -142,7 +146,7 @@ def select_GC_candidadates(gal_id):
 
     for param in GC_SEL_PARAMS:
         print (param)
-        param = param + '_' + fn_det
+        #param = param + '_' + fn_det
         #param_art_gcs = art_gcs[param]
         param_det_art_gcs = det_art_gcs[param]
         param_sources = sources[param]
